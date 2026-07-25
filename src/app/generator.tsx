@@ -104,7 +104,7 @@ const INITIAL_MESSAGES: ChatMessage[] = [
   {
     id: 'msg-1',
     sender: 'ai',
-    text: '¡Hola! 🪄 Soy tu Asistente NextDate AI. Aquí tienes una propuesta inicial recomendada paso a paso. También puedes escribir tu propio deseo abajo:',
+    text: '¡Hola! 🪄 Soy tu Asistente NextDate AI. Aquí tienes una propuesta recomendada paso a paso. También puedes escribir tu propio deseo abajo:',
     itinerary: MOCK_GENERATED_ITINERARY,
     timestamp: 'Ahora'
   }
@@ -153,13 +153,12 @@ export default function GeneratorScreen() {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
 
-    // Simular respuesta inteligente de la IA
     setTimeout(() => {
       setIsThinking(false);
       const aiResponse: ChatMessage = {
         id: `ai-${Date.now()}`,
         sender: 'ai',
-        text: `¡Excelente idea! Basado en "${userText}", he diseñado el siguiente itinerario personalizado:`,
+        text: `Basado en "${userText}", he preparado este itinerario exclusivo para ti:`,
         itinerary: MOCK_GENERATED_ITINERARY,
         timestamp: 'Ahora'
       };
@@ -167,7 +166,7 @@ export default function GeneratorScreen() {
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 150);
-    }, 1600);
+    }, 1500);
   };
 
   const openStepDetail = (step: ItineraryStep) => {
@@ -183,25 +182,18 @@ export default function GeneratorScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         
-        {/* Header Superior del Chat AI */}
-        <View style={[styles.chatHeader, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={styles.avatarAi}>
-            <Text style={{ fontSize: 18 }}>🪄</Text>
-          </View>
-          <View>
-            <Text style={[styles.chatHeaderTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+        {/* Minimal Clean Header */}
+        <View style={styles.cleanHeader}>
+          <View style={styles.headerTitleRow}>
+            <Text style={{ fontSize: 16, marginRight: 6 }}>🪄</Text>
+            <Text style={[styles.cleanTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
               NextDate AI
             </Text>
-            <View style={styles.statusRow}>
-              <View style={styles.greenDot} />
-              <Text style={[styles.chatHeaderStatus, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
-                En línea • Asistente Inteligente
-              </Text>
-            </View>
+            <View style={styles.onlineDot} />
           </View>
         </View>
 
-        {/* Lista de Mensajes del Chat */}
+        {/* Scroll de Conversación Ultra-Minimalista */}
         <ScrollView 
           ref={scrollViewRef}
           contentContainerStyle={styles.chatScroll}
@@ -214,27 +206,23 @@ export default function GeneratorScreen() {
               <View 
                 key={msg.id} 
                 style={[
-                  styles.messageWrapper,
-                  isUser ? styles.userMessageWrapper : styles.aiMessageWrapper
+                  styles.messageRow,
+                  isUser ? styles.userRow : styles.aiRow
                 ]}
               >
-                {!isUser ? (
-                  <View style={styles.smallAiAvatar}>
-                    <Text style={{ fontSize: 12 }}>🪄</Text>
-                  </View>
-                ) : null}
-
                 <View 
                   style={[
-                    styles.messageBubble,
-                    isUser ? [styles.userBubble, { backgroundColor: colors.primary }] : [styles.aiBubble, { backgroundColor: colors.card, borderColor: colors.border }],
+                    styles.cleanBubble,
+                    isUser 
+                      ? [styles.userBubble, { backgroundColor: colors.primary }] 
+                      : [styles.aiBubble, { backgroundColor: colors.card, borderColor: colors.border }],
                     { borderRadius: borderRadius.lg }
                   ]}
                 >
                   {msg.text ? (
                     <Text 
                       style={[
-                        styles.messageText, 
+                        styles.msgText, 
                         { color: isUser ? colors.primaryContrast : colors.text, fontFamily: typography.fonts.regular }
                       ]}
                     >
@@ -242,67 +230,67 @@ export default function GeneratorScreen() {
                     </Text>
                   ) : null}
 
-                  {/* ITINERARIO PASO A PASO EN FORMATO STEPPER DENTRO DEL CHAT */}
+                  {/* ITINERARIO STEPPER ULTRA-CLEAN */}
                   {msg.itinerary ? (() => {
                     const itin = msg.itinerary;
                     const isSaved = itin ? !!savedItineraryIds[itin.id] : false;
                     return (
-                      <View style={styles.itineraryContainer}>
+                      <View style={styles.itineraryBox}>
                         
-                        <View style={styles.itineraryHeader}>
-                          <Text style={[styles.matchBadge, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                            🎯 {itin.matchScore}% Compatibilidad
+                        <View style={styles.itineraryTitleBlock}>
+                          <Text style={[styles.matchText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+                            ✨ {itin.matchScore}% Compatibilidad
                           </Text>
-                          <Text style={[styles.itineraryTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                          <Text style={[styles.itinTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
                             {itin.title}
                           </Text>
-                          <Text style={[styles.itineraryTagline, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                          <Text style={[styles.itinSub, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
                             {itin.tagline}
                           </Text>
                         </View>
 
-                        {/* STEPPER VERTICAL INTERACTIVO */}
-                        <View style={styles.stepperContainer}>
+                        {/* STEPPER CONECTOR DE NODOS */}
+                        <View style={styles.stepperWrap}>
                           {itin.steps.map((step, index) => {
                             const isLast = index === itin.steps.length - 1;
                             return (
-                              <View key={step.stepNumber} style={styles.stepperRow}>
+                              <View key={step.stepNumber} style={styles.stepperItem}>
                                 
-                                {/* Nodo y línea conectora */}
-                                <View style={styles.stepperNodeCol}>
-                                  <View style={[styles.stepperCircle, { backgroundColor: colors.primary }]}>
-                                    <Text style={[styles.stepperCircleText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                                {/* Nodo Numérico & Línea */}
+                                <View style={styles.nodeColumn}>
+                                  <View style={[styles.nodeCircle, { backgroundColor: colors.primary }]}>
+                                    <Text style={[styles.nodeNum, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
                                       {step.stepNumber}
                                     </Text>
                                   </View>
                                   {!isLast ? (
-                                    <View style={[styles.stepperLine, { backgroundColor: colors.primary + '50' }]} />
+                                    <View style={[styles.nodeLine, { backgroundColor: colors.border }]} />
                                   ) : null}
                                 </View>
 
                                 {/* Card del Paso */}
                                 <TouchableOpacity
-                                  style={[styles.stepperCard, { backgroundColor: colors.background, borderColor: colors.border, borderRadius: borderRadius.md }]}
+                                  style={[styles.stepCard, { backgroundColor: colors.background, borderColor: colors.border, borderRadius: borderRadius.md }]}
                                   activeOpacity={0.88}
                                   onPress={() => openStepDetail(step)}
                                 >
-                                  <Image source={{ uri: step.imageUrl }} style={styles.stepThumb} />
+                                  <Image source={{ uri: step.imageUrl }} style={styles.stepImage} />
                                   
-                                  <View style={styles.stepInfo}>
+                                  <View style={styles.stepDetails}>
                                     <Text style={[styles.stepTime, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                                      🕒 {step.time}
+                                      {step.time}
                                     </Text>
 
-                                    <Text style={[styles.stepTitleText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                                    <Text style={[styles.stepHeadline, { color: colors.text, fontFamily: typography.fonts.bold }]}>
                                       {step.categoryEmoji} {step.title}
                                     </Text>
 
-                                    <Text style={[styles.stepPlaceText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]} numberOfLines={1}>
+                                    <Text style={[styles.stepAddress, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]} numberOfLines={1}>
                                       📍 {step.placeName}
                                     </Text>
                                   </View>
 
-                                  <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
+                                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
                                     <Path d="M9 18l6-6-6-6" />
                                   </Svg>
                                 </TouchableOpacity>
@@ -311,24 +299,22 @@ export default function GeneratorScreen() {
                             );
                           })}
 
-                          {/* Botón de Guardar Plan de Cita */}
-                          <View style={styles.savePlanActionRow}>
-                            <TouchableOpacity
-                              style={[
-                                styles.savePlanBtn,
-                                {
-                                  backgroundColor: isSaved ? '#34C759' : colors.primary,
-                                  borderRadius: borderRadius.md
-                                }
-                              ]}
-                              activeOpacity={0.88}
-                              onPress={() => toggleSaveItinerary(itin.id)}
-                            >
-                              <Text style={[styles.savePlanBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                                {isSaved ? '✅ ¡Plan Guardado en Mis Citas!' : '💾 Guardar este Plan de Cita'}
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
+                          {/* Botón Minimalista Guardar Plan */}
+                          <TouchableOpacity
+                            style={[
+                              styles.minimalSaveBtn,
+                              {
+                                backgroundColor: isSaved ? '#34C759' : colors.primary,
+                                borderRadius: borderRadius.md
+                              }
+                            ]}
+                            activeOpacity={0.88}
+                            onPress={() => toggleSaveItinerary(itin.id)}
+                          >
+                            <Text style={[styles.minimalSaveBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                              {isSaved ? '✓ Plan Guardado' : '💾 Guardar este Plan'}
+                            </Text>
+                          </TouchableOpacity>
 
                         </View>
 
@@ -341,28 +327,23 @@ export default function GeneratorScreen() {
             );
           })}
 
-          {/* Indicador de Pensando/Diseñando de la IA */}
+          {/* Thinking State */}
           {isThinking ? (
-            <View style={styles.aiThinkingWrapper}>
-              <View style={styles.smallAiAvatar}>
-                <Text style={{ fontSize: 12 }}>🪄</Text>
-              </View>
-              <View style={[styles.thinkingBubble, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
-                <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 8 }} />
-                <Text style={[styles.thinkingText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
-                  Diseñando la cita perfecta para ti...
-                </Text>
-              </View>
+            <View style={styles.thinkingRow}>
+              <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 8 }} />
+              <Text style={[styles.thinkingLabel, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                Diseñando tu cita...
+              </Text>
             </View>
           ) : null}
 
         </ScrollView>
 
-        {/* INPUT DE CHAT EN LA PARTE INFERIOR */}
-        <View style={[styles.chatInputBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        {/* Floating Minimal Chat Input */}
+        <View style={[styles.floatingInputRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <TextInput
-            style={[styles.chatTextInput, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border, borderRadius: borderRadius.round, fontFamily: typography.fonts.regular }]}
-            placeholder="Escribe cómo quieres tu cita..."
+            style={[styles.cleanTextInput, { color: colors.text, fontFamily: typography.fonts.regular }]}
+            placeholder="Describe tu cita ideal..."
             placeholderTextColor={colors.textSecondary}
             value={inputPrompt}
             onChangeText={setInputPrompt}
@@ -370,12 +351,12 @@ export default function GeneratorScreen() {
             returnKeyType="send"
           />
           <TouchableOpacity 
-            style={[styles.sendBtn, { backgroundColor: inputPrompt.trim() ? colors.primary : colors.border, borderRadius: 22 }]}
+            style={[styles.cleanSendBtn, { backgroundColor: inputPrompt.trim() ? colors.primary : colors.border }]}
             activeOpacity={0.8}
             onPress={handleSendMessage}
             disabled={!inputPrompt.trim() || isThinking}
           >
-            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2.5}>
+            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2.5}>
               <Path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
             </Svg>
           </TouchableOpacity>
@@ -383,23 +364,23 @@ export default function GeneratorScreen() {
 
       </KeyboardAvoidingView>
 
-      {/* DETALLE COMPLETO DEL PASO AL DARLE CLICK EN CUALQUIER STEP CARD */}
+      {/* DETALLE A PANTALLA COMPLETA NATIVA (MODAL STEP) */}
       <Modal
         visible={!!selectedStep}
         animationType="slide"
         presentationStyle="fullScreen"
         onRequestClose={() => setSelectedStep(null)}
       >
-        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.modalArea, { backgroundColor: colors.background }]}>
           {selectedStep ? (
             <View style={{ flex: 1 }}>
               
-              {/* Imagen & Botón X de Cierre con top: 36 para librar el notch */}
-              <View style={styles.modalImageWrapper}>
-                <Image source={{ uri: selectedStep.imageUrl }} style={styles.modalImage} />
+              {/* Cover Image & Close X Button (top: 36) */}
+              <View style={styles.modalCoverWrapper}>
+                <Image source={{ uri: selectedStep.imageUrl }} style={styles.modalCover} />
                 
                 <TouchableOpacity 
-                  style={styles.closeBtn}
+                  style={styles.modalCloseBtn}
                   activeOpacity={0.8}
                   onPress={() => setSelectedStep(null)}
                 >
@@ -409,59 +390,58 @@ export default function GeneratorScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Contenido Detallado del Paso */}
-              <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.modalScrollContent} showsVerticalScrollIndicator={false}>
+              <ScrollView contentContainerStyle={styles.modalBody} showsVerticalScrollIndicator={false}>
                 
-                <View style={styles.modalBadgeRow}>
-                  <View style={[styles.modalPill, { backgroundColor: colors.primary }]}>
-                    <Text style={[styles.modalPillText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                      Paso {selectedStep.stepNumber} del Itinerario
+                <View style={styles.modalHeaderRow}>
+                  <View style={[styles.modalStepBadge, { backgroundColor: colors.primary }]}>
+                    <Text style={[styles.modalStepBadgeText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                      Paso {selectedStep.stepNumber}
                     </Text>
                   </View>
-                  <Text style={[styles.modalTime, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+                  <Text style={[styles.modalTimeText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
                     🕒 {selectedStep.time}
                   </Text>
                 </View>
 
-                <Text style={[styles.modalTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                <Text style={[styles.modalHeadline, { color: colors.text, fontFamily: typography.fonts.bold }]}>
                   {selectedStep.categoryEmoji} {selectedStep.title}
                 </Text>
 
-                <Text style={[styles.modalPlace, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+                <Text style={[styles.modalSubHeadline, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
                   📍 {selectedStep.placeName} • {selectedStep.estimatedCost}
                 </Text>
 
-                <Text style={[styles.modalDesc, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                <Text style={[styles.modalParagraph, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
                   {selectedStep.description}
                 </Text>
 
-                {/* UBICACIÓN EN MAPA */}
-                <Text style={[styles.modalSectionTitle, { color: colors.text, fontFamily: typography.fonts.bold, marginTop: 20 }]}>
+                {/* MAPA */}
+                <Text style={[styles.modalSectionHeading, { color: colors.text, fontFamily: typography.fonts.bold, marginTop: 20 }]}>
                   Ubicación del Plan
                 </Text>
-                <Text style={[styles.modalAddress, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                <Text style={[styles.modalAddressText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
                   {selectedStep.address}
                 </Text>
 
-                <View style={[styles.mapCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
-                  <View style={[styles.mapInner, { backgroundColor: colors.primary + '08' }]}>
-                    <View style={[styles.mapPin, { backgroundColor: colors.primary }]}>
-                      <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2}>
+                <View style={[styles.mapContainer, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
+                  <View style={[styles.mapContent, { backgroundColor: colors.primary + '08' }]}>
+                    <View style={[styles.mapPinBg, { backgroundColor: colors.primary }]}>
+                      <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2}>
                         <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                         <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
                       </Svg>
                     </View>
-                    <Text style={[styles.mapText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                    <Text style={[styles.mapPinLabel, { color: colors.text, fontFamily: typography.fonts.bold }]}>
                       {selectedStep.placeName}
                     </Text>
                   </View>
                 </View>
 
-                {/* COMPONENTE DE CALIFICACIÓN (RATE) DEBAJO DEL MAPA */}
-                <Text style={[styles.modalSectionTitle, { color: colors.text, fontFamily: typography.fonts.bold, marginTop: 12 }]}>
+                {/* RATE DEL PLAN (DEBAJO DEL MAPA) */}
+                <Text style={[styles.modalSectionHeading, { color: colors.text, fontFamily: typography.fonts.bold, marginTop: 12 }]}>
                   Califica este Plan
                 </Text>
-                <View style={[styles.rateCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
+                <View style={[styles.rateCardBox, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
                   <View style={styles.starsRow}>
                     {[1, 2, 3, 4, 5].map((star) => (
                       <TouchableOpacity
@@ -470,7 +450,7 @@ export default function GeneratorScreen() {
                         onPress={() => setStepRating(star)}
                         style={{ padding: 4 }}
                       >
-                        <Text style={{ fontSize: 28, opacity: star <= stepRating ? 1 : 0.25 }}>
+                        <Text style={{ fontSize: 26, opacity: star <= stepRating ? 1 : 0.25 }}>
                           ⭐
                         </Text>
                       </TouchableOpacity>
@@ -479,27 +459,27 @@ export default function GeneratorScreen() {
 
                   {stepRating > 0 && !stepRatingSubmitted ? (
                     <TouchableOpacity
-                      style={[styles.rateSubmitBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
+                      style={[styles.rateActionBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
                       onPress={() => setStepRatingSubmitted(true)}
                     >
-                      <Text style={[styles.rateSubmitText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                      <Text style={[styles.rateActionBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
                         Enviar Calificación
                       </Text>
                     </TouchableOpacity>
                   ) : stepRatingSubmitted ? (
-                    <Text style={[styles.rateThanks, { color: colors.text, fontFamily: typography.fonts.medium }]}>
+                    <Text style={[styles.rateSuccessText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
                       ¡Gracias por calificar este paso! 🙌
                     </Text>
                   ) : null}
                 </View>
 
-                {/* BOTÓN SEPARADO DE ACCIÓN */}
+                {/* BOTÓN PLANEAR ESTE PASO SEPARADO */}
                 <TouchableOpacity 
-                  style={[styles.confirmStepBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
+                  style={[styles.modalPlanBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
                   activeOpacity={0.9}
                   onPress={() => setSelectedStep(null)}
                 >
-                  <Text style={[styles.confirmStepText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                  <Text style={[styles.modalPlanBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
                     Planear Este Paso ✨
                   </Text>
                 </TouchableOpacity>
@@ -521,182 +501,147 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  chatHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  cleanHeader: {
     paddingHorizontal: 20,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    gap: 12,
-  },
-  avatarAi: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
-    justify: 'center',
   },
-  chatHeaderTitle: {
-    fontSize: 16,
-  },
-  statusRow: {
+  headerTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
   },
-  greenDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
+  cleanTitle: {
+    fontSize: 18,
+  },
+  onlineDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: '#34C759',
-  },
-  chatHeaderStatus: {
-    fontSize: 11,
+    marginLeft: 6,
   },
   chatScroll: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 8,
     paddingBottom: 150,
   },
-  messageWrapper: {
-    flexDirection: 'row',
-    marginBottom: 16,
-    maxWidth: '90%',
+  messageRow: {
+    marginBottom: 14,
+    width: '100%',
   },
-  userMessageWrapper: {
-    alignSelf: 'flex-end',
-    justifyContent: 'flex-end',
+  userRow: {
+    alignItems: 'flex-end',
   },
-  aiMessageWrapper: {
-    alignSelf: 'flex-start',
-    gap: 8,
+  aiRow: {
+    alignItems: 'flex-start',
   },
-  smallAiAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    alignItems: 'center',
-    justify: 'center',
-    marginTop: 4,
-  },
-  messageBubble: {
-    padding: 14,
-    maxWidth: '100%',
+  cleanBubble: {
+    padding: 12,
+    maxWidth: '94%',
   },
   userBubble: {},
   aiBubble: {
     borderWidth: 1,
   },
-  messageText: {
+  msgText: {
     fontSize: 14,
     lineHeight: 20,
   },
-  aiThinkingWrapper: {
+  thinkingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    alignSelf: 'flex-start',
+    marginBottom: 12,
   },
-  thinkingBubble: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 1,
-  },
-  thinkingText: {
+  thinkingLabel: {
     fontSize: 13,
   },
-  itineraryContainer: {
-    marginTop: 10,
-  },
-  itineraryHeader: {
-    marginBottom: 10,
-  },
-  matchBadge: {
-    fontSize: 12,
-    marginBottom: 2,
-  },
-  itineraryTitle: {
-    fontSize: 18,
-    marginBottom: 2,
-  },
-  itineraryTagline: {
-    fontSize: 12,
-  },
-  stepperContainer: {
+  itineraryBox: {
     marginTop: 8,
   },
-  stepperRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
+  itineraryTitleBlock: {
+    marginBottom: 10,
   },
-  stepperNodeCol: {
+  matchText: {
+    fontSize: 11,
+    marginBottom: 2,
+  },
+  itinTitle: {
+    fontSize: 17,
+    marginBottom: 2,
+  },
+  itinSub: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  stepperWrap: {
+    marginTop: 6,
+  },
+  stepperItem: {
+    flexDirection: 'row',
+    marginBottom: 6,
+  },
+  nodeColumn: {
     alignItems: 'center',
-    width: 28,
-    marginRight: 8,
+    width: 24,
+    marginRight: 6,
     paddingTop: 4,
   },
-  stepperCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  nodeCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: 'center',
     justify: 'center',
     zIndex: 2,
   },
-  stepperCircleText: {
-    fontSize: 12,
+  nodeNum: {
+    fontSize: 11,
   },
-  stepperLine: {
-    width: 2,
+  nodeLine: {
+    width: 1.5,
     flex: 1,
     marginTop: 2,
-    marginBottom: -8,
+    marginBottom: -6,
   },
-  stepperCard: {
+  stepCard: {
     flex: 1,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     padding: 8,
   },
-  stepThumb: {
-    width: 48,
-    height: 48,
+  stepImage: {
+    width: 44,
+    height: 44,
     borderRadius: 6,
     marginRight: 8,
   },
-  stepInfo: {
+  stepDetails: {
     flex: 1,
   },
   stepTime: {
     fontSize: 10,
-    marginBottom: 1,
   },
-  stepTitleText: {
+  stepHeadline: {
     fontSize: 13,
-    marginBottom: 1,
   },
-  stepPlaceText: {
+  stepAddress: {
     fontSize: 11,
   },
-  savePlanActionRow: {
-    marginTop: 12,
-    width: '100%',
-  },
-  savePlanBtn: {
-    height: 44,
+  minimalSaveBtn: {
+    height: 40,
     width: '100%',
     alignItems: 'center',
     justify: 'center',
+    marginTop: 10,
   },
-  savePlanBtnText: {
+  minimalSaveBtnText: {
     fontSize: 13,
   },
-  chatInputBar: {
+  floatingInputRow: {
     position: 'absolute',
     bottom: 96,
     left: 16,
@@ -704,39 +649,39 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    paddingVertical: 6,
+    paddingVertical: 5,
     borderWidth: 1,
-    borderRadius: 28,
+    borderRadius: 24,
     gap: 8,
   },
-  chatTextInput: {
+  cleanTextInput: {
     flex: 1,
-    height: 42,
-    paddingHorizontal: 16,
-    fontSize: 14,
-    borderWidth: 1,
+    height: 38,
+    paddingHorizontal: 12,
+    fontSize: 13,
   },
-  sendBtn: {
-    width: 42,
-    height: 42,
+  cleanSendBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justify: 'center',
   },
 
-  /* MODAL STEP DETAIL */
-  modalContainer: {
+  /* MODAL */
+  modalArea: {
     flex: 1,
   },
-  modalImageWrapper: {
+  modalCoverWrapper: {
     position: 'relative',
     width: '100%',
     height: 220,
   },
-  modalImage: {
+  modalCover: {
     width: '100%',
     height: '100%',
   },
-  closeBtn: {
+  modalCloseBtn: {
     position: 'absolute',
     top: 36,
     right: 16,
@@ -748,70 +693,70 @@ const styles = StyleSheet.create({
     justify: 'center',
     zIndex: 10,
   },
-  modalScrollContent: {
+  modalBody: {
     padding: 20,
     paddingBottom: 40,
   },
-  modalBadgeRow: {
+  modalHeaderRow: {
     flexDirection: 'row',
     justify: 'space-between',
     alignItems: 'center',
     marginBottom: 10,
   },
-  modalPill: {
+  modalStepBadge: {
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: 6,
   },
-  modalPillText: {
+  modalStepBadgeText: {
     fontSize: 11,
   },
-  modalTime: {
+  modalTimeText: {
     fontSize: 13,
   },
-  modalTitle: {
+  modalHeadline: {
     fontSize: 22,
     marginBottom: 4,
   },
-  modalPlace: {
+  modalSubHeadline: {
     fontSize: 13,
     marginBottom: 12,
   },
-  modalDesc: {
+  modalParagraph: {
     fontSize: 14,
     lineHeight: 22,
   },
-  modalSectionTitle: {
+  modalSectionHeading: {
     fontSize: 16,
     marginBottom: 6,
   },
-  modalAddress: {
+  modalAddressText: {
     fontSize: 13,
     marginBottom: 10,
   },
-  mapCard: {
+  mapContainer: {
     height: 140,
     borderWidth: 1,
     overflow: 'hidden',
     marginBottom: 20,
   },
-  mapInner: {
+  mapContent: {
     flex: 1,
     alignItems: 'center',
     justify: 'center',
   },
-  mapPin: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  mapPinBg: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justify: 'center',
     marginBottom: 6,
   },
-  mapText: {
+  mapPinLabel: {
     fontSize: 13,
   },
-  rateCard: {
+  rateCardBox: {
     padding: 14,
     borderWidth: 1,
     alignItems: 'center',
@@ -821,28 +766,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 6,
   },
-  rateSubmitBtn: {
+  rateActionBtn: {
     height: 38,
     width: '100%',
     alignItems: 'center',
     justify: 'center',
     marginTop: 10,
   },
-  rateSubmitText: {
+  rateActionBtnText: {
     fontSize: 12,
   },
-  rateThanks: {
+  rateSuccessText: {
     fontSize: 12,
     marginTop: 8,
   },
-  confirmStepBtn: {
+  modalPlanBtn: {
     height: 50,
     width: '100%',
     alignItems: 'center',
     justify: 'center',
     marginTop: 12,
   },
-  confirmStepText: {
+  modalPlanBtnText: {
     fontSize: 15,
   },
 });
