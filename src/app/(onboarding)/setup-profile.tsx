@@ -10,8 +10,7 @@ import {
   Platform, 
   ScrollView, 
   useWindowDimensions,
-  ActivityIndicator,
-  Modal
+  ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
@@ -50,11 +49,6 @@ const DIETARY_OPTIONS: { id: DietaryPreference; label: string }[] = [
   { id: 'OTHER', label: 'Otro' },
 ];
 
-const MONTHS = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-];
-
 export default function SetupProfileScreen() {
   const { colors, typography, borderRadius } = useTheme();
   const router = useRouter();
@@ -66,20 +60,13 @@ export default function SetupProfileScreen() {
   // Datos del formulario para createProfile(input: CreateProfileInput!)
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
+  const [birthdate, setBirthdate] = useState('1998-10-20');
   const [gender, setGender] = useState<Gender>('OTHER');
   const [interests, setInterests] = useState<PlaceCategory[]>(['FOOD_DRINK', 'CULTURE']);
   const [preferredPriceRange, setPreferredPriceRange] = useState<PriceRange>('MODERATE');
   const [dietaryPreference, setDietaryPreference] = useState<DietaryPreference>('NONE');
   const [latitude, setLatitude] = useState<number>(20.6736);
   const [longitude, setLongitude] = useState<number>(-103.344);
-
-  // Estado del Calendario de Fecha de Nacimiento
-  const [selectedDay, setSelectedDay] = useState(20);
-  const [selectedMonth, setSelectedMonth] = useState(9); // 0-indexed (9 = Octubre)
-  const [selectedYear, setSelectedYear] = useState(1998);
-  const [showCalendarModal, setShowCalendarModal] = useState(false);
-
-  const birthdate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -100,6 +87,10 @@ export default function SetupProfileScreen() {
     if (currentStep === 1) {
       if (!username.trim()) {
         setErrorMessage('Por favor ingresa tu nombre de usuario.');
+        return;
+      }
+      if (!birthdate.trim()) {
+        setErrorMessage('Por favor selecciona tu fecha de nacimiento.');
         return;
       }
     }
@@ -139,9 +130,6 @@ export default function SetupProfileScreen() {
       setLoading(false);
     }
   };
-
-  // Días del mes seleccionado
-  const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -219,29 +207,44 @@ export default function SetupProfileScreen() {
                   />
                 </View>
 
-                {/* Birthdate Input con Calendario */}
+                {/* Birthdate Input Nativo */}
                 <View style={styles.inputGroup}>
                   <Text style={[styles.label, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
                     Fecha de Nacimiento
                   </Text>
-                  <TouchableOpacity 
-                    style={[styles.dateSelectorButton, { borderColor: colors.border, backgroundColor: colors.card, borderRadius: borderRadius.md }]}
-                    activeOpacity={0.8}
-                    onPress={() => setShowCalendarModal(true)}
-                  >
-                    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2} style={{ marginRight: 12 }}>
-                      <Path d="M19 4H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zM16 2v4M8 2v4M3 10h18" />
-                    </Svg>
-                    <Text style={[styles.dateSelectorText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
-                      {selectedDay} de {MONTHS[selectedMonth]} de {selectedYear}
-                    </Text>
-                    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
-                      <Path d="M6 9l6 6 6-6" />
-                    </Svg>
-                  </TouchableOpacity>
+                  {Platform.OS === 'web' ? (
+                    <input 
+                      type="date"
+                      value={birthdate}
+                      onChange={(e) => setBirthdate(e.target.value)}
+                      style={{
+                        height: '52px',
+                        border: `1px solid ${colors.border}`,
+                        borderRadius: `${borderRadius.md}px`,
+                        backgroundColor: colors.card,
+                        color: colors.text,
+                        padding: '0 16px',
+                        fontSize: '15px',
+                        fontFamily: 'inherit',
+                        outline: 'none',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  ) : (
+                    <TextInput
+                      style={[styles.input, { color: colors.text, borderColor: colors.border, borderRadius: borderRadius.md, backgroundColor: colors.card }]}
+                      placeholder="YYYY-MM-DD"
+                      placeholderTextColor={colors.textSecondary}
+                      value={birthdate}
+                      onChangeText={setBirthdate}
+                      keyboardType="numbers-and-punctuation"
+                    />
+                  )}
                 </View>
 
-                {/* Gender Selector */}
+                {/* Gender Selector con Alineación Centrada Perfecta */}
                 <View style={styles.inputGroup}>
                   <Text style={[styles.label, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
                     Género
@@ -483,112 +486,6 @@ export default function SetupProfileScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      {/* MODAL DE CALENDARIO DE FECHA DE NACIMIENTO */}
-      <Modal
-        visible={showCalendarModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowCalendarModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.calendarModalContent, { backgroundColor: colors.background, borderColor: colors.border, borderRadius: borderRadius.xl }]}>
-            
-            {/* Header del Calendario */}
-            <View style={styles.calendarHeader}>
-              <Text style={[styles.calendarTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                Seleccionar Fecha de Nacimiento
-              </Text>
-              <TouchableOpacity onPress={() => setShowCalendarModal(false)}>
-                <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
-                  <Path d="M18 6L6 18M6 6l12 12" />
-                </Svg>
-              </TouchableOpacity>
-            </View>
-
-            {/* Controles de Año y Mes */}
-            <View style={styles.calendarControls}>
-              {/* Año Selector */}
-              <View style={styles.controlGroup}>
-                <TouchableOpacity 
-                  style={[styles.arrowNavBtn, { borderColor: colors.border }]}
-                  onPress={() => setSelectedYear(selectedYear - 1)}
-                >
-                  <Text style={{ color: colors.text, fontSize: 16 }}>‹</Text>
-                </TouchableOpacity>
-                <Text style={[styles.controlLabel, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                  {selectedYear}
-                </Text>
-                <TouchableOpacity 
-                  style={[styles.arrowNavBtn, { borderColor: colors.border }]}
-                  onPress={() => setSelectedYear(selectedYear + 1)}
-                >
-                  <Text style={{ color: colors.text, fontSize: 16 }}>›</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Mes Selector */}
-              <View style={styles.controlGroup}>
-                <TouchableOpacity 
-                  style={[styles.arrowNavBtn, { borderColor: colors.border }]}
-                  onPress={() => setSelectedMonth(selectedMonth === 0 ? 11 : selectedMonth - 1)}
-                >
-                  <Text style={{ color: colors.text, fontSize: 16 }}>‹</Text>
-                </TouchableOpacity>
-                <Text style={[styles.controlLabel, { color: colors.text, fontFamily: typography.fonts.bold, minWidth: 90, textAlign: 'center' }]}>
-                  {MONTHS[selectedMonth]}
-                </Text>
-                <TouchableOpacity 
-                  style={[styles.arrowNavBtn, { borderColor: colors.border }]}
-                  onPress={() => setSelectedMonth(selectedMonth === 11 ? 0 : selectedMonth + 1)}
-                >
-                  <Text style={{ color: colors.text, fontSize: 16 }}>›</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Grid de Días */}
-            <View style={styles.daysGrid}>
-              {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => {
-                const isSelected = d === selectedDay;
-                return (
-                  <TouchableOpacity
-                    key={d}
-                    style={[
-                      styles.dayCell,
-                      {
-                        backgroundColor: isSelected ? colors.primary : colors.card,
-                        borderColor: isSelected ? colors.primary : colors.border,
-                        borderRadius: borderRadius.md
-                      }
-                    ]}
-                    onPress={() => setSelectedDay(d)}
-                  >
-                    <Text style={[
-                      styles.dayCellText,
-                      { color: isSelected ? colors.primaryContrast : colors.text, fontFamily: isSelected ? typography.fonts.bold : typography.fonts.regular }
-                    ]}>
-                      {d}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {/* Botón de Confirmar Fecha */}
-            <TouchableOpacity
-              style={[styles.confirmDateButton, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
-              onPress={() => setShowCalendarModal(false)}
-            >
-              <Text style={[styles.confirmDateText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                Confirmar Fecha ({birthdate})
-              </Text>
-            </TouchableOpacity>
-
-          </View>
-        </View>
-      </Modal>
-
     </SafeAreaView>
   );
 }
@@ -674,18 +571,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 15,
   },
-  dateSelectorButton: {
-    height: 52,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  dateSelectorText: {
-    flex: 1,
-    fontSize: 15,
-  },
   textArea: {
     height: 90,
     borderWidth: 1,
@@ -695,16 +580,19 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   genderOptions: {
-    gap: 8,
+    gap: 10,
   },
   genderChip: {
-    height: 46,
+    height: 48,
     borderWidth: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justify: 'center',
+    paddingHorizontal: 16,
   },
   genderChipText: {
     fontSize: 14,
+    textAlign: 'center',
   },
   categoriesGrid: {
     flexDirection: 'row',
@@ -767,7 +655,7 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     alignItems: 'center',
-    justifyContent: 'center',
+    justify: 'center',
     marginBottom: 12,
   },
   locationTitle: {
@@ -793,78 +681,11 @@ const styles = StyleSheet.create({
   nextButton: {
     height: 54,
     alignItems: 'center',
-    justifyContent: 'center',
+    justify: 'center',
     marginTop: 8,
     marginBottom: 24,
   },
   nextButtonText: {
     fontSize: 16,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  calendarModalContent: {
-    width: '100%',
-    maxWidth: 380,
-    padding: 20,
-    borderWidth: 1,
-  },
-  calendarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  calendarTitle: {
-    fontSize: 16,
-  },
-  calendarControls: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  controlGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  arrowNavBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    alignItems: 'center',
-    justify: 'center',
-  },
-  controlLabel: {
-    fontSize: 14,
-  },
-  daysGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 20,
-  },
-  dayCell: {
-    width: 42,
-    height: 42,
-    borderWidth: 1,
-    alignItems: 'center',
-    justify: 'center',
-  },
-  dayCellText: {
-    fontSize: 13,
-  },
-  confirmDateButton: {
-    height: 48,
-    alignItems: 'center',
-    justify: 'center',
-  },
-  confirmDateText: {
-    fontSize: 14,
   },
 });
