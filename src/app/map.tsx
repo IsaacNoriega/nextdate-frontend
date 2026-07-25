@@ -3,75 +3,79 @@ import {
   StyleSheet, 
   View, 
   Text, 
-  TextInput, 
   TouchableOpacity, 
   ScrollView, 
   Image, 
-  Modal
+  Modal,
+  Linking
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
 import { useTheme } from '../hooks/useTheme';
 import BottomBar from '../components/ui/bottom-bar';
 
-interface MapPin {
-  id: string;
-  name: string;
+interface RouteStep {
+  stepNumber: number;
+  time: string;
+  title: string;
+  placeName: string;
   categoryEmoji: string;
-  categoryLabel: string;
-  rating: number;
-  price: string;
-  distance: string;
   address: string;
+  latitude: number;
+  longitude: number;
   description: string;
   imageUrl: string;
-  topPct: number; // Porcentaje de posición en el mapa
+  estimatedCost: string;
+  topPct: number;
   leftPct: number;
 }
 
-const MOCK_MAP_PINS: MapPin[] = [
+const MOCK_ITINERARY_ROUTE: RouteStep[] = [
   {
-    id: 'pin-1',
-    name: 'Terraza Luna Gastro Bar',
+    stepNumber: 1,
+    time: '18:30 PM',
+    title: 'Cócteles de Autor al Atardecer',
+    placeName: 'Terraza Luna Gastro Bar',
     categoryEmoji: '🍸',
-    categoryLabel: 'Coctelería',
-    rating: 4.9,
-    price: '$$$',
-    distance: '0.8 km',
     address: 'Av. Chapultepec Norte 340, Americana',
-    description: 'Vista panorámica espectacular del atardecer con coctelería artesanal y música suave.',
+    latitude: 20.6741,
+    longitude: -103.3682,
+    description: 'Coctelería artesanal y vista del atardecer para iniciar la cita.',
     imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
-    topPct: 35,
-    leftPct: 45
+    estimatedCost: '$250 MXN',
+    topPct: 25,
+    leftPct: 30
   },
   {
-    id: 'pin-2',
-    name: 'Trattoria Barrio',
+    stepNumber: 2,
+    time: '19:45 PM',
+    title: 'Cena a la Luz de las Velas',
+    placeName: 'Trattoria Barrio Americana',
     categoryEmoji: '🍝',
-    categoryLabel: 'Italiana',
-    rating: 4.8,
-    price: '$$',
-    distance: '1.4 km',
     address: 'Calle López Cotilla 1420, Americana',
-    description: 'Ambiente íntimo con velas, pasta fresca hecha a mano y vinos seleccionados.',
+    latitude: 20.6725,
+    longitude: -103.3611,
+    description: 'Pasta artesanal italiana, ambiente íntimo y vino de la casa.',
     imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80',
-    topPct: 52,
-    leftPct: 65
+    estimatedCost: '$480 MXN',
+    topPct: 48,
+    leftPct: 58
   },
   {
-    id: 'pin-3',
-    name: 'Jardín Botánico & Gelato',
+    stepNumber: 3,
+    time: '21:15 PM',
+    title: 'Postre & Paseo Nocturno',
+    placeName: 'Jardín Botánico & Gelato',
     categoryEmoji: '🍦',
-    categoryLabel: 'Postres & Paseo',
-    rating: 4.7,
-    price: '$',
-    distance: '2.1 km',
     address: 'Camino del Jardín s/n',
-    description: 'Gelato artesanal italiano y senderos románticos illuminados al atardecer.',
+    latitude: 20.7102,
+    longitude: -103.3745,
+    description: 'Gelato artesanal italiano y caminata bajo las estrellas.',
     imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80',
-    topPct: 22,
-    leftPct: 28
+    estimatedCost: '$120 MXN',
+    topPct: 70,
+    leftPct: 75
   }
 ];
 
@@ -79,61 +83,101 @@ export default function MapScreen() {
   const { colors, typography, borderRadius } = useTheme();
   const router = useRouter();
 
-  const [selectedPin, setSelectedPin] = useState<MapPin | null>(MOCK_MAP_PINS[0]);
-  const [showFullDetailModal, setShowFullDetailModal] = useState(false);
-  const [placeRating, setPlaceRating] = useState<number>(0);
-  const [placeRatingSubmitted, setPlaceRatingSubmitted] = useState(false);
+  const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
+  const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
+  const [stepRating, setStepRating] = useState<number>(0);
+  const [stepRatingSubmitted, setStepRatingSubmitted] = useState<boolean>(false);
+
+  const activeStep = MOCK_ITINERARY_ROUTE[activeStepIndex];
+
+  const handleOpenGoogleMaps = (step: RouteStep) => {
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(step.placeName + ' ' + step.address)}`;
+    Linking.openURL(url).catch(() => {});
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       
-      {/* SIMULACIÓN DE MAPA INTERACTIVO A PANTALLA COMPLETA */}
-      <View style={[styles.mapContainer, { backgroundColor: colors.card }]}>
+      {/* GOOGLE MAPS STYLE CONTAINER */}
+      <View style={styles.mapViewport}>
         
-        {/* Fondo Grid & Elementos Geográficos del Mapa */}
-        <View style={[styles.mapBackground, { backgroundColor: colors.primary + '0A' }]}>
+        {/* Fondo con diseño de Google Maps Dark / Light Theme */}
+        <View style={[styles.googleMapBg, { backgroundColor: colors.card }]}>
           
-          {/* Vías / Calles dibujadas */}
-          <View style={[styles.mapRoadHorizontal, { top: '38%', backgroundColor: colors.border }]} />
-          <View style={[styles.mapRoadHorizontal, { top: '55%', backgroundColor: colors.border }]} />
-          <View style={[styles.mapRoadVertical, { left: '48%', backgroundColor: colors.border }]} />
-          <View style={[styles.mapRoadVertical, { left: '67%', backgroundColor: colors.border }]} />
+          {/* SVG Polyline Ruta trazada en el Mapa estilo Google Maps */}
+          <Svg style={StyleSheet.absoluteFill}>
+            {/* Ruta punteada conectora de fondo */}
+            <Line
+              x1="30%"
+              y1="25%"
+              x2="58%"
+              y2="48%"
+              stroke={colors.primary}
+              strokeWidth="4"
+              strokeDasharray="6, 6"
+              strokeOpacity="0.8"
+            />
+            <Line
+              x1="58%"
+              y1="48%"
+              x2="75%"
+              y2="70%"
+              stroke={colors.primary}
+              strokeWidth="4"
+              strokeDasharray="6, 6"
+              strokeOpacity="0.8"
+            />
+          </Svg>
 
-          {/* Área Verde Parques */}
-          <View style={[styles.mapParkArea, { top: '15%', left: '20%', backgroundColor: '#34C75920' }]}>
-            <Text style={{ fontSize: 16 }}>🌿</Text>
+          {/* Bloques de Manzanas y Parques de Mapa */}
+          <View style={[styles.mapBlock, { top: '15%', left: '10%', width: 120, height: 80, backgroundColor: colors.border + '30' }]} />
+          <View style={[styles.mapBlock, { top: '35%', left: '60%', width: 100, height: 100, backgroundColor: colors.border + '30' }]} />
+          <View style={[styles.mapParkBlock, { top: '58%', left: '15%', width: 140, height: 90, backgroundColor: '#34C75918' }]}>
+            <Text style={{ fontSize: 18 }}>🌿</Text>
           </View>
 
-          {/* PINS INTERACTIVOS SOBRE EL MAPA */}
-          {MOCK_MAP_PINS.map((pin) => {
-            const isSelected = selectedPin?.id === pin.id;
+          {/* PINS NUMERADOS DE LA RUTA EN EL MAPA (1 -> 2 -> 3) */}
+          {MOCK_ITINERARY_ROUTE.map((step, idx) => {
+            const isActive = idx === activeStepIndex;
             return (
               <TouchableOpacity
-                key={pin.id}
+                key={step.stepNumber}
                 style={[
-                  styles.mapPinContainer,
+                  styles.routePinWrapper,
                   {
-                    top: `${pin.topPct}%`,
-                    left: `${pin.leftPct}%`,
+                    top: `${step.topPct}%`,
+                    left: `${step.leftPct}%`,
                   }
                 ]}
-                activeOpacity={0.8}
-                onPress={() => setSelectedPin(pin)}
+                activeOpacity={0.85}
+                onPress={() => setActiveStepIndex(idx)}
               >
+                {/* Etiqueta de Horario sobre el Pin */}
+                <View style={[styles.pinTimeTag, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <Text style={[styles.pinTimeText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                    {step.time}
+                  </Text>
+                </View>
+
+                {/* Marcador Pin Circular */}
                 <View 
                   style={[
-                    styles.mapPinBubble,
+                    styles.routePinCircle,
                     {
-                      backgroundColor: isSelected ? colors.primary : colors.card,
-                      borderColor: isSelected ? colors.primaryContrast : colors.primary,
-                      transform: [{ scale: isSelected ? 1.25 : 1 }]
+                      backgroundColor: isActive ? colors.primary : colors.card,
+                      borderColor: isActive ? colors.primaryContrast : colors.primary,
+                      transform: [{ scale: isActive ? 1.3 : 1 }]
                     }
                   ]}
                 >
-                  <Text style={{ fontSize: 16 }}>{pin.categoryEmoji}</Text>
+                  <Text style={[styles.routePinNum, { color: isActive ? colors.primaryContrast : colors.primary, fontFamily: typography.fonts.bold }]}>
+                    {step.stepNumber}
+                  </Text>
                 </View>
-                {isSelected ? (
-                  <View style={[styles.pinPulseRing, { borderColor: colors.primary }]} />
+
+                {/* Sombra / Halo Activo */}
+                {isActive ? (
+                  <View style={[styles.activeHaloRing, { borderColor: colors.primary }]} />
                 ) : null}
               </TouchableOpacity>
             );
@@ -141,60 +185,107 @@ export default function MapScreen() {
 
         </View>
 
-        {/* Buscador & Filtros Flotantes Superiores */}
-        <View style={styles.floatingHeaderArea}>
-          <View style={[styles.searchBarBox, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.round }]}>
-            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
-              <Circle cx="11" cy="11" r="8" />
-              <Path d="M21 21l-4.35-4.35" />
-            </Svg>
-            <TextInput
-              style={[styles.searchInput, { color: colors.text, fontFamily: typography.fonts.regular }]}
-              placeholder="Buscar lugares para citas cerca de ti..."
-              placeholderTextColor={colors.textSecondary}
-            />
+        {/* HEADER FLOTANTE DE LA RUTA GOOGLE MAPS */}
+        <View style={styles.floatingRouteHeader}>
+          <View style={[styles.routeHeaderBox, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
+            <View style={styles.routeTitleRow}>
+              <Text style={{ fontSize: 18, marginRight: 8 }}>🗺️</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.routeItinName, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                  Ruta: Noche Mágica en la Americana
+                </Text>
+                <Text style={[styles.routeItinSub, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                  3 Pasos • 2.4 km • 12 min en auto
+                </Text>
+              </View>
+            </View>
+
+            {/* Selector Rápido de Pasos */}
+            <View style={styles.stepChipsRow}>
+              {MOCK_ITINERARY_ROUTE.map((st, i) => (
+                <TouchableOpacity
+                  key={st.stepNumber}
+                  style={[
+                    styles.stepSelectChip,
+                    {
+                      backgroundColor: i === activeStepIndex ? colors.primary : colors.background,
+                      borderColor: i === activeStepIndex ? colors.primary : colors.border,
+                      borderRadius: borderRadius.round
+                    }
+                  ]}
+                  onPress={() => setActiveStepIndex(i)}
+                >
+                  <Text style={[
+                    styles.stepSelectChipText,
+                    { color: i === activeStepIndex ? colors.primaryContrast : colors.text, fontFamily: typography.fonts.bold }
+                  ]}>
+                    Paso {st.stepNumber} {st.categoryEmoji}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
           </View>
         </View>
 
-        {/* TARJETA FLOTANTE INFERIOR DEL LUGAR SELECCIONADO */}
-        {selectedPin ? (
-          <View style={styles.bottomCardWrapper}>
-            <View style={[styles.selectedPlaceCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
+        {/* TARJETA FLOTANTE INFERIOR NAVEGADORA DE RUTA */}
+        {activeStep ? (
+          <View style={styles.floatingStepCardWrapper}>
+            <View style={[styles.stepNavigatorCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
               
-              <Image source={{ uri: selectedPin.imageUrl }} style={styles.placeCardImage} />
+              {/* Cover Image Thumb */}
+              <Image source={{ uri: activeStep.imageUrl }} style={styles.navigatorThumb} />
 
-              <View style={styles.placeCardDetails}>
-                
-                <View style={styles.placeCardHeaderRow}>
-                  <Text style={[styles.categoryBadgeText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                    {selectedPin.categoryEmoji} {selectedPin.categoryLabel}
-                  </Text>
-                  <Text style={[styles.distanceText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
-                    📍 {selectedPin.distance}
+              <View style={styles.navigatorInfo}>
+                <View style={styles.navHeaderRow}>
+                  <View style={[styles.stepBadge, { backgroundColor: colors.primary }]}>
+                    <Text style={[styles.stepBadgeText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                      Paso {activeStep.stepNumber} de {MOCK_ITINERARY_ROUTE.length}
+                    </Text>
+                  </View>
+                  <Text style={[styles.navTimeText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+                    🕒 {activeStep.time}
                   </Text>
                 </View>
 
-                <Text style={[styles.placeNameText, { color: colors.text, fontFamily: typography.fonts.bold }]} numberOfLines={1}>
-                  {selectedPin.name}
+                <Text style={[styles.navTitleText, { color: colors.text, fontFamily: typography.fonts.bold }]} numberOfLines={1}>
+                  {activeStep.categoryEmoji} {activeStep.title}
                 </Text>
 
-                <Text style={[styles.ratingPriceText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                  ⭐ {selectedPin.rating} • {selectedPin.price} • Americana
+                <Text style={[styles.navPlaceText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]} numberOfLines={1}>
+                  📍 {activeStep.placeName}
                 </Text>
 
-                <TouchableOpacity 
-                  style={[styles.planHereBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
-                  activeOpacity={0.88}
-                  onPress={() => {
-                    setPlaceRating(0);
-                    setPlaceRatingSubmitted(false);
-                    setShowFullDetailModal(true);
-                  }}
-                >
-                  <Text style={[styles.planHereBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                    Planear Cita Aquí ✨
-                  </Text>
-                </TouchableOpacity>
+                {/* Acciones de Navegación */}
+                <View style={styles.navActionsRow}>
+                  
+                  {/* Botón Ver Detalle & Calificar */}
+                  <TouchableOpacity
+                    style={[styles.navDetailBtn, { backgroundColor: colors.primary + '18', borderRadius: borderRadius.md }]}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      setStepRating(0);
+                      setStepRatingSubmitted(false);
+                      setShowDetailModal(true);
+                    }}
+                  >
+                    <Text style={[styles.navDetailBtnText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+                      Ver Detalle ✨
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Botón Abrir Google Maps */}
+                  <TouchableOpacity
+                    style={[styles.navMapsBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
+                    activeOpacity={0.88}
+                    onPress={() => handleOpenGoogleMaps(activeStep)}
+                  >
+                    <Text style={[styles.navMapsBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                      Navegar GPS 🧭
+                    </Text>
+                  </TouchableOpacity>
+
+                </View>
 
               </View>
 
@@ -206,23 +297,23 @@ export default function MapScreen() {
 
       {/* DETALLE COMPLETO MODAL FULL-SCREEN CON BOTÓN "X" A top: 36 */}
       <Modal
-        visible={showFullDetailModal}
+        visible={showDetailModal}
         animationType="slide"
         presentationStyle="fullScreen"
-        onRequestClose={() => setShowFullDetailModal(false)}
+        onRequestClose={() => setShowDetailModal(false)}
       >
         <SafeAreaView style={[styles.modalArea, { backgroundColor: colors.background }]}>
-          {selectedPin ? (
+          {activeStep ? (
             <View style={{ flex: 1 }}>
               
               {/* Cover Image & Close X Button (top: 36) */}
               <View style={styles.modalCoverWrapper}>
-                <Image source={{ uri: selectedPin.imageUrl }} style={styles.modalCover} />
+                <Image source={{ uri: activeStep.imageUrl }} style={styles.modalCover} />
                 
                 <TouchableOpacity 
                   style={styles.modalCloseBtn}
                   activeOpacity={0.8}
-                  onPress={() => setShowFullDetailModal(false)}
+                  onPress={() => setShowDetailModal(false)}
                 >
                   <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.5}>
                     <Path d="M18 6L6 18M6 6l12 12" />
@@ -232,43 +323,40 @@ export default function MapScreen() {
 
               <ScrollView contentContainerStyle={styles.modalBody} showsVerticalScrollIndicator={false}>
                 
+                <View style={styles.modalHeaderRow}>
+                  <View style={[styles.modalStepBadge, { backgroundColor: colors.primary }]}>
+                    <Text style={[styles.modalStepBadgeText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                      Paso {activeStep.stepNumber}
+                    </Text>
+                  </View>
+                  <Text style={[styles.modalTimeText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+                    🕒 {activeStep.time}
+                  </Text>
+                </View>
+
                 <Text style={[styles.modalHeadline, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                  {selectedPin.name}
+                  {activeStep.categoryEmoji} {activeStep.title}
                 </Text>
 
                 <Text style={[styles.modalSubHeadline, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
-                  ⭐ {selectedPin.rating} • {selectedPin.categoryEmoji} {selectedPin.categoryLabel} • {selectedPin.price}
+                  📍 {activeStep.placeName} • {activeStep.estimatedCost}
                 </Text>
 
                 <Text style={[styles.modalParagraph, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                  {selectedPin.description}
+                  {activeStep.description}
                 </Text>
 
-                {/* MAPA Y DIRECCIÓN */}
+                {/* DIRECCIÓN GPS */}
                 <Text style={[styles.modalSectionHeading, { color: colors.text, fontFamily: typography.fonts.bold, marginTop: 20 }]}>
                   Dirección GPS
                 </Text>
                 <Text style={[styles.modalAddressText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                  {selectedPin.address}
+                  {activeStep.address}
                 </Text>
 
-                <View style={[styles.mapContainerPreview, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
-                  <View style={[styles.mapContentPreview, { backgroundColor: colors.primary + '08' }]}>
-                    <View style={[styles.mapPinBg, { backgroundColor: colors.primary }]}>
-                      <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2}>
-                        <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                        <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-                      </Svg>
-                    </View>
-                    <Text style={[styles.mapPinLabel, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                      {selectedPin.name}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* RATE DEL LUGAR (DEBAJO DEL MAPA) */}
+                {/* RATE DEL PLAN (DEBAJO DEL MAPA) */}
                 <Text style={[styles.modalSectionHeading, { color: colors.text, fontFamily: typography.fonts.bold, marginTop: 12 }]}>
-                  Califica este Lugar
+                  Califica este Paso del Itinerario
                 </Text>
                 <View style={[styles.rateCardBox, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
                   <View style={styles.starsRow}>
@@ -276,40 +364,43 @@ export default function MapScreen() {
                       <TouchableOpacity
                         key={star}
                         activeOpacity={0.7}
-                        onPress={() => setPlaceRating(star)}
+                        onPress={() => setStepRating(star)}
                         style={{ padding: 4 }}
                       >
-                        <Text style={{ fontSize: 26, opacity: star <= placeRating ? 1 : 0.25 }}>
+                        <Text style={{ fontSize: 26, opacity: star <= stepRating ? 1 : 0.25 }}>
                           ⭐
                         </Text>
                       </TouchableOpacity>
                     ))}
                   </View>
 
-                  {placeRating > 0 && !placeRatingSubmitted ? (
+                  {stepRating > 0 && !stepRatingSubmitted ? (
                     <TouchableOpacity
                       style={[styles.rateActionBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
-                      onPress={() => setPlaceRatingSubmitted(true)}
+                      onPress={() => setStepRatingSubmitted(true)}
                     >
                       <Text style={[styles.rateActionBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
                         Enviar Calificación
                       </Text>
                     </TouchableOpacity>
-                  ) : placeRatingSubmitted ? (
+                  ) : stepRatingSubmitted ? (
                     <Text style={[styles.rateSuccessText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
-                      ¡Gracias por calificar este lugar! 🙌
+                      ¡Gracias por calificar este paso! 🙌
                     </Text>
                   ) : null}
                 </View>
 
-                {/* BOTÓN SEPARADO DE ACCIÓN */}
+                {/* BOTÓN SEPARADO DE NAVEGACIÓN DIRECTA */}
                 <TouchableOpacity 
                   style={[styles.modalPlanBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
                   activeOpacity={0.9}
-                  onPress={() => setShowFullDetailModal(false)}
+                  onPress={() => {
+                    setShowDetailModal(false);
+                    handleOpenGoogleMaps(activeStep);
+                  }}
                 >
                   <Text style={[styles.modalPlanBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                    Confirmar Plan de Cita ✨
+                    Abrir en Google Maps / Waze 🧭
                   </Text>
                 </TouchableOpacity>
 
@@ -330,129 +421,165 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  mapContainer: {
+  mapViewport: {
     flex: 1,
     position: 'relative',
   },
-  mapBackground: {
+  googleMapBg: {
     ...StyleSheet.absoluteFillObject,
     overflow: 'hidden',
   },
-  mapRoadHorizontal: {
+  mapBlock: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 8,
-    opacity: 0.3,
+    borderRadius: 8,
   },
-  mapRoadVertical: {
+  mapParkBlock: {
     position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: 8,
-    opacity: 0.3,
-  },
-  mapParkArea: {
-    position: 'absolute',
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    borderRadius: 16,
     alignItems: 'center',
     justify: 'center',
   },
-  mapPinContainer: {
+  routePinWrapper: {
     position: 'absolute',
     alignItems: 'center',
     justify: 'center',
-    width: 44,
-    height: 44,
+    width: 60,
+    height: 60,
+    transform: [{ translateX: -30 }, { translateY: -30 }],
   },
-  mapPinBubble: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  pinTimeTag: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderRadius: 8,
+    marginBottom: 2,
+  },
+  pinTimeText: {
+    fontSize: 9,
+  },
+  routePinCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     borderWidth: 2,
     alignItems: 'center',
     justify: 'center',
     zIndex: 10,
     elevation: 6,
   },
-  pinPulseRing: {
-    position: 'absolute',
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 1.5,
-    opacity: 0.5,
+  routePinNum: {
+    fontSize: 13,
   },
-  floatingHeaderArea: {
+  activeHaloRing: {
+    position: 'absolute',
+    bottom: 4,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    opacity: 0.6,
+  },
+  floatingRouteHeader: {
     position: 'absolute',
     top: 14,
     left: 16,
     right: 16,
     zIndex: 20,
   },
-  searchBarBox: {
+  routeHeaderBox: {
+    padding: 12,
+    borderWidth: 1,
+    elevation: 6,
+  },
+  routeTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    height: 46,
+    marginBottom: 10,
+  },
+  routeItinName: {
+    fontSize: 15,
+  },
+  routeItinSub: {
+    fontSize: 11,
+  },
+  stepChipsRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  stepSelectChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderWidth: 1,
-    gap: 10,
-    elevation: 4,
   },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
+  stepSelectChipText: {
+    fontSize: 11,
   },
-  bottomCardWrapper: {
+  floatingStepCardWrapper: {
     position: 'absolute',
     bottom: 100,
     left: 16,
     right: 16,
     zIndex: 20,
   },
-  selectedPlaceCard: {
+  stepNavigatorCard: {
     flexDirection: 'row',
     padding: 12,
     borderWidth: 1,
     elevation: 8,
   },
-  placeCardImage: {
-    width: 80,
-    height: 80,
+  navigatorThumb: {
+    width: 86,
+    height: 86,
     borderRadius: 10,
     marginRight: 12,
   },
-  placeCardDetails: {
+  navigatorInfo: {
     flex: 1,
     justify: 'space-between',
   },
-  placeCardHeaderRow: {
+  navHeaderRow: {
     flexDirection: 'row',
     justify: 'space-between',
     alignItems: 'center',
   },
-  categoryBadgeText: {
+  stepBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  stepBadgeText: {
+    fontSize: 10,
+  },
+  navTimeText: {
     fontSize: 11,
   },
-  distanceText: {
-    fontSize: 11,
-  },
-  placeNameText: {
+  navTitleText: {
     fontSize: 15,
   },
-  ratingPriceText: {
+  navPlaceText: {
     fontSize: 12,
   },
-  planHereBtn: {
-    height: 32,
-    width: '100%',
-    alignItems: 'center',
-    justify: 'center',
+  navActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
     marginTop: 4,
   },
-  planHereBtnText: {
+  navDetailBtn: {
+    flex: 1,
+    height: 32,
+    alignItems: 'center',
+    justify: 'center',
+  },
+  navDetailBtnText: {
+    fontSize: 11,
+  },
+  navMapsBtn: {
+    flex: 1,
+    height: 32,
+    alignItems: 'center',
+    justify: 'center',
+  },
+  navMapsBtnText: {
     fontSize: 11,
   },
 
@@ -485,6 +612,23 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 40,
   },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    justify: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  modalStepBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  modalStepBadgeText: {
+    fontSize: 11,
+  },
+  modalTimeText: {
+    fontSize: 13,
+  },
   modalHeadline: {
     fontSize: 22,
     marginBottom: 4,
@@ -504,28 +648,6 @@ const styles = StyleSheet.create({
   modalAddressText: {
     fontSize: 13,
     marginBottom: 10,
-  },
-  mapContainerPreview: {
-    height: 140,
-    borderWidth: 1,
-    overflow: 'hidden',
-    marginBottom: 20,
-  },
-  mapContentPreview: {
-    flex: 1,
-    alignItems: 'center',
-    justify: 'center',
-  },
-  mapPinBg: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justify: 'center',
-    marginBottom: 6,
-  },
-  mapPinLabel: {
-    fontSize: 13,
   },
   rateCardBox: {
     padding: 14,
