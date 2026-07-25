@@ -13,8 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
-import { useTheme } from '../hooks/useTheme';
-import BottomBar from '../components/ui/bottom-bar';
+import { useTheme } from '../../hooks/useTheme';
 
 type ProfileTab = 'SAVED' | 'POSTS' | 'SETTINGS';
 
@@ -181,7 +180,7 @@ export default function ProfileScreen() {
                   <TouchableOpacity 
                     style={[styles.planActionBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
                     activeOpacity={0.88}
-                    onPress={() => router.push('/generator')}
+                    onPress={() => router.push('/(tabs)/generator')}
                   >
                     <Text style={[styles.planActionBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
                       Ver Itinerario & Planear ✨
@@ -251,7 +250,7 @@ export default function ProfileScreen() {
       </ScrollView>
 
       {/* FLOATING PILL BOTTOM BAR REUTILIZABLE */}
-      <BottomBar activeTab="profile" />
+
 
     </SafeAreaView>
   );

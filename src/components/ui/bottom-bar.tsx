@@ -16,18 +16,19 @@ export default function BottomBar({ activeTab, onTabPress }: BottomBarProps) {
   const handlePress = (tab: BottomBarTab) => {
     if (onTabPress) {
       onTabPress(tab);
+      return;
     }
 
     if (tab === 'explore') {
-      router.push('/explore');
+      router.push('/(tabs)/explore');
     } else if (tab === 'map') {
-      router.push('/map');
+      router.push('/(tabs)/map');
     } else if (tab === 'ai') {
-      router.push('/generator');
+      router.push('/(tabs)/generator');
     } else if (tab === 'community') {
-      router.push('/community');
+      router.push('/(tabs)/community');
     } else if (tab === 'profile') {
-      router.push('/profile');
+      router.push('/(tabs)/profile');
     }
   };
 

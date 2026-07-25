@@ -15,12 +15,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
-import { useTheme } from '../hooks/useTheme';
-import BottomBar from '../components/ui/bottom-bar';
+import { useTheme } from '../../hooks/useTheme';
+import PlaceCard from '../../components/places/place-card';
+import MapPreview from '../../components/ui/map-preview';
+import StarRating from '../../components/ui/star-rating';
 
 type PlaceCategory = 'ALL' | 'FOOD_DRINK' | 'CULTURE' | 'NATURE' | 'ENTERTAINMENT' | 'SHOPPING' | 'SPORTS';
 type PriceRange = 'ALL' | 'CHEAP' | 'MODERATE' | 'EXPENSIVE' | 'LUXURY';
-type ActiveTab = 'explore' | 'map' | 'ai' | 'community' | 'profile';
 
 interface Place {
   id: string;
@@ -137,7 +138,7 @@ export default function ExploreScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<PlaceCategory>('ALL');
   const [selectedPrice, setSelectedPrice] = useState<PriceRange>('ALL');
-  const [activeTab, setActiveTab] = useState<ActiveTab>('explore');
+
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
 
   // Estado del Rating del Plan
@@ -273,81 +274,32 @@ export default function ExploreScreen() {
         </View>
 
         {/* Contenido Principal: Mapa o Lista de Lugares */}
-        {activeTab === 'map' ? (
-          <View style={[styles.mapPlaceholder, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
-            <Svg width={48} height={48} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={1.5} style={{ marginBottom: 12 }}>
-              <Path d="M1 6v13l7-4 8 4 7-4V2l-7 4-8-4-7 4zM8 2v13M16 6v13" />
-            </Svg>
-            <Text style={[styles.mapPlaceholderTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-              Mapa Interactivo de Guadalajara
-            </Text>
-            <Text style={[styles.mapPlaceholderSub, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-              Mostrando {filteredPlaces.length} lugares en tu zona
-            </Text>
-          </View>
-        ) : (
+        {(
           <FlatList
             data={filteredPlaces}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             renderItem={({ item }) => (
-              <TouchableOpacity 
-                style={[styles.placeCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}
-                activeOpacity={0.9}
+              <PlaceCard
+                name={item.name}
+                emoji={item.emoji}
+                categoryLabel={item.categoryLabel}
+                priceSymbol={item.priceSymbol}
+                address={item.address}
+                distance={item.distance}
+                rating={item.rating}
+                reviewsCount={item.reviewsCount}
+                imageUrl={item.imageUrl}
                 onPress={() => openPlaceDetails(item)}
-              >
-                <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />
-                
-                <View style={styles.cardBody}>
-                  <View style={styles.cardHeaderRow}>
-                    <Text style={[styles.cardCategory, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                      {item.emoji} {item.categoryLabel}
-                    </Text>
-                    <Text style={[styles.cardPrice, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
-                      {item.priceSymbol}
-                    </Text>
-                  </View>
-
-                  <Text style={[styles.cardTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                    {item.name}
-                  </Text>
-
-                  <Text style={[styles.cardAddress, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]} numberOfLines={1}>
-                    📍 {item.address} • {item.distance}
-                  </Text>
-
-                  {/* Footer con Botón Planear Cita ABAJO A LA DERECHA */}
-                  <View style={styles.cardFooter}>
-                    <View style={styles.ratingBadge}>
-                      <Text style={{ fontSize: 13, marginRight: 4 }}>⭐</Text>
-                      <Text style={[styles.ratingText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                        {item.rating}
-                      </Text>
-                      <Text style={[styles.reviewsText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                        ({item.reviewsCount})
-                      </Text>
-                    </View>
-
-                    <TouchableOpacity 
-                      style={[styles.planButton, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
-                      onPress={() => openPlaceDetails(item)}
-                    >
-                      <Text style={[styles.planButtonText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                        Planear Cita
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </TouchableOpacity>
+              />
             )}
           />
         )}
 
       </View>
 
-      {/* FLOATING PILL BOTTOM BAR REUTILIZABLE */}
-      <BottomBar activeTab={activeTab === 'map' ? 'map' : 'explore'} onTabPress={(tab) => setActiveTab(tab)} />
+
 
       {/* PANTALLA COMPLETA NATIVA CON BOTÓN "X", MAPA Y CALIFICADOR DE PLAN (RATE) */}
       <Modal
@@ -416,72 +368,21 @@ export default function ExploreScreen() {
                   📍 {selectedPlace.address}
                 </Text>
 
-                <View style={[styles.interactiveMapCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
-                  <View style={[styles.mapGridBackground, { backgroundColor: colors.primary + '08' }]}>
-                    <View style={[styles.locationPinBox, { backgroundColor: colors.primary }]}>
-                      <Svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2}>
-                        <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                        <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-                      </Svg>
-                    </View>
-                    <Text style={[styles.mapCoordsText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                      {selectedPlace.name}
-                    </Text>
-                    <Text style={[styles.mapSubCoords, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                      Lat: {selectedPlace.latitude} | Long: {selectedPlace.longitude}
-                    </Text>
-                  </View>
-                </View>
+                <MapPreview
+                  placeName={selectedPlace.name}
+                  subtitle={`Lat: ${selectedPlace.latitude} | Long: ${selectedPlace.longitude}`}
+                />
 
                 {/* SECCIÓN DE CALIFICACIÓN DE PLAN (RATE THE PLAN - ABAJO DEL MAPA) */}
                 <Text style={[styles.fullScreenSectionHeader, { color: colors.text, fontFamily: typography.fonts.bold, marginTop: 12 }]}>
                   Califica este Lugar / Plan
                 </Text>
-                <View style={[styles.ratingCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
-                  <Text style={[styles.ratingCardTitle, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
-                    ¿Qué te pareció la experiencia para una cita?
-                  </Text>
-                  
-                  <View style={styles.starsRow}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <TouchableOpacity
-                        key={star}
-                        activeOpacity={0.7}
-                        onPress={() => setUserRating(star)}
-                        style={styles.starBtn}
-                      >
-                        <Text style={[styles.starEmoji, { opacity: star <= userRating ? 1 : 0.3 }]}>
-                          ⭐
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-
-                  {userRating > 0 ? (
-                    <View style={styles.ratingFeedbackBox}>
-                      <Text style={[styles.ratingFeedbackText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                        {userRating === 5 ? '¡Excelente plan de cita! 🌟' : userRating >= 4 ? '¡Muy recomendado! 👍' : 'Buena opción 😊'}
-                      </Text>
-                      
-                      {!ratingSubmitted ? (
-                        <TouchableOpacity
-                          style={[styles.submitRatingBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
-                          onPress={() => setRatingSubmitted(true)}
-                        >
-                          <Text style={[styles.submitRatingText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                            Enviar Calificación
-                          </Text>
-                        </TouchableOpacity>
-                      ) : (
-                        <View style={styles.ratingSuccessBox}>
-                          <Text style={[styles.ratingSuccessText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
-                            ¡Gracias por calificar este plan! 🙌
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  ) : null}
-                </View>
+                <StarRating
+                  rating={userRating}
+                  onRatingChange={setUserRating}
+                  onSubmit={() => setRatingSubmitted(true)}
+                  isSubmitted={ratingSubmitted}
+                />
 
                 {/* Botón de Acción Principal */}
                 <TouchableOpacity 
@@ -663,55 +564,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
-  /* ESTILOS FLOTANTES DE LA PILL BOTTOM BAR NATIVOS DE NEXTDATE */
-  floatingPillWrapper: {
-    position: 'absolute',
-    bottom: 20,
-    left: 16,
-    right: 16,
-    alignItems: 'center',
-    justify: 'center',
-  },
-  floatingPillBar: {
-    height: 68,
-    width: '100%',
-    maxWidth: 420,
-    backgroundColor: '#1E1E22',
-    borderRadius: 34,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justify: 'space-around',
-    paddingHorizontal: 8,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.45,
-    shadowRadius: 18,
-    elevation: 12,
-    borderWidth: 1,
-    borderColor: '#2A2A30',
-  },
-  pillTabItem: {
-    flex: 1,
-    alignItems: 'center',
-    justify: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    borderRadius: 24,
-  },
-  activePillCapsule: {
-    backgroundColor: 'rgba(255, 255, 255, 0.16)',
-  },
-  pillTabText: {
-    fontSize: 11,
-    color: '#8E8E93',
-    marginTop: 3,
-    textAlign: 'center',
-    width: '100%',
-  },
-  activePillText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
+
 
   fullScreenContainer: {
     flex: 1,
@@ -780,84 +633,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 24,
   },
-  ratingCard: {
-    padding: 16,
-    borderWidth: 1,
-    alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 32,
-  },
-  ratingCardTitle: {
-    fontSize: 13,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  starsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
-  },
-  starBtn: {
-    padding: 4,
-  },
-  starEmoji: {
-    fontSize: 32,
-  },
-  ratingFeedbackBox: {
-    alignItems: 'center',
-    width: '100%',
-    marginTop: 6,
-  },
-  ratingFeedbackText: {
-    fontSize: 14,
-    marginBottom: 12,
-  },
-  submitRatingBtn: {
-    height: 42,
-    width: '100%',
-    alignItems: 'center',
-    justify: 'center',
-  },
-  submitRatingText: {
-    fontSize: 13,
-  },
-  ratingSuccessBox: {
-    paddingVertical: 6,
-  },
-  ratingSuccessText: {
-    fontSize: 13,
-  },
   fullScreenAddressText: {
     fontSize: 14,
     marginBottom: 12,
-  },
-  interactiveMapCard: {
-    width: '100%',
-    height: 180,
-    borderWidth: 1,
-    overflow: 'hidden',
-    marginBottom: 28,
-  },
-  mapGridBackground: {
-    flex: 1,
-    alignItems: 'center',
-    justify: 'center',
-    padding: 16,
-  },
-  locationPinBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    alignItems: 'center',
-    justify: 'center',
-    marginBottom: 8,
-  },
-  mapCoordsText: {
-    fontSize: 15,
-    marginBottom: 2,
-  },
-  mapSubCoords: {
-    fontSize: 12,
   },
   fullScreenActionBtn: {
     height: 54,

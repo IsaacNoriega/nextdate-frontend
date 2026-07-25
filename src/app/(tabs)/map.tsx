@@ -13,8 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path, Circle, Line } from 'react-native-svg';
-import { useTheme } from '../hooks/useTheme';
-import BottomBar from '../components/ui/bottom-bar';
+import { useTheme } from '../../hooks/useTheme';
 
 interface RouteStep {
   stepNumber: number;
@@ -670,7 +669,7 @@ export default function MapScreen() {
       </Modal>
 
       {/* FLOATING PILL BOTTOM BAR REUTILIZABLE */}
-      <BottomBar activeTab="map" />
+
 
     </SafeAreaView>
   );
