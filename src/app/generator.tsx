@@ -50,15 +50,6 @@ interface ChatMessage {
   timestamp: string;
 }
 
-const INITIAL_MESSAGES: ChatMessage[] = [
-  {
-    id: 'msg-1',
-    sender: 'ai',
-    text: '¡Hola! 🪄 Soy tu Asistente NextDate AI. Cuéntame cómo imaginas tu cita ideal (ej. "Cita romántica para nuestro aniversario con cena italiana") y crearé el itinerario paso a paso perfecto para ti.',
-    timestamp: 'Ahora'
-  }
-];
-
 const MOCK_GENERATED_ITINERARY: GeneratedItinerary = {
   id: 'itin-101',
   title: 'Noche Mágica en la Americana',
@@ -108,6 +99,16 @@ const MOCK_GENERATED_ITINERARY: GeneratedItinerary = {
     }
   ]
 };
+
+const INITIAL_MESSAGES: ChatMessage[] = [
+  {
+    id: 'msg-1',
+    sender: 'ai',
+    text: '¡Hola! 🪄 Soy tu Asistente NextDate AI. Aquí tienes una propuesta inicial recomendada paso a paso. También puedes escribir tu propio deseo abajo:',
+    itinerary: MOCK_GENERATED_ITINERARY,
+    timestamp: 'Ahora'
+  }
+];
 
 export default function GeneratorScreen() {
   const { colors, typography, borderRadius } = useTheme();
