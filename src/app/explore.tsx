@@ -864,6 +864,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     marginTop: 4,
+    marginBottom: 32,
   },
   ratingCardTitle: {
     fontSize: 13,
@@ -943,6 +944,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justify: 'center',
+    marginTop: 16,
+    marginBottom: 24,
   },
   fullScreenActionText: {
     fontSize: 16,
