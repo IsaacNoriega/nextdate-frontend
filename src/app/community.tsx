@@ -398,6 +398,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justify: 'space-between',
     alignItems: 'center',
+    width: '100%',
     marginBottom: 14,
   },
   headerSub: {
@@ -411,6 +412,7 @@ const styles = StyleSheet.create({
   shareBtn: {
     paddingHorizontal: 16,
     paddingVertical: 8,
+    marginLeft: 'auto',
   },
   shareBtnText: {
     fontSize: 13,
