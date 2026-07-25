@@ -487,8 +487,33 @@ export default function ExploreScreen() {
                   {selectedPlace.description}
                 </Text>
 
-                {/* SECCIÓN DE CALIFICACIÓN DE PLAN (RATE THE PLAN) */}
+                {/* SECCIÓN DEL MAPA DE UBICACIÓN INTERACTIVO */}
                 <Text style={[styles.fullScreenSectionHeader, { color: colors.text, fontFamily: typography.fonts.bold, marginTop: 24 }]}>
+                  Ubicación en el Mapa
+                </Text>
+                <Text style={[styles.fullScreenAddressText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                  📍 {selectedPlace.address}
+                </Text>
+
+                <View style={[styles.interactiveMapCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
+                  <View style={[styles.mapGridBackground, { backgroundColor: colors.primary + '08' }]}>
+                    <View style={[styles.locationPinBox, { backgroundColor: colors.primary }]}>
+                      <Svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2}>
+                        <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                      </Svg>
+                    </View>
+                    <Text style={[styles.mapCoordsText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                      {selectedPlace.name}
+                    </Text>
+                    <Text style={[styles.mapSubCoords, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                      Lat: {selectedPlace.latitude} | Long: {selectedPlace.longitude}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* SECCIÓN DE CALIFICACIÓN DE PLAN (RATE THE PLAN - ABAJO DEL MAPA) */}
+                <Text style={[styles.fullScreenSectionHeader, { color: colors.text, fontFamily: typography.fonts.bold, marginTop: 12 }]}>
                   Califica este Lugar / Plan
                 </Text>
                 <View style={[styles.ratingCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
@@ -535,31 +560,6 @@ export default function ExploreScreen() {
                       )}
                     </View>
                   ) : null}
-                </View>
-
-                {/* SECCIÓN DEL MAPA DE UBICACIÓN INTERACTIVO */}
-                <Text style={[styles.fullScreenSectionHeader, { color: colors.text, fontFamily: typography.fonts.bold, marginTop: 24 }]}>
-                  Ubicación en el Mapa
-                </Text>
-                <Text style={[styles.fullScreenAddressText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                  📍 {selectedPlace.address}
-                </Text>
-
-                <View style={[styles.interactiveMapCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
-                  <View style={[styles.mapGridBackground, { backgroundColor: colors.primary + '08' }]}>
-                    <View style={[styles.locationPinBox, { backgroundColor: colors.primary }]}>
-                      <Svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2}>
-                        <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                        <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-                      </Svg>
-                    </View>
-                    <Text style={[styles.mapCoordsText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                      {selectedPlace.name}
-                    </Text>
-                    <Text style={[styles.mapSubCoords, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                      Lat: {selectedPlace.latitude} | Long: {selectedPlace.longitude}
-                    </Text>
-                  </View>
                 </View>
 
                 {/* Botón de Acción Principal */}
