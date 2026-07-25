@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 32,
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
     marginBottom: 16,
   },
   title: {
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 48,
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
   },
   loginRedirectButtonText: {
     fontSize: 15,
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
   submitButton: {
     height: 52,
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
     marginTop: 8,
     marginBottom: 24,
   },

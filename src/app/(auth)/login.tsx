@@ -63,11 +63,7 @@ export default function LoginScreen() {
   };
 
   const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/');
-    }
+    router.replace('/');
   };
 
   return (
@@ -230,22 +226,18 @@ export default function LoginScreen() {
             {/* Social Grid Centrada */}
             <View style={styles.socialGrid}>
               <TouchableOpacity style={[styles.socialButton, { borderColor: colors.border, backgroundColor: colors.card }]} activeOpacity={0.7}>
-                <View style={styles.socialIconWrapper}>
-                  <Svg width={20} height={20} viewBox="0 0 24 24">
-                    <Path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                    <Path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                    <Path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
-                    <Path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                  </Svg>
-                </View>
+                <Svg width={20} height={20} viewBox="0 0 24 24">
+                  <Path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <Path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <Path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
+                  <Path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                </Svg>
               </TouchableOpacity>
 
               <TouchableOpacity style={[styles.socialButton, { borderColor: colors.border, backgroundColor: colors.card }]} activeOpacity={0.7}>
-                <View style={styles.socialIconWrapper}>
-                  <Svg width={20} height={20} viewBox="0 0 24 24" fill={colors.text}>
-                    <Path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C4.31 16.92 3.46 11.2 5.56 8.3c1.02-1.42 2.5-2.3 4.12-2.32 1.25.02 2.15.54 2.92.54.76 0 2-.68 3.51-.52 1.26.13 2.53.58 3.33 1.7-3.15 1.88-2.64 6.2.5 7.42-.64 1.76-1.5 3.5-2.81 5.16zM12.03 6.16c-.08-2.69 2.24-5.06 4.83-5.16.27 3.04-2.8 5.4-4.83 5.16z" />
-                  </Svg>
-                </View>
+                <Svg width={20} height={20} viewBox="0 0 24 24" fill={colors.text}>
+                  <Path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C4.31 16.92 3.46 11.2 5.56 8.3c1.02-1.42 2.5-2.3 4.12-2.32 1.25.02 2.15.54 2.92.54.76 0 2-.68 3.51-.52 1.26.13 2.53.58 3.33 1.7-3.15 1.88-2.64 6.2.5 7.42-.64 1.76-1.5 3.5-2.81 5.16zM12.03 6.16c-.08-2.69 2.24-5.06 4.83-5.16.27 3.04-2.8 5.4-4.83 5.16z" />
+                </Svg>
               </TouchableOpacity>
             </View>
 
@@ -300,7 +292,7 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 26,
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
     marginBottom: 16,
   },
   welcomeTitle: {
@@ -363,7 +355,7 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
     marginTop: 8,
     marginBottom: 24,
   },
@@ -395,19 +387,12 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 12,
     borderWidth: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    justify: 'center',
-  },
-  socialIconWrapper: {
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
   },
   footer: {
     flexDirection: 'row',
-    justify: 'center',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   footerText: {

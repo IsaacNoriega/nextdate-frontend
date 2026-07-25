@@ -92,11 +92,7 @@ export default function RegisterScreen() {
   };
 
   const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/');
-    }
+    router.replace('/');
   };
 
   return (
@@ -123,7 +119,7 @@ export default function RegisterScreen() {
             {/* Greeting */}
             <View style={styles.brandingHeader}>
               <Text style={[styles.welcomeTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                Crea tu Cuenta ✨
+                Crea tu Cuenta
               </Text>
               <Text style={[styles.welcomeSubtitle, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
                 Únete a NextDate y comienza a diseñar momentos inolvidables.
@@ -392,7 +388,7 @@ const styles = StyleSheet.create({
   strengthContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justify: 'space-between',
+    justifyContent: 'space-between',
     marginTop: 8,
   },
   strengthBars: {
@@ -414,7 +410,7 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
     marginTop: 12,
     marginBottom: 24,
   },
@@ -425,7 +421,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: 'row',
-    justify: 'center',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   footerText: {
