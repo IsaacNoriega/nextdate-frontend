@@ -38,6 +38,7 @@ export default function RootLayout() {
         <Stack.Screen name="explore" />
         <Stack.Screen name="generator" />
         <Stack.Screen name="community" />
+        <Stack.Screen name="profile" />
       </Stack>
     </ThemeProvider>
   );

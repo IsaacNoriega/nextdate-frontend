@@ -25,7 +25,7 @@ export default function BottomBar({ activeTab, onTabPress }: BottomBarProps) {
     } else if (tab === 'community') {
       router.push('/community');
     } else if (tab === 'profile') {
-      router.push('/(onboarding)/setup-profile');
+      router.push('/profile');
     }
   };
 
