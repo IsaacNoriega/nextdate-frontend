@@ -12,10 +12,11 @@ import {
   Modal,
   Platform,
   Animated,
+  PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 import PlaceCard from '../../components/places/place-card';
 import MapPreview from '../../components/ui/map-preview';
@@ -141,6 +142,21 @@ export default function ExploreScreen() {
   const [selectedPrice, setSelectedPrice] = useState<PriceRange>('ALL');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+
+  // Swipe gesture right-to-left to close modal
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > 25 && gestureState.dx < 0;
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx < -40 || gestureState.vx < -0.4) {
+          setSelectedPlace(null);
+        }
+      },
+    })
+  ).current;
 
   // Estado del Rating del Plan
   const [userRating, setUserRating] = useState<number>(0);
@@ -188,14 +204,14 @@ export default function ExploreScreen() {
           </View>
         </View>
 
-        {/* Search */}
+        {/* Search Bar + Filter Trigger Button */}
         <View style={styles.searchContainer}>
           <View style={[
             styles.searchBox,
             {
               backgroundColor: colors.card,
               borderColor: isSearchFocused ? colors.primary : colors.border,
-              borderRadius: borderRadius.md
+              borderRadius: borderRadius.md,
             }
           ]}>
             <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={isSearchFocused ? colors.primary : colors.textSecondary} strokeWidth={2} style={{ marginRight: 10 }}>
@@ -220,71 +236,92 @@ export default function ExploreScreen() {
               </TouchableOpacity>
             ) : null}
           </View>
+
+          {/* Filter Button */}
+          <TouchableOpacity
+            style={[
+              styles.filterTriggerBtn,
+              {
+                backgroundColor: (selectedCategory !== 'ALL' || selectedPrice !== 'ALL') ? colors.primary : colors.card,
+                borderColor: (selectedCategory !== 'ALL' || selectedPrice !== 'ALL') ? colors.primary : colors.border,
+                borderRadius: borderRadius.md,
+              }
+            ]}
+            activeOpacity={0.8}
+            onPress={() => setIsFilterModalOpen(true)}
+          >
+            <Svg
+              width={18}
+              height={18}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke={(selectedCategory !== 'ALL' || selectedPrice !== 'ALL') ? colors.primaryContrast : colors.text}
+              strokeWidth={2}
+            >
+              <Path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
+            </Svg>
+            {(selectedCategory !== 'ALL' || selectedPrice !== 'ALL') && (
+              <View style={[styles.activeFilterDot, { backgroundColor: colors.primaryContrast }]} />
+            )}
+          </TouchableOpacity>
         </View>
 
-        {/* Categories */}
-        <View style={styles.categoriesSection}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesScroll}>
-            {CATEGORIES.map((cat) => {
-              const isSelected = selectedCategory === cat.id;
-              return (
-                <TouchableOpacity
-                  key={cat.id}
-                  style={[
-                    styles.categoryChip,
-                    {
-                      backgroundColor: isSelected ? colors.primary : colors.card,
-                      borderColor: isSelected ? colors.primary : colors.border,
-                      borderRadius: borderRadius.round
-                    }
-                  ]}
-                  onPress={() => setSelectedCategory(cat.id)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.categoryIcon}>{cat.icon}</Text>
-                  <Text style={[
-                    styles.categoryChipText,
-                    { color: isSelected ? colors.primaryContrast : colors.text, fontFamily: isSelected ? typography.fonts.bold : typography.fonts.medium }
-                  ]}>
-                    {cat.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
+        {/* Active Filters Pill Bar (only visible when filters are applied) */}
+        {(selectedCategory !== 'ALL' || selectedPrice !== 'ALL') ? (
+          <View style={styles.activeFiltersBar}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.activeFiltersScroll}>
+              {selectedCategory !== 'ALL' && (() => {
+                const catObj = CATEGORIES.find(c => c.id === selectedCategory);
+                return (
+                  <TouchableOpacity
+                    style={[styles.appliedFilterPill, { backgroundColor: colors.primary, borderRadius: borderRadius.round }]}
+                    activeOpacity={0.8}
+                    onPress={() => setSelectedCategory('ALL')}
+                  >
+                    <Text style={[styles.appliedFilterPillText, { color: colors.primaryContrast, fontFamily: typography.fonts.medium }]}>
+                      {catObj?.label}
+                    </Text>
+                    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2.5}>
+                      <Path d="M18 6L6 18M6 6l12 12" />
+                    </Svg>
+                  </TouchableOpacity>
+                );
+              })()}
 
-        {/* Price filter + results count */}
-        <View style={styles.filtersRow}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.priceScroll}>
-            {PRICE_FILTERS.map((pr) => {
-              const isSelected = selectedPrice === pr.id;
-              return (
-                <TouchableOpacity
-                  key={pr.id}
-                  style={[
-                    styles.priceChip,
-                    {
-                      backgroundColor: isSelected ? colors.primary : 'transparent',
-                      borderColor: isSelected ? colors.primary : colors.border,
-                      borderRadius: borderRadius.sm
-                    }
-                  ]}
-                  onPress={() => setSelectedPrice(pr.id)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[
-                    styles.priceChipText,
-                    { color: isSelected ? colors.primaryContrast : colors.textSecondary, fontFamily: isSelected ? typography.fonts.bold : typography.fonts.medium }
-                  ]}>
-                    {pr.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-          <Text style={[styles.resultsCount, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-            {filteredPlaces.length} {filteredPlaces.length === 1 ? 'lugar' : 'lugares'}
+              {selectedPrice !== 'ALL' && (() => {
+                const prObj = PRICE_FILTERS.find(p => p.id === selectedPrice);
+                return (
+                  <TouchableOpacity
+                    style={[styles.appliedFilterPill, { backgroundColor: colors.primary, borderRadius: borderRadius.round }]}
+                    activeOpacity={0.8}
+                    onPress={() => setSelectedPrice('ALL')}
+                  >
+                    <Text style={[styles.appliedFilterPillText, { color: colors.primaryContrast, fontFamily: typography.fonts.medium }]}>
+                      Precio: {prObj?.label}
+                    </Text>
+                    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2.5}>
+                      <Path d="M18 6L6 18M6 6l12 12" />
+                    </Svg>
+                  </TouchableOpacity>
+                );
+              })()}
+
+              <TouchableOpacity
+                style={styles.clearAllBtn}
+                onPress={() => { setSelectedCategory('ALL'); setSelectedPrice('ALL'); }}
+              >
+                <Text style={[styles.clearAllText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+                  Limpiar todo
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        ) : null}
+
+        {/* Results summary bar */}
+        <View style={styles.resultsSummaryBar}>
+          <Text style={[styles.resultsCount, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+            {filteredPlaces.length} {filteredPlaces.length === 1 ? 'lugar disponible' : 'lugares disponibles'}
           </Text>
         </View>
 
@@ -297,7 +334,6 @@ export default function ExploreScreen() {
           renderItem={({ item }) => (
             <PlaceCard
               name={item.name}
-              emoji={item.emoji}
               categoryLabel={item.categoryLabel}
               priceSymbol={item.priceSymbol}
               address={item.address}
@@ -338,7 +374,10 @@ export default function ExploreScreen() {
         presentationStyle="fullScreen"
         onRequestClose={() => setSelectedPlace(null)}
       >
-        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+        <SafeAreaView 
+          style={[styles.modalContainer, { backgroundColor: colors.background }]}
+          {...panResponder.panHandlers}
+        >
           {selectedPlace ? (
             <View style={{ flex: 1 }}>
               {/* Hero image */}
@@ -359,7 +398,7 @@ export default function ExploreScreen() {
                 {/* Badge on image */}
                 <View style={styles.heroBadge}>
                   <Text style={styles.heroBadgeText}>
-                    {selectedPlace.emoji} {selectedPlace.categoryLabel}
+                    {selectedPlace.categoryLabel}
                   </Text>
                 </View>
               </View>
@@ -464,6 +503,190 @@ export default function ExploreScreen() {
         </SafeAreaView>
       </Modal>
 
+      {/* Categories & Price Filter Bottom Sheet Modal */}
+      <Modal
+        visible={isFilterModalOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setIsFilterModalOpen(false)}
+      >
+        <TouchableOpacity
+          style={styles.filterModalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsFilterModalOpen(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={[
+              styles.filterSheet,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                borderTopLeftRadius: 28,
+                borderTopRightRadius: 28,
+              }
+            ]}
+          >
+            {/* Sheet Handle */}
+            <View style={styles.sheetHandleBar}>
+              <View style={[styles.sheetHandlePill, { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
+            </View>
+
+            {/* Header with Title and Reset Action */}
+            <View style={styles.filterSheetHeader}>
+              <Text style={[styles.filterSheetTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                Filtros de Búsqueda
+              </Text>
+              {(selectedCategory !== 'ALL' || selectedPrice !== 'ALL') ? (
+                <TouchableOpacity
+                  onPress={() => { setSelectedCategory('ALL'); setSelectedPrice('ALL'); }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.resetFilterText, { color: colors.primary, fontFamily: typography.fonts.medium }]}>
+                    Restablecer
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity onPress={() => setIsFilterModalOpen(false)} style={styles.filterCloseBtn}>
+                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
+                    <Path d="M18 6L6 18M6 6l12 12" />
+                  </Svg>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.filterSheetBody}>
+              {/* Category Section */}
+              <View style={styles.filterSectionGroup}>
+                <Text style={[styles.filterGroupTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                  Categoría de Cita
+                </Text>
+                <View style={styles.categoryGrid}>
+                  {CATEGORIES.map((cat) => {
+                    const isSelected = selectedCategory === cat.id;
+                    const strokeColor = isSelected ? colors.primaryContrast : colors.text;
+                    return (
+                      <TouchableOpacity
+                        key={cat.id}
+                        style={[
+                          styles.categoryGridItem,
+                          {
+                            backgroundColor: isSelected ? colors.primary : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'),
+                            borderColor: isSelected ? colors.primary : colors.border,
+                            borderRadius: borderRadius.round,
+                          }
+                        ]}
+                        onPress={() => setSelectedCategory(cat.id)}
+                        activeOpacity={0.8}
+                      >
+                        <View style={{ marginRight: 6 }}>
+                          {cat.id === 'ALL' && (
+                            <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={2}>
+                              <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                            </Svg>
+                          )}
+                          {cat.id === 'FOOD_DRINK' && (
+                            <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={2}>
+                              <Path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3" />
+                            </Svg>
+                          )}
+                          {cat.id === 'CULTURE' && (
+                            <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={2}>
+                              <Path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15z" />
+                            </Svg>
+                          )}
+                          {cat.id === 'NATURE' && (
+                            <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={2}>
+                              <Path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z" />
+                              <Path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+                            </Svg>
+                          )}
+                          {cat.id === 'ENTERTAINMENT' && (
+                            <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={2}>
+                              <Path d="M19.82 2H4.18C2.97 2 2 2.97 2 4.18v15.64C2 21.03 2.97 22 4.18 22h15.64c1.21 0 2.18-.97 2.18-2.18V4.18C22 2.97 21.03 2 19.82 2zM7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5" />
+                            </Svg>
+                          )}
+                          {cat.id === 'SHOPPING' && (
+                            <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={2}>
+                              <Path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0" />
+                            </Svg>
+                          )}
+                          {cat.id === 'SPORTS' && (
+                            <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={2}>
+                              <Circle cx="12" cy="12" r="10" />
+                              <Path d="M12 2a14.5 14.5 0 0 0 0 20M12 2a14.5 14.5 0 0 1 0 20M2 12h20" />
+                            </Svg>
+                          )}
+                        </View>
+                        <Text style={[
+                          styles.categoryGridText,
+                          {
+                            color: isSelected ? colors.primaryContrast : colors.text,
+                            fontFamily: isSelected ? typography.fonts.bold : typography.fonts.medium,
+                          }
+                        ]}>
+                          {cat.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* Price Range Section */}
+              <View style={styles.filterSectionGroup}>
+                <Text style={[styles.filterGroupTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                  Rango de Presupuesto
+                </Text>
+                <View style={styles.priceRowGrid}>
+                  {PRICE_FILTERS.map((pr) => {
+                    const isSelected = selectedPrice === pr.id;
+                    return (
+                      <TouchableOpacity
+                        key={pr.id}
+                        style={[
+                          styles.priceGridItem,
+                          {
+                            backgroundColor: isSelected ? colors.primary : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'),
+                            borderColor: isSelected ? colors.primary : colors.border,
+                            borderRadius: borderRadius.md,
+                          }
+                        ]}
+                        onPress={() => setSelectedPrice(pr.id)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[
+                          styles.priceGridText,
+                          {
+                            color: isSelected ? colors.primaryContrast : colors.text,
+                            fontFamily: isSelected ? typography.fonts.bold : typography.fonts.medium,
+                          }
+                        ]}>
+                          {pr.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            </ScrollView>
+
+            {/* Bottom Sticky Action Footer */}
+            <View style={styles.filterSheetFooter}>
+              <TouchableOpacity
+                style={[styles.applyFilterBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
+                activeOpacity={0.9}
+                onPress={() => setIsFilterModalOpen(false)}
+              >
+                <Text style={[styles.applyFilterBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                  Ver {filteredPlaces.length} {filteredPlaces.length === 1 ? 'Lugar' : 'Lugares'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -499,9 +722,13 @@ const styles = StyleSheet.create({
 
   // Search
   searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     marginBottom: 14,
   },
   searchBox: {
+    flex: 1,
     height: 46,
     borderWidth: 1,
     flexDirection: 'row',
@@ -570,6 +797,32 @@ const styles = StyleSheet.create({
   resultsCount: {
     fontSize: 12,
     marginLeft: 12,
+  },
+
+  activeFiltersBar: {
+    marginBottom: 10,
+  },
+  activeFiltersScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  appliedFilterPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    gap: 6,
+  },
+  appliedFilterPillText: {
+    fontSize: 12,
+  },
+  clearAllBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  clearAllText: {
+    fontSize: 12,
   },
 
   // List
@@ -729,5 +982,160 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     fontSize: 16,
+  },
+
+  // Overlay Drawer Panel Styles
+  modalOverlay: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  modalBackdrop: {
+    width: '12%',
+    height: '100%',
+  },
+  drawerPanel: {
+    flex: 1,
+    height: '100%',
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: -4, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  // Filter Trigger Button & Summary Bar
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
+  filterTriggerBtn: {
+    width: 48,
+    height: 48,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  activeFilterDot: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
+  resultsSummaryBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+    paddingHorizontal: 2,
+  },
+  clearFiltersLink: {
+    fontSize: 13,
+  },
+
+  // Filter Sheet Modal Styles
+  filterModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'flex-end',
+  },
+  filterSheet: {
+    width: '100%',
+    maxHeight: '82%',
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 14,
+    elevation: 16,
+  },
+  sheetHandleBar: {
+    width: '100%',
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetHandlePill: {
+    width: 38,
+    height: 4.5,
+    borderRadius: 3,
+  },
+  filterSheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    marginBottom: 8,
+  },
+  filterSheetTitle: {
+    fontSize: 19,
+    letterSpacing: -0.3,
+  },
+  resetFilterText: {
+    fontSize: 13,
+    paddingHorizontal: 4,
+  },
+  filterCloseBtn: {
+    padding: 6,
+  },
+  filterSheetBody: {
+    paddingBottom: 16,
+  },
+  filterSectionGroup: {
+    marginBottom: 20,
+  },
+  filterGroupTitle: {
+    fontSize: 14,
+    letterSpacing: 0.2,
+    marginBottom: 12,
+  },
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  categoryGridItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+  },
+  categoryGridText: {
+    fontSize: 13,
+  },
+  priceRowGrid: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  priceGridItem: {
+    flex: 1,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  priceGridText: {
+    fontSize: 14,
+  },
+  filterSheetFooter: {
+    paddingTop: 12,
+  },
+  applyFilterBtn: {
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  applyFilterBtnText: {
+    fontSize: 15,
   },
 });
