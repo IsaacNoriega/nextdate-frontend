@@ -216,38 +216,55 @@ export default function GeneratorScreen() {
               </Text>
             </View>
 
-            {/* Cronograma de Pasos */}
-            <View style={styles.stepsList}>
-              {itinerary.steps.map((step) => (
-                <TouchableOpacity
-                  key={step.stepNumber}
-                  style={[styles.stepCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}
-                  activeOpacity={0.88}
-                  onPress={() => openStepDetail(step)}
-                >
-                  <Image source={{ uri: step.imageUrl }} style={styles.stepThumb} />
-                  
-                  <View style={styles.stepInfo}>
-                    <View style={styles.stepTopRow}>
-                      <Text style={[styles.stepTime, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                        Paso {step.stepNumber} • {step.time}
-                      </Text>
+            {/* Cronograma en Formato Stepper */}
+            <View style={styles.stepperContainer}>
+              {itinerary.steps.map((step, index) => {
+                const isLast = index === itinerary.steps.length - 1;
+                return (
+                  <View key={step.stepNumber} style={styles.stepperRow}>
+                    
+                    {/* Columna del Nodo Numérico y Línea Conectora */}
+                    <View style={styles.stepperNodeCol}>
+                      <View style={[styles.stepperCircle, { backgroundColor: colors.primary }]}>
+                        <Text style={[styles.stepperCircleText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                          {step.stepNumber}
+                        </Text>
+                      </View>
+                      {!isLast ? (
+                        <View style={[styles.stepperLine, { backgroundColor: colors.primary + '50' }]} />
+                      ) : null}
                     </View>
 
-                    <Text style={[styles.stepTitleText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                      {step.categoryEmoji} {step.title}
-                    </Text>
+                    {/* Tarjeta del Paso */}
+                    <TouchableOpacity
+                      style={[styles.stepperCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}
+                      activeOpacity={0.88}
+                      onPress={() => openStepDetail(step)}
+                    >
+                      <Image source={{ uri: step.imageUrl }} style={styles.stepThumb} />
+                      
+                      <View style={styles.stepInfo}>
+                        <Text style={[styles.stepTime, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+                          🕒 {step.time}
+                        </Text>
 
-                    <Text style={[styles.stepPlaceText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]} numberOfLines={1}>
-                      📍 {step.placeName}
-                    </Text>
+                        <Text style={[styles.stepTitleText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                          {step.categoryEmoji} {step.title}
+                        </Text>
+
+                        <Text style={[styles.stepPlaceText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]} numberOfLines={1}>
+                          📍 {step.placeName}
+                        </Text>
+                      </View>
+
+                      <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
+                        <Path d="M9 18l6-6-6-6" />
+                      </Svg>
+                    </TouchableOpacity>
+
                   </View>
-
-                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2} style={{ marginRight: 12 }}>
-                    <Path d="M9 18l6-6-6-6" />
-                  </Svg>
-                </TouchableOpacity>
-              ))}
+                );
+              })}
             </View>
           </View>
         ) : null}
@@ -502,33 +519,58 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
-  stepsList: {
-    gap: 12,
-    marginTop: 10,
+  stepperContainer: {
+    marginTop: 12,
   },
-  stepCard: {
+  stepperRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  stepperNodeCol: {
+    alignItems: 'center',
+    width: 32,
+    marginRight: 10,
+    paddingTop: 4,
+  },
+  stepperCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justify: 'center',
+    zIndex: 2,
+  },
+  stepperCircleText: {
+    fontSize: 13,
+  },
+  stepperLine: {
+    width: 2,
+    flex: 1,
+    marginTop: 2,
+    marginBottom: -8,
+  },
+  stepperCard: {
+    flex: 1,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     padding: 10,
   },
   stepThumb: {
-    width: 64,
-    height: 64,
-    borderRadius: 10,
-    marginRight: 12,
+    width: 54,
+    height: 54,
+    borderRadius: 8,
+    marginRight: 10,
   },
   stepInfo: {
     flex: 1,
   },
-  stepTopRow: {
-    marginBottom: 2,
-  },
   stepTime: {
     fontSize: 11,
+    marginBottom: 2,
   },
   stepTitleText: {
-    fontSize: 15,
+    fontSize: 14,
     marginBottom: 2,
   },
   stepPlaceText: {
