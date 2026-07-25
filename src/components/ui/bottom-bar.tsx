@@ -18,8 +18,10 @@ export default function BottomBar({ activeTab, onTabPress }: BottomBarProps) {
       onTabPress(tab);
     }
 
-    if (tab === 'explore' || tab === 'map') {
+    if (tab === 'explore') {
       router.push('/explore');
+    } else if (tab === 'map') {
+      router.push('/map');
     } else if (tab === 'ai') {
       router.push('/generator');
     } else if (tab === 'community') {

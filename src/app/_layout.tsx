@@ -39,6 +39,7 @@ export default function RootLayout() {
         <Stack.Screen name="generator" />
         <Stack.Screen name="community" />
         <Stack.Screen name="profile" />
+        <Stack.Screen name="map" />
       </Stack>
     </ThemeProvider>
   );
