@@ -6,8 +6,8 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
 
 ## 🔀 Estado de Branches Git
 
-- **Branch actual**: `feature/onboarding-profile`
-- **Branch anterior**: `feature/auth-views` (Merged/Pushed a origin)
+- **Branch actual**: `feature/explore-places`
+- **Branch anterior**: `feature/onboarding-profile` (Merged/Pushed a origin)
 - **Branch base**: `main`
 - **Propósito**: Implementación completa del Módulo 2 de Onboarding y Creación de Perfil de Usuario.
 

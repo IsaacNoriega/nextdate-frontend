@@ -1,180 +1,636 @@
-import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
-import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useState } from 'react';
+import { 
+  StyleSheet, 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  ScrollView, 
+  Image, 
+  useWindowDimensions,
+  FlatList,
+  Modal
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import Svg, { Path } from 'react-native-svg';
+import { useTheme } from '../hooks/useTheme';
 
-import { ExternalLink } from '@/components/external-link';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Collapsible } from '@/components/ui/collapsible';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+type PlaceCategory = 'ALL' | 'FOOD_DRINK' | 'CULTURE' | 'NATURE' | 'ENTERTAINMENT' | 'SHOPPING' | 'SPORTS';
+type PriceRange = 'ALL' | 'CHEAP' | 'MODERATE' | 'EXPENSIVE' | 'LUXURY';
 
-export default function TabTwoScreen() {
-  const safeAreaInsets = useSafeAreaInsets();
-  const insets = {
-    ...safeAreaInsets,
-    bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
-  };
-  const theme = useTheme();
+interface Place {
+  id: string;
+  name: string;
+  category: PlaceCategory;
+  categoryLabel: string;
+  emoji: string;
+  address: string;
+  priceRange: PriceRange;
+  priceSymbol: string;
+  rating: number;
+  reviewsCount: number;
+  imageUrl: string;
+  distance: string;
+  description: string;
+}
 
-  const contentPlatformStyle = Platform.select({
-    android: {
-      paddingTop: insets.top,
-      paddingLeft: insets.left,
-      paddingRight: insets.right,
-      paddingBottom: insets.bottom,
-    },
-    web: {
-      paddingTop: Spacing.six,
-      paddingBottom: Spacing.four,
-    },
+const CATEGORIES: { id: PlaceCategory; label: string; icon: string }[] = [
+  { id: 'ALL', label: 'Todos', icon: '✨' },
+  { id: 'FOOD_DRINK', label: 'Gastronomía & Bares', icon: '🍷' },
+  { id: 'CULTURE', label: 'Cultura & Arte', icon: '🎭' },
+  { id: 'NATURE', label: 'Naturaleza', icon: '🌿' },
+  { id: 'ENTERTAINMENT', label: 'Entretenimiento', icon: '🎬' },
+  { id: 'SHOPPING', label: 'Compras', icon: '🛍️' },
+  { id: 'SPORTS', label: 'Deportes', icon: '⚽' },
+];
+
+const PRICE_FILTERS: { id: PriceRange; label: string }[] = [
+  { id: 'ALL', label: 'Todos' },
+  { id: 'CHEAP', label: '$' },
+  { id: 'MODERATE', label: '$$' },
+  { id: 'EXPENSIVE', label: '$$$' },
+  { id: 'LUXURY', label: '$$$$' },
+];
+
+const MOCK_PLACES: Place[] = [
+  {
+    id: '1',
+    name: 'Terraza Luna & Bar Gastro',
+    category: 'FOOD_DRINK',
+    categoryLabel: 'Gastronomía & Bares',
+    emoji: '🍷',
+    address: 'Av. Chapultepec Norte 340, Americana',
+    priceRange: 'MODERATE',
+    priceSymbol: '$$',
+    rating: 4.8,
+    reviewsCount: 124,
+    imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
+    distance: '1.2 km',
+    description: 'Vista panorámica de la ciudad con coctelería de autor y bocadillos artesanales para veladas románticas.'
+  },
+  {
+    id: '2',
+    name: 'Museo de Arte Moderno & Jardín',
+    category: 'CULTURE',
+    categoryLabel: 'Cultura & Arte',
+    emoji: '🎭',
+    address: 'Calle López Cotilla 1420',
+    priceRange: 'CHEAP',
+    priceSymbol: '$',
+    rating: 4.9,
+    reviewsCount: 89,
+    imageUrl: 'https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?w=600&auto=format&fit=crop&q=80',
+    distance: '2.5 km',
+    description: 'Exposiciones de arte contempoáneo y un tranquilo jardín botánico ideal para platicar.'
+  },
+  {
+    id: '3',
+    name: 'Bosque Mirador & Picnic Spot',
+    category: 'NATURE',
+    categoryLabel: 'Naturaleza',
+    emoji: '🌿',
+    address: 'Camino al Mirador s/n',
+    priceRange: 'CHEAP',
+    priceSymbol: '$',
+    rating: 4.7,
+    reviewsCount: 210,
+    imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80',
+    distance: '4.1 km',
+    description: 'Área natural protegida con vistas espectaculares al atardecer y senderos rodeados de pinos.'
+  },
+  {
+    id: '4',
+    name: 'Cine Boutique & Speakeasy',
+    category: 'ENTERTAINMENT',
+    categoryLabel: 'Entretenimiento',
+    emoji: '🎬',
+    address: 'Plaza Andares Nivel 3',
+    priceRange: 'EXPENSIVE',
+    priceSymbol: '$$$',
+    rating: 4.9,
+    reviewsCount: 312,
+    imageUrl: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&auto=format&fit=crop&q=80',
+    distance: '3.8 km',
+    description: 'Salas vip exclusivas con sillones reclinables y servicio gourmet a la mesa.'
+  }
+];
+
+export default function ExploreScreen() {
+  const { colors, typography, borderRadius } = useTheme();
+  const router = useRouter();
+  const { width } = useWindowDimensions();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<PlaceCategory>('ALL');
+  const [selectedPrice, setSelectedPrice] = useState<PriceRange>('ALL');
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+
+  // Filtrado dinámico
+  const filteredPlaces = MOCK_PLACES.filter((place) => {
+    const matchesSearch = place.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          place.address.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === 'ALL' || place.category === selectedCategory;
+    const matchesPrice = selectedPrice === 'ALL' || place.priceRange === selectedPrice;
+    return matchesSearch && matchesCategory && matchesPrice;
   });
 
   return (
-    <ScrollView
-      style={[styles.scrollView, { backgroundColor: theme.background }]}
-      contentInset={insets}
-      contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="subtitle">Explore</ThemedText>
-          <ThemedText style={styles.centerText} themeColor="textSecondary">
-            This starter app includes example{'\n'}code to help you get started.
-          </ThemedText>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.mainWrapper}>
 
-          <ExternalLink href="https://docs.expo.dev" asChild>
-            <Pressable style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedView type="backgroundElement" style={styles.linkButton}>
-                <ThemedText type="link">Expo documentation</ThemedText>
-                <SymbolView
-                  tintColor={theme.text}
-                  name={{ ios: 'arrow.up.right.square', android: 'link', web: 'link' }}
-                  size={12}
-                />
-              </ThemedView>
-            </Pressable>
-          </ExternalLink>
-        </ThemedView>
+        {/* Top Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={[styles.headerGreeting, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+              Descubre en
+            </Text>
+            <TouchableOpacity style={styles.locationChip} activeOpacity={0.8}>
+              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2}>
+                <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+              </Svg>
+              <Text style={[styles.locationText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                Guadalajara, Jal.
+              </Text>
+              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
+                <Path d="M6 9l6 6 6-6" />
+              </Svg>
+            </TouchableOpacity>
+          </View>
 
-        <ThemedView style={styles.sectionsWrapper}>
-          <Collapsible title="File-based routing">
-            <ThemedText type="small">
-              This app has two screens: <ThemedText type="code">src/app/index.tsx</ThemedText> and{' '}
-              <ThemedText type="code">src/app/explore.tsx</ThemedText>
-            </ThemedText>
-            <ThemedText type="small">
-              The layout file in <ThemedText type="code">src/app/_layout.tsx</ThemedText> sets up
-              the tab navigator.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/router/introduction">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
+          {/* Toggle Modo Lista / Mapa */}
+          <View style={[styles.viewToggleWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <TouchableOpacity 
+              style={[
+                styles.toggleBtn, 
+                viewMode === 'list' && { backgroundColor: colors.primary }
+              ]}
+              onPress={() => setViewMode('list')}
+            >
+              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={viewMode === 'list' ? colors.primaryContrast : colors.textSecondary} strokeWidth={2}>
+                <Path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+              </Svg>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[
+                styles.toggleBtn, 
+                viewMode === 'map' && { backgroundColor: colors.primary }
+              ]}
+              onPress={() => setViewMode('map')}
+            >
+              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={viewMode === 'map' ? colors.primaryContrast : colors.textSecondary} strokeWidth={2}>
+                <Path d="M1 6v13l7-4 8 4 7-4V2l-7 4-8-4-7 4zM8 2v13M16 6v13" />
+              </Svg>
+            </TouchableOpacity>
+          </View>
+        </View>
 
-          <Collapsible title="Android, iOS, and web support">
-            <ThemedView type="backgroundElement" style={styles.collapsibleContent}>
-              <ThemedText type="small">
-                You can open this project on Android, iOS, and the web. To open the web version,
-                press <ThemedText type="smallBold">w</ThemedText> in the terminal running this
-                project.
-              </ThemedText>
-              <Image
-                source={require('@/assets/images/tutorial-web.png')}
-                style={styles.imageTutorial}
-              />
-            </ThemedView>
-          </Collapsible>
+        {/* Buscador Search Input */}
+        <View style={styles.searchContainer}>
+          <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.md }]}>
+            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2} style={{ marginRight: 10 }}>
+              <Path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </Svg>
+            <TextInput
+              style={[styles.searchInput, { color: colors.text, fontFamily: typography.fonts.regular }]}
+              placeholder="Buscar restaurantes, parques, eventos..."
+              placeholderTextColor={colors.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery ? (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
+                  <Path d="M18 6L6 18M6 6l12 12" />
+                </Svg>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </View>
 
-          <Collapsible title="Images">
-            <ThemedText type="small">
-              For static images, you can use the <ThemedText type="code">@2x</ThemedText> and{' '}
-              <ThemedText type="code">@3x</ThemedText> suffixes to provide files for different
-              screen densities.
-            </ThemedText>
-            <Image source={require('@/assets/images/react-logo.png')} style={styles.imageReact} />
-            <ExternalLink href="https://reactnative.dev/docs/images">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
+        {/* Filtro Horizontal de Categorías */}
+        <View style={styles.categoriesSection}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesScroll}>
+            {CATEGORIES.map((cat) => {
+              const isSelected = selectedCategory === cat.id;
+              return (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={[
+                    styles.categoryChip,
+                    {
+                      backgroundColor: isSelected ? colors.primary : colors.card,
+                      borderColor: isSelected ? colors.primary : colors.border,
+                      borderRadius: borderRadius.round
+                    }
+                  ]}
+                  onPress={() => setSelectedCategory(cat.id)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={{ marginRight: 6 }}>{cat.icon}</Text>
+                  <Text style={[
+                    styles.categoryChipText,
+                    { color: isSelected ? colors.primaryContrast : colors.text, fontFamily: isSelected ? typography.fonts.bold : typography.fonts.medium }
+                  ]}>
+                    {cat.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
 
-          <Collapsible title="Light and dark mode components">
-            <ThemedText type="small">
-              This template has light and dark mode support. The{' '}
-              <ThemedText type="code">useColorScheme()</ThemedText> hook lets you inspect what the
-              user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
+        {/* Filtro Horizontal de Presupuesto */}
+        <View style={styles.priceFilterRow}>
+          <Text style={[styles.priceFilterLabel, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+            Presupuesto:
+          </Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.priceScroll}>
+            {PRICE_FILTERS.map((pr) => {
+              const isSelected = selectedPrice === pr.id;
+              return (
+                <TouchableOpacity
+                  key={pr.id}
+                  style={[
+                    styles.priceFilterChip,
+                    {
+                      backgroundColor: isSelected ? colors.primary + '15' : colors.card,
+                      borderColor: isSelected ? colors.primary : colors.border,
+                      borderRadius: borderRadius.sm
+                    }
+                  ]}
+                  onPress={() => setSelectedPrice(pr.id)}
+                >
+                  <Text style={[
+                    styles.priceFilterText,
+                    { color: isSelected ? colors.primary : colors.textSecondary, fontFamily: isSelected ? typography.fonts.bold : typography.fonts.regular }
+                  ]}>
+                    {pr.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
 
-          <Collapsible title="Animations">
-            <ThemedText type="small">
-              This template includes an example of an animated component. The{' '}
-              <ThemedText type="code">src/components/ui/collapsible.tsx</ThemedText> component uses
-              the powerful <ThemedText type="code">react-native-reanimated</ThemedText> library to
-              animate opening this hint.
-            </ThemedText>
-          </Collapsible>
-        </ThemedView>
-        {Platform.OS === 'web' && <WebBadge />}
-      </ThemedView>
-    </ScrollView>
+        {/* Contenido Principal: Mapa o Lista de Lugares */}
+        {viewMode === 'map' ? (
+          <View style={[styles.mapPlaceholder, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
+            <Svg width={48} height={48} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={1.5} style={{ marginBottom: 12 }}>
+              <Path d="M1 6v13l7-4 8 4 7-4V2l-7 4-8-4-7 4zM8 2v13M16 6v13" />
+            </Svg>
+            <Text style={[styles.mapPlaceholderTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+              Vista de Mapa Interactivo
+            </Text>
+            <Text style={[styles.mapPlaceholderSub, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+              Mostrando {filteredPlaces.length} lugares en Guadalajara
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredPlaces}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item }) => (
+              <TouchableOpacity 
+                style={[styles.placeCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}
+                activeOpacity={0.9}
+                onPress={() => setSelectedPlace(item)}
+              >
+                <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />
+                
+                <View style={styles.cardBody}>
+                  <View style={styles.cardHeaderRow}>
+                    <Text style={[styles.cardCategory, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+                      {item.emoji} {item.categoryLabel}
+                    </Text>
+                    <Text style={[styles.cardPrice, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
+                      {item.priceSymbol}
+                    </Text>
+                  </View>
+
+                  <Text style={[styles.cardTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                    {item.name}
+                  </Text>
+
+                  <Text style={[styles.cardAddress, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]} numberOfLines={1}>
+                    📍 {item.address} • {item.distance}
+                  </Text>
+
+                  <View style={styles.cardFooter}>
+                    <View style={styles.ratingBadge}>
+                      <Text style={{ fontSize: 13, marginRight: 4 }}>⭐</Text>
+                      <Text style={[styles.ratingText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                        {item.rating}
+                      </Text>
+                      <Text style={[styles.reviewsText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                        ({item.reviewsCount})
+                      </Text>
+                    </View>
+
+                    <TouchableOpacity 
+                      style={[styles.planButton, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
+                      onPress={() => setSelectedPlace(item)}
+                    >
+                      <Text style={[styles.planButtonText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                        Planear Cita
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            )}
+          />
+        )}
+
+      </View>
+
+      {/* Modal de Detalle de Lugar */}
+      <Modal
+        visible={!!selectedPlace}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSelectedPlace(null)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1}
+          onPress={() => setSelectedPlace(null)}
+        >
+          <TouchableOpacity 
+            activeOpacity={1}
+            style={[styles.modalSheet, { backgroundColor: colors.background, borderColor: colors.border, borderRadius: borderRadius.xl }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            {selectedPlace ? (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Image source={{ uri: selectedPlace.imageUrl }} style={styles.modalImage} />
+                
+                <View style={styles.modalBody}>
+                  <View style={styles.modalHeaderRow}>
+                    <Text style={[styles.modalCategory, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+                      {selectedPlace.emoji} {selectedPlace.categoryLabel}
+                    </Text>
+                    <TouchableOpacity onPress={() => setSelectedPlace(null)}>
+                      <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
+                        <Path d="M18 6L6 18M6 6l12 12" />
+                      </Svg>
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={[styles.modalTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                    {selectedPlace.name}
+                  </Text>
+
+                  <Text style={[styles.modalAddress, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                    📍 {selectedPlace.address} ({selectedPlace.distance})
+                  </Text>
+
+                  <Text style={[styles.modalDesc, { color: colors.text, fontFamily: typography.fonts.regular }]}>
+                    {selectedPlace.description}
+                  </Text>
+
+                  {/* Acciones */}
+                  <TouchableOpacity 
+                    style={[styles.modalActionBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
+                    onPress={() => {
+                      setSelectedPlace(null);
+                      router.push('/(auth)/login');
+                    }}
+                  >
+                    <Text style={[styles.modalActionText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                      Agregar este Lugar a una Cita ✨
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            ) : null}
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
+  container: {
     flex: 1,
   },
-  contentContainer: {
+  mainWrapper: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+  },
+  header: {
     flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  container: {
-    maxWidth: MaxContentWidth,
-    flexGrow: 1,
-  },
-  titleContainer: {
-    gap: Spacing.three,
+    justify: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.six,
+    marginBottom: 16,
   },
-  centerText: {
-    textAlign: 'center',
+  headerGreeting: {
+    fontSize: 12,
   },
-  pressed: {
-    opacity: 0.7,
-  },
-  linkButton: {
+  locationChip: {
     flexDirection: 'row',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.two,
-    borderRadius: Spacing.five,
-    justifyContent: 'center',
-    gap: Spacing.one,
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  locationText: {
+    fontSize: 16,
+  },
+  viewToggleWrapper: {
+    flexDirection: 'row',
+    padding: 3,
+    borderWidth: 1,
+    borderRadius: 20,
+  },
+  toggleBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justify: 'center',
+  },
+  searchContainer: {
+    marginBottom: 16,
+  },
+  searchBox: {
+    height: 48,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    height: '100%',
+  },
+  categoriesSection: {
+    marginBottom: 14,
+  },
+  categoriesScroll: {
+    gap: 8,
+  },
+  categoryChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  sectionsWrapper: {
-    gap: Spacing.five,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
+  categoryChipText: {
+    fontSize: 13,
   },
-  collapsibleContent: {
+  priceFilterRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 16,
   },
-  imageTutorial: {
+  priceFilterLabel: {
+    fontSize: 13,
+    marginRight: 10,
+  },
+  priceScroll: {
+    gap: 6,
+  },
+  priceFilterChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+  },
+  priceFilterText: {
+    fontSize: 12,
+  },
+  listContent: {
+    paddingBottom: 30,
+    gap: 16,
+  },
+  placeCard: {
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  cardImage: {
     width: '100%',
-    aspectRatio: 296 / 171,
-    borderRadius: Spacing.three,
-    marginTop: Spacing.two,
+    height: 180,
   },
-  imageReact: {
-    width: 100,
-    height: 100,
-    alignSelf: 'center',
+  cardBody: {
+    padding: 16,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justify: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  cardCategory: {
+    fontSize: 12,
+  },
+  cardPrice: {
+    fontSize: 14,
+  },
+  cardTitle: {
+    fontSize: 18,
+    lineHeight: 24,
+    marginBottom: 4,
+  },
+  cardAddress: {
+    fontSize: 13,
+    marginBottom: 14,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justify: 'space-between',
+    alignItems: 'center',
+  },
+  ratingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ratingText: {
+    fontSize: 14,
+  },
+  reviewsText: {
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  planButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  planButtonText: {
+    fontSize: 13,
+  },
+  mapPlaceholder: {
+    flex: 1,
+    borderWidth: 1,
+    alignItems: 'center',
+    justify: 'center',
+    padding: 24,
+    marginBottom: 20,
+  },
+  mapPlaceholderTitle: {
+    fontSize: 18,
+    marginBottom: 6,
+  },
+  mapPlaceholderSub: {
+    fontSize: 13,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justify: 'flex-end',
+  },
+  modalSheet: {
+    width: '100%',
+    maxHeight: '85%',
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  modalImage: {
+    width: '100%',
+    height: 220,
+  },
+  modalBody: {
+    padding: 20,
+  },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    justify: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  modalCategory: {
+    fontSize: 13,
+  },
+  modalTitle: {
+    fontSize: 22,
+    marginBottom: 6,
+  },
+  modalAddress: {
+    fontSize: 14,
+    marginBottom: 14,
+  },
+  modalDesc: {
+    fontSize: 14,
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  modalActionBtn: {
+    height: 52,
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justify: 'center',
+  },
+  modalActionText: {
+    fontSize: 15,
+    textAlign: 'center',
+    width: '100%',
   },
 });
