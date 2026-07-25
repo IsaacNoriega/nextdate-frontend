@@ -9,7 +9,7 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
 - **Branch actual**: `feature/explore-places`
 - **Branch anterior**: `feature/onboarding-profile` (Merged/Pushed a origin)
 - **Branch base**: `main`
-- **Propósito**: Implementación completa del Módulo 2 de Onboarding y Creación de Perfil de Usuario.
+- **Propósito**: Implementación completa del Módulo 3 de Exploración y Descubrimiento de Lugares.
 
 ---
 
@@ -34,9 +34,15 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
 - [x] Reemplazar `SafeAreaView` por `react-native-safe-area-context` en todas las pantallas.
 - [x] Alineación centrada de textos e iconos SVG en todos los botones primarios, secundarios y redes sociales.
 
-### ⏳ Módulo 3: Exploración y Descubrimiento (`(tabs)/explore`)
-- [ ] Vista de Mapa Interactivo & Lista de Lugares Cercanos.
-- [ ] Detalle de Lugar (`place/[id]`).
+### 🟢 Módulo 3: Exploración y Descubrimiento (`feature/explore-places`)
+- [x] Crear rama de trabajo `feature/explore-places`.
+- [x] Diseñar e implementar pantalla de Exploración (`app/explore.tsx`):
+  - [x] Filtros por búsqueda, categorías (`PlaceCategory`) y rango de precios (`PriceRange`).
+  - [x] Tarjetas de lugares con botón *"Planear Cita"* ubicado abajo a la derecha.
+  - [x] Vista completa nativa con botón de cierre **"X"** superior.
+  - [x] Sección de mapa de ubicación interactivo con pin GPS.
+  - [x] Calificador interactivo de 5 estrellas (*Rate Plan*) colocado debajo del mapa.
+  - [x] Floating Pill Bottom Navigation Bar (Barra de Navegación Flotante estilo WhatsApp / Meta AI) con tabs centrados (*Explorar, Mapa, AI Citas, Comunidad, Perfil*).
 
 ### ⏳ Módulo 4: NextDate AI & Itinerarios (`(tabs)/generator`, `itineraries`)
 - [ ] Asistente por Prompt AI (`recommendItinerary`).
@@ -52,9 +58,7 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
 ## 📝 Registro de Cambios (Log de Ejecución)
 
 ### [2026-07-24 / 2026-07-25]
-- **Onboarding de Perfil (`src/app/(onboarding)/setup-profile.tsx`)**:
-  - Implementado Stepper de 4 pasos con indicador visual de progreso.
-  - Integrado con la mutation GraphQL `createProfile(input: CreateProfileInput!)`.
-  - Mapeo completo de enums (`Gender`, `PlaceCategory`, `PriceRange`, `DietaryPreference`).
-  - Modal flotante centrado en pantalla con DatePicker nativo (HTML5 type="date" en Web y DateTimePicker nativo en móvil).
-  - Botón de navegación sin borde circular en toda la aplicación.
+- **Exploración de Lugares (`src/app/explore.tsx`)**:
+  - Implementada navegación completa y vista de lugares basada en GraphQL schema (`Place`).
+  - Integrada barra flotante tipo píldora con diseño premium.
+  - Detalle modal a pantalla completa con mapa y calificador de planes.
