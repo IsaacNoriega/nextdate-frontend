@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  ScrollView, 
-  Image, 
+import {
+  StyleSheet,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  Image,
   Modal,
-  TouchableWithoutFeedback
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import Svg, { Path, Circle, Line } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
+import StarRating from '../../components/ui/star-rating';
 
 interface RouteStep {
   stepNumber: number;
@@ -53,7 +52,7 @@ const AVAILABLE_ITINERARIES: SavedItineraryOption[] = [
     steps: [
       {
         stepNumber: 1,
-        time: '18:30 PM',
+        time: '18:30',
         title: 'Cócteles de Autor al Atardecer',
         placeName: 'Terraza Luna Gastro Bar',
         categoryEmoji: '🍸',
@@ -69,7 +68,7 @@ const AVAILABLE_ITINERARIES: SavedItineraryOption[] = [
       },
       {
         stepNumber: 2,
-        time: '19:45 PM',
+        time: '19:45',
         title: 'Cena a la Luz de las Velas',
         placeName: 'Trattoria Barrio Americana',
         categoryEmoji: '🍝',
@@ -85,7 +84,7 @@ const AVAILABLE_ITINERARIES: SavedItineraryOption[] = [
       },
       {
         stepNumber: 3,
-        time: '21:15 PM',
+        time: '21:15',
         title: 'Postre & Paseo Nocturno',
         placeName: 'Jardín Botánico & Gelato',
         categoryEmoji: '🍦',
@@ -111,7 +110,7 @@ const AVAILABLE_ITINERARIES: SavedItineraryOption[] = [
     steps: [
       {
         stepNumber: 1,
-        time: '16:00 PM',
+        time: '16:00',
         title: 'Helado Artesanal & Café',
         placeName: 'Gelateria Italiana',
         categoryEmoji: '🍦',
@@ -127,7 +126,7 @@ const AVAILABLE_ITINERARIES: SavedItineraryOption[] = [
       },
       {
         stepNumber: 2,
-        time: '17:30 PM',
+        time: '17:30',
         title: 'Picnic al Atardecer',
         placeName: 'Mirador del Bosque',
         categoryEmoji: '🌿',
@@ -146,31 +145,26 @@ const AVAILABLE_ITINERARIES: SavedItineraryOption[] = [
 ];
 
 export default function MapScreen() {
-  const { colors, typography, borderRadius } = useTheme();
-  const router = useRouter();
+  const { colors, typography, borderRadius, isDark } = useTheme();
 
-  // Por defecto NO hay ningún itinerario seleccionado
   const [selectedItineraryId, setSelectedItineraryId] = useState<string | null>(null);
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
   const [isNavigating, setIsNavigating] = useState<boolean>(false);
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
-  
-  // Estado del Buscador / Desplegable de Itinerarios
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState<boolean>(false);
   const [stepRating, setStepRating] = useState<number>(0);
   const [stepRatingSubmitted, setStepRatingSubmitted] = useState<boolean>(false);
 
-  const currentItinerary = selectedItineraryId 
-    ? AVAILABLE_ITINERARIES.find((i) => i.id === selectedItineraryId) || null 
+  const currentItinerary = selectedItineraryId
+    ? AVAILABLE_ITINERARIES.find((i) => i.id === selectedItineraryId) || null
     : null;
-    
+
   const activeStep = currentItinerary ? currentItinerary.steps[activeStepIndex] || currentItinerary.steps[0] : null;
 
-  // Simulación de navegación
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (isNavigating) {
+    if (isNavigating && currentItinerary) {
       interval = setInterval(() => {
         setActiveStepIndex((prev) => (prev < currentItinerary.steps.length - 1 ? prev + 1 : prev));
       }, 5000);
@@ -179,7 +173,7 @@ export default function MapScreen() {
   }, [isNavigating, currentItinerary]);
 
   const handleNextStep = () => {
-    if (activeStepIndex < currentItinerary.steps.length - 1) {
+    if (currentItinerary && activeStepIndex < currentItinerary.steps.length - 1) {
       setActiveStepIndex(activeStepIndex + 1);
     } else {
       setIsNavigating(false);
@@ -187,216 +181,188 @@ export default function MapScreen() {
   };
 
   const filteredItineraries = AVAILABLE_ITINERARIES.filter((item) => {
-    return item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    return item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
            item.tagline.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
+  const accentBlue = isDark ? '#0A84FF' : '#007AFF';
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-      
-      {/* VISTA DE MAPA INTERACTIVO NATIVO IN-APP */}
+
       <View style={styles.mapViewport}>
-        
-        {/* Fondo del Mapa Vectorial Tipo Google Maps */}
-        <View style={[styles.mapCanvas, { backgroundColor: colors.background }]}>
-          
-          {/* Capa Vectorial SVG de la Ciudad: Avenidas, Ríos y Rutas */}
+
+        {/* Map Canvas */}
+        <View style={[styles.mapCanvas, { backgroundColor: isDark ? '#0D0D0D' : '#F8F8FA' }]}>
+
+          {/* SVG Map Layer */}
           <Svg style={StyleSheet.absoluteFill}>
-            {/* Río / Cuerpo de Agua */}
+            {/* Water */}
             <Path
               d="M-20,140 Q160,200 300,120 T550,240"
               fill="none"
-              stroke="#0A84FF"
-              strokeWidth="20"
-              strokeOpacity="0.2"
+              stroke={accentBlue}
+              strokeWidth="22"
+              strokeOpacity="0.12"
             />
 
-            {/* Avenidas Principales & Carreteras */}
+            {/* Major roads */}
             <Path
               d="M-50,230 Q200,250 550,220"
               fill="none"
-              stroke={colors.border}
-              strokeWidth="12"
-              strokeOpacity="0.6"
+              stroke={isDark ? '#2C2C2E' : '#E5E5EA'}
+              strokeWidth="14"
+              strokeOpacity="0.8"
             />
             <Path
               d="M180,-50 L220,650"
               fill="none"
-              stroke={colors.border}
-              strokeWidth="10"
-              strokeOpacity="0.6"
+              stroke={isDark ? '#2C2C2E' : '#E5E5EA'}
+              strokeWidth="12"
+              strokeOpacity="0.8"
             />
             <Path
               d="M380,-50 L340,650"
               fill="none"
-              stroke={colors.border}
-              strokeWidth="8"
-              strokeOpacity="0.4"
+              stroke={isDark ? '#2C2C2E' : '#E5E5EA'}
+              strokeWidth="10"
+              strokeOpacity="0.5"
             />
 
-            {/* Red de Calles Secundarias */}
-            <Line x1="10%" y1="15%" x2="90%" y2="15%" stroke={colors.border} strokeWidth="3" strokeOpacity="0.25" />
-            <Line x1="10%" y1="38%" x2="90%" y2="38%" stroke={colors.border} strokeWidth="3" strokeOpacity="0.25" />
-            <Line x1="10%" y1="58%" x2="90%" y2="58%" stroke={colors.border} strokeWidth="3" strokeOpacity="0.25" />
-            <Line x1="10%" y1="78%" x2="90%" y2="78%" stroke={colors.border} strokeWidth="3" strokeOpacity="0.25" />
+            {/* Grid streets */}
+            <Line x1="10%" y1="15%" x2="90%" y2="15%" stroke={isDark ? '#1C1C1E' : '#EBEBED'} strokeWidth="2" />
+            <Line x1="10%" y1="38%" x2="90%" y2="38%" stroke={isDark ? '#1C1C1E' : '#EBEBED'} strokeWidth="2" />
+            <Line x1="10%" y1="58%" x2="90%" y2="58%" stroke={isDark ? '#1C1C1E' : '#EBEBED'} strokeWidth="2" />
+            <Line x1="10%" y1="78%" x2="90%" y2="78%" stroke={isDark ? '#1C1C1E' : '#EBEBED'} strokeWidth="2" />
+            <Line x1="32%" y1="5%" x2="32%" y2="95%" stroke={isDark ? '#1C1C1E' : '#EBEBED'} strokeWidth="2" />
+            <Line x1="62%" y1="5%" x2="62%" y2="95%" stroke={isDark ? '#1C1C1E' : '#EBEBED'} strokeWidth="2" />
 
-            <Line x1="32%" y1="5%" x2="32%" y2="95%" stroke={colors.border} strokeWidth="3" strokeOpacity="0.25" />
-            <Line x1="62%" y1="5%" x2="62%" y2="95%" stroke={colors.border} strokeWidth="3" strokeOpacity="0.25" />
-
-            {/* Trazado de Ruta del Itinerario Seleccionado */}
+            {/* Route lines */}
             {currentItinerary && currentItinerary.steps.length > 1 ? (
-              <Line
-                x1={`${currentItinerary.steps[0].leftPct}%`}
-                y1={`${currentItinerary.steps[0].topPct}%`}
-                x2={`${currentItinerary.steps[1].leftPct}%`}
-                y2={`${currentItinerary.steps[1].topPct}%`}
-                stroke={colors.primary}
-                strokeWidth="6"
-                strokeDasharray={isNavigating ? '8, 4' : undefined}
-              />
-            ) : null}
-
-            {currentItinerary && currentItinerary.steps.length > 2 ? (
-              <Line
-                x1={`${currentItinerary.steps[1].leftPct}%`}
-                y1={`${currentItinerary.steps[1].topPct}%`}
-                x2={`${currentItinerary.steps[2].leftPct}%`}
-                y2={`${currentItinerary.steps[2].topPct}%`}
-                stroke={colors.primary}
-                strokeWidth="6"
-                strokeDasharray={isNavigating ? '8, 4' : undefined}
-              />
+              <>
+                {currentItinerary.steps.slice(0, -1).map((step, idx) => (
+                  <Line
+                    key={`route-${idx}`}
+                    x1={`${step.leftPct}%`}
+                    y1={`${step.topPct}%`}
+                    x2={`${currentItinerary.steps[idx + 1].leftPct}%`}
+                    y2={`${currentItinerary.steps[idx + 1].topPct}%`}
+                    stroke={accentBlue}
+                    strokeWidth="4"
+                    strokeDasharray={isNavigating ? '8,6' : undefined}
+                    strokeLinecap="round"
+                  />
+                ))}
+              </>
             ) : null}
           </Svg>
 
-          {/* Bloques de la Ciudad & Zonas Verdes */}
-          <View style={[styles.cityBlock, { top: '12%', left: '8%', width: 100, height: 70, backgroundColor: colors.border + '20', borderRadius: 10 }]} />
-          <View style={[styles.cityBlock, { top: '42%', left: '68%', width: 90, height: 110, backgroundColor: colors.border + '20', borderRadius: 10 }]} />
-          <View style={[styles.parkZone, { top: '64%', left: '14%', width: 140, height: 90, backgroundColor: '#30D15822', borderRadius: 18 }]}>
-            <Text style={[styles.parkZoneText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
-              🌿 Bosque Central
+          {/* City blocks */}
+          <View style={[styles.cityBlock, { top: '12%', left: '8%', width: 100, height: 70, backgroundColor: isDark ? '#1A1A1C' : '#EEEEEF', borderRadius: 12 }]} />
+          <View style={[styles.cityBlock, { top: '42%', left: '68%', width: 90, height: 110, backgroundColor: isDark ? '#1A1A1C' : '#EEEEEF', borderRadius: 12 }]} />
+
+          {/* Park zone */}
+          <View style={[styles.parkZone, { top: '64%', left: '14%', width: 140, height: 90, backgroundColor: isDark ? 'rgba(48,209,88,0.08)' : 'rgba(48,209,88,0.12)', borderRadius: 18 }]}>
+            <Text style={[styles.parkLabel, { color: isDark ? '#30D158' : '#248A3D', fontFamily: typography.fonts.medium }]}>
+              Bosque Central
             </Text>
           </View>
 
-          {/* Indicador de Ubicación GPS Usuario (Punto Azul con Halo) */}
-          <View style={[styles.userGpsLocation, { top: '32%', left: '22%' }]}>
-            <View style={styles.userGpsDot} />
-            <View style={styles.userGpsHalo} />
+          {/* User GPS dot */}
+          <View style={[styles.userGps, { top: '32%', left: '22%' }]}>
+            <View style={styles.gpsHalo} />
+            <View style={styles.gpsDot} />
           </View>
 
-          {/* PINS INTERACTIVOS DE LA RUTA */}
+          {/* Route pins */}
           {currentItinerary ? currentItinerary.steps.map((step, idx) => {
             const isActive = idx === activeStepIndex;
             return (
               <TouchableOpacity
                 key={step.stepNumber}
-                style={[
-                  styles.mapPinAnchor,
-                  {
-                    top: `${step.topPct}%`,
-                    left: `${step.leftPct}%`,
-                  }
-                ]}
+                style={[styles.pinAnchor, { top: `${step.topPct}%`, left: `${step.leftPct}%` }]}
                 activeOpacity={0.88}
                 onPress={() => setActiveStepIndex(idx)}
               >
-                <View style={[styles.timeChip, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  <Text style={[styles.timeChipText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                    {step.time}
-                  </Text>
-                </View>
-
-                <View 
-                  style={[
-                    styles.pinNode,
-                    {
-                      backgroundColor: isActive ? colors.primary : colors.card,
-                      borderColor: isActive ? colors.primaryContrast : colors.primary,
-                      transform: [{ scale: isActive ? 1.3 : 1 }]
-                    }
-                  ]}
-                >
-                  <Text style={[styles.pinNodeNum, { color: isActive ? colors.primaryContrast : colors.primary, fontFamily: typography.fonts.bold }]}>
+                <View style={[
+                  styles.pin,
+                  {
+                    backgroundColor: isActive ? accentBlue : colors.card,
+                    borderColor: isActive ? '#FFFFFF' : accentBlue,
+                    transform: [{ scale: isActive ? 1.2 : 1 }]
+                  }
+                ]}>
+                  <Text style={[styles.pinText, { color: isActive ? '#FFFFFF' : accentBlue, fontFamily: typography.fonts.bold }]}>
                     {step.stepNumber}
                   </Text>
                 </View>
-
-                {isActive && isNavigating ? (
-                  <View style={[styles.pulseRing, { borderColor: colors.primary }]} />
-                ) : null}
+                {isActive && (
+                  <View style={[styles.pinLabel, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <Text style={[styles.pinLabelText, { color: colors.text, fontFamily: typography.fonts.medium }]} numberOfLines={1}>
+                      {step.placeName}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
             );
           }) : null}
-
         </View>
 
-        {/* HEADER FLOTANTE: BUSCADOR / SELECTOR DE ITINERARIOS GUARDADOS */}
-        <View style={styles.topHeaderOverlay}>
+        {/* Top overlay: search or navigation banner */}
+        <View style={styles.topOverlay}>
           {isNavigating && activeStep ? (
-            /* Banner Giro a Giro en Vivo */
-            <View style={[styles.turnInstructionBanner, { backgroundColor: '#1C1C1E', borderRadius: borderRadius.lg }]}>
-              <View style={styles.turnIconBg}>
-                <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.5}>
+            <View style={[styles.navBanner, { backgroundColor: isDark ? '#1C1C1E' : '#000000', borderRadius: borderRadius.lg }]}>
+              <View style={[styles.navIconCircle, { backgroundColor: accentBlue }]}>
+                <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.5}>
                   <Path d="M9 18l6-6-6-6" />
                 </Svg>
               </View>
-
               <View style={{ flex: 1 }}>
-                <Text style={[styles.turnMainText, { color: '#FFFFFF', fontFamily: typography.fonts.bold }]}>
+                <Text style={[styles.navMainText, { fontFamily: typography.fonts.bold }]}>
                   {activeStep.turnInstruction}
                 </Text>
-                <Text style={[styles.turnSubText, { color: '#8E8E93', fontFamily: typography.fonts.medium }]}>
-                  Paso {activeStep.stepNumber}: {activeStep.placeName} • {activeStep.distanceRemaining} ({activeStep.eta})
+                <Text style={styles.navSubText}>
+                  {activeStep.distanceRemaining} · {activeStep.eta}
                 </Text>
               </View>
-
-              <TouchableOpacity 
-                style={styles.stopNavBtn}
-                onPress={() => setIsNavigating(false)}
-              >
-                <Text style={{ color: '#FF3B30', fontSize: 13, fontFamily: typography.fonts.bold }}>Salir</Text>
+              <TouchableOpacity onPress={() => setIsNavigating(false)} style={styles.navStopBtn}>
+                <Text style={styles.navStopText}>Salir</Text>
               </TouchableOpacity>
             </View>
           ) : (
-            /* BARRA BUSCADORA TIPO GOOGLE MAPS DE ITINERARIOS GUARDADOS */
-            <View style={{ width: '100%' }}>
-              
-              <View style={[styles.searchPillBar, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.round }]}>
-                <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2.5}>
+            <View>
+              {/* Search bar */}
+              <TouchableOpacity
+                style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}
+                activeOpacity={0.9}
+                onPress={() => setIsSearchDropdownOpen(true)}
+              >
+                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
                   <Circle cx="11" cy="11" r="8" />
                   <Path d="M21 21l-4.35-4.35" />
                 </Svg>
+                <Text style={[styles.searchBarText, { color: currentItinerary ? colors.text : colors.textSecondary, fontFamily: typography.fonts.medium }]} numberOfLines={1}>
+                  {currentItinerary ? currentItinerary.title : 'Buscar itinerario...'}
+                </Text>
+                <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
+                  <Path d="M6 9l6 6 6-6" />
+                </Svg>
+              </TouchableOpacity>
 
-                <TextInput
-                  style={[styles.searchPillInput, { color: colors.text, fontFamily: typography.fonts.medium }]}
-                  placeholder="Selecciona o busca un itinerario guardado..."
-                  placeholderTextColor={colors.textSecondary}
-                  value={isSearchDropdownOpen ? searchQuery : (currentItinerary ? currentItinerary.title : '')}
-                  onFocus={() => {
-                    setIsSearchDropdownOpen(true);
-                    setSearchQuery('');
-                  }}
-                  onChangeText={(txt) => {
-                    setSearchQuery(txt);
-                    setIsSearchDropdownOpen(true);
-                  }}
-                />
+              {/* Dropdown */}
+              {isSearchDropdownOpen && (
+                <View style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
+                  <TextInput
+                    style={[styles.dropdownSearch, { color: colors.text, borderColor: colors.border, borderRadius: borderRadius.md, fontFamily: typography.fonts.regular }]}
+                    placeholder="Buscar por nombre..."
+                    placeholderTextColor={colors.textSecondary}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    autoFocus
+                  />
 
-                <TouchableOpacity 
-                  onPress={() => setIsSearchDropdownOpen(!isSearchDropdownOpen)}
-                  style={{ padding: 4 }}
-                >
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                    {isSearchDropdownOpen ? '▲' : '▼'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* LISTA DESPLEGABLE DE ITINERARIOS GUARDADOS */}
-              {isSearchDropdownOpen ? (
-                <View style={[styles.dropdownPanel, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
-                  <Text style={[styles.dropdownHeaderTitle, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
-                    ITINERARIOS GUARDADOS
+                  <Text style={[styles.dropdownLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
+                    ITINERARIOS
                   </Text>
 
                   {filteredItineraries.map((itin) => {
@@ -405,10 +371,11 @@ export default function MapScreen() {
                       <TouchableOpacity
                         key={itin.id}
                         style={[
-                          styles.dropdownItemRow,
+                          styles.dropdownItem,
                           {
-                            backgroundColor: isSelected ? colors.primary + '12' : 'transparent',
-                            borderColor: isSelected ? colors.primary : colors.border
+                            backgroundColor: isSelected ? accentBlue + '12' : 'transparent',
+                            borderColor: isSelected ? accentBlue : colors.border,
+                            borderRadius: borderRadius.md,
                           }
                         ]}
                         activeOpacity={0.8}
@@ -417,38 +384,54 @@ export default function MapScreen() {
                           setActiveStepIndex(0);
                           setIsNavigating(false);
                           setIsSearchDropdownOpen(false);
-                          setSearchQuery(itin.title);
+                          setSearchQuery('');
                         }}
                       >
-                        <Text style={{ fontSize: 18, marginRight: 10 }}>🗺️</Text>
+                        <View style={[styles.dropdownItemIcon, { backgroundColor: accentBlue + '15' }]}>
+                          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={accentBlue} strokeWidth={2}>
+                            <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                            <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                          </Svg>
+                        </View>
                         <View style={{ flex: 1 }}>
                           <Text style={[styles.dropdownItemTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
                             {itin.title}
                           </Text>
                           <Text style={[styles.dropdownItemSub, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]} numberOfLines={1}>
-                            {itin.steps.length} Pasos • {itin.totalDistance} • {itin.tagline}
+                            {itin.steps.length} pasos · {itin.totalDistance} · {itin.totalTime}
                           </Text>
                         </View>
-                        {isSelected ? (
-                          <Text style={{ color: colors.primary, fontFamily: typography.fonts.bold, fontSize: 13 }}>✓</Text>
-                        ) : null}
+                        {isSelected && (
+                          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={accentBlue} strokeWidth={2.5}>
+                            <Path d="M20 6L9 17l-5-5" />
+                          </Svg>
+                        )}
                       </TouchableOpacity>
                     );
                   })}
-                </View>
-              ) : null}
 
-              {/* Selector Rápido de Pasos del Itinerario Actual */}
-              {!isSearchDropdownOpen && currentItinerary ? (
-                <View style={styles.stepsPillRow}>
+                  <TouchableOpacity
+                    style={[styles.dropdownClose, { borderTopColor: colors.border }]}
+                    onPress={() => setIsSearchDropdownOpen(false)}
+                  >
+                    <Text style={[styles.dropdownCloseText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+                      Cerrar
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Step chips */}
+              {!isSearchDropdownOpen && currentItinerary && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stepsRow}>
                   {currentItinerary.steps.map((st, i) => (
                     <TouchableOpacity
                       key={st.stepNumber}
                       style={[
                         styles.stepChip,
                         {
-                          backgroundColor: i === activeStepIndex ? colors.primary : colors.card,
-                          borderColor: i === activeStepIndex ? colors.primary : colors.border,
+                          backgroundColor: i === activeStepIndex ? accentBlue : colors.card,
+                          borderColor: i === activeStepIndex ? accentBlue : colors.border,
                           borderRadius: borderRadius.round
                         }
                       ]}
@@ -456,53 +439,45 @@ export default function MapScreen() {
                     >
                       <Text style={[
                         styles.stepChipText,
-                        { color: i === activeStepIndex ? colors.primaryContrast : colors.text, fontFamily: typography.fonts.bold }
+                        { color: i === activeStepIndex ? '#FFFFFF' : colors.text, fontFamily: typography.fonts.bold }
                       ]}>
-                        Paso {st.stepNumber} {st.categoryEmoji}
+                        {st.stepNumber}. {st.placeName}
                       </Text>
                     </TouchableOpacity>
                   ))}
-                </View>
-              ) : null}
-
+                </ScrollView>
+              )}
             </View>
           )}
         </View>
 
-        {/* TARJETA FLOTANTE INFERIOR NAVEGADORA O PROMPT DE SELECCIÓN */}
+        {/* Bottom card */}
         {activeStep && !isSearchDropdownOpen ? (
-          <View style={styles.bottomCardContainer}>
-            <View style={[styles.navCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
-              
-              <Image source={{ uri: activeStep.imageUrl }} style={styles.navCardImage} />
-
-              <View style={styles.navCardContent}>
-                
-                <View style={styles.cardHeaderRow}>
-                  <View style={[styles.cardStepBadge, { backgroundColor: colors.primary }]}>
-                    <Text style={[styles.cardStepBadgeText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                      Paso {activeStep.stepNumber} de {currentItinerary?.steps.length}
+          <View style={styles.bottomCard}>
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
+              <Image source={{ uri: activeStep.imageUrl }} style={[styles.cardImage, { borderRadius: borderRadius.md }]} />
+              <View style={styles.cardBody}>
+                <View style={styles.cardTop}>
+                  <View style={[styles.stepBadge, { backgroundColor: accentBlue }]}>
+                    <Text style={[styles.stepBadgeText, { fontFamily: typography.fonts.bold }]}>
+                      {activeStep.stepNumber}/{currentItinerary?.steps.length}
                     </Text>
                   </View>
-
-                  <Text style={[styles.cardTimeText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                    🕒 {activeStep.time}
+                  <Text style={[styles.cardTime, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+                    {activeStep.time}
                   </Text>
                 </View>
 
-                <Text style={[styles.cardHeadline, { color: colors.text, fontFamily: typography.fonts.bold }]} numberOfLines={1}>
-                  {activeStep.categoryEmoji} {activeStep.title}
+                <Text style={[styles.cardTitle, { color: colors.text, fontFamily: typography.fonts.bold }]} numberOfLines={1}>
+                  {activeStep.title}
                 </Text>
-
                 <Text style={[styles.cardPlace, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]} numberOfLines={1}>
-                  📍 {activeStep.placeName}
+                  {activeStep.placeName} · {activeStep.estimatedCost}
                 </Text>
 
-                {/* CONTROLES DE NAVEGACIÓN */}
-                <View style={styles.cardActionsRow}>
-                  
+                <View style={styles.cardActions}>
                   <TouchableOpacity
-                    style={[styles.detailActionBtn, { backgroundColor: colors.primary + '18', borderRadius: borderRadius.md }]}
+                    style={[styles.detailBtn, { borderColor: colors.border, borderRadius: borderRadius.md }]}
                     activeOpacity={0.8}
                     onPress={() => {
                       setStepRating(0);
@@ -510,13 +485,13 @@ export default function MapScreen() {
                       setShowDetailModal(true);
                     }}
                   >
-                    <Text style={[styles.detailActionBtnText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                      Ver Detalle ✨
+                    <Text style={[styles.detailBtnText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
+                      Detalle
                     </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[styles.navStartBtn, { backgroundColor: isNavigating ? '#34C759' : colors.primary, borderRadius: borderRadius.md }]}
+                    style={[styles.navBtn, { backgroundColor: isNavigating ? '#30D158' : accentBlue, borderRadius: borderRadius.md }]}
                     activeOpacity={0.88}
                     onPress={() => {
                       if (!isNavigating) {
@@ -526,30 +501,33 @@ export default function MapScreen() {
                       }
                     }}
                   >
-                    <Text style={[styles.navStartBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                      {isNavigating ? 'Siguiente Paso ➔' : '🚀 Iniciar Navegación'}
+                    <Svg width={14} height={14} viewBox="0 0 24 24" fill="#FFFFFF">
+                      <Path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                    </Svg>
+                    <Text style={[styles.navBtnText, { fontFamily: typography.fonts.bold }]}>
+                      {isNavigating ? 'Siguiente' : 'Navegar'}
                     </Text>
                   </TouchableOpacity>
-
                 </View>
-
               </View>
-
             </View>
           </View>
         ) : !currentItinerary && !isSearchDropdownOpen ? (
-          <View style={styles.bottomCardContainer}>
-            <TouchableOpacity 
-              style={[styles.emptyPromptCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}
+          <View style={styles.bottomCard}>
+            <TouchableOpacity
+              style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}
               activeOpacity={0.85}
               onPress={() => setIsSearchDropdownOpen(true)}
             >
-              <Text style={{ fontSize: 24, marginBottom: 4 }}>🗺️</Text>
-              <Text style={[styles.emptyPromptTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                Selecciona una Cita para Navegar
+              <Svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={1.5}>
+                <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+              </Svg>
+              <Text style={[styles.emptyCardTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                Selecciona un itinerario
               </Text>
-              <Text style={[styles.emptyPromptSub, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                Toca la barra superior para buscar y elegir un itinerario guardado.
+              <Text style={[styles.emptyCardSub, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                Toca la barra de búsqueda para elegir una cita guardada.
               </Text>
             </TouchableOpacity>
           </View>
@@ -557,119 +535,117 @@ export default function MapScreen() {
 
       </View>
 
-      {/* DETALLE COMPLETO MODAL FULL-SCREEN */}
+      {/* Detail Modal */}
       <Modal
         visible={showDetailModal}
         animationType="slide"
         presentationStyle="fullScreen"
         onRequestClose={() => setShowDetailModal(false)}
       >
-        <SafeAreaView style={[styles.modalArea, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
           {activeStep ? (
             <View style={{ flex: 1 }}>
-              
-              <View style={styles.modalCoverWrapper}>
-                <Image source={{ uri: activeStep.imageUrl }} style={styles.modalCover} />
-                
-                <TouchableOpacity 
-                  style={styles.modalCloseBtn}
+              <View style={styles.modalHero}>
+                <Image source={{ uri: activeStep.imageUrl }} style={styles.modalHeroImage} />
+                <TouchableOpacity
+                  style={styles.modalClose}
                   activeOpacity={0.8}
                   onPress={() => setShowDetailModal(false)}
                 >
-                  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.5}>
+                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.5}>
                     <Path d="M18 6L6 18M6 6l12 12" />
                   </Svg>
                 </TouchableOpacity>
+                <View style={[styles.modalHeroBadge, { backgroundColor: accentBlue }]}>
+                  <Text style={[styles.modalHeroBadgeText, { fontFamily: typography.fonts.bold }]}>
+                    Paso {activeStep.stepNumber}
+                  </Text>
+                </View>
               </View>
 
               <ScrollView contentContainerStyle={styles.modalBody} showsVerticalScrollIndicator={false}>
-                
-                <View style={styles.modalHeaderRow}>
-                  <View style={[styles.modalStepBadge, { backgroundColor: colors.primary }]}>
-                    <Text style={[styles.modalStepBadgeText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                      Paso {activeStep.stepNumber}
+                <Text style={[styles.modalTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                  {activeStep.title}
+                </Text>
+
+                <View style={styles.modalMeta}>
+                  <View style={[styles.modalMetaChip, { backgroundColor: colors.card }]}>
+                    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
+                      <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                      <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                    </Svg>
+                    <Text style={[styles.modalMetaText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
+                      {activeStep.placeName}
                     </Text>
                   </View>
-                  <Text style={[styles.modalTimeText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                    🕒 {activeStep.time}
+                  <View style={[styles.modalMetaChip, { backgroundColor: colors.card }]}>
+                    <Text style={[styles.modalMetaText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
+                      {activeStep.estimatedCost}
+                    </Text>
+                  </View>
+                  <View style={[styles.modalMetaChip, { backgroundColor: colors.card }]}>
+                    <Text style={[styles.modalMetaText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
+                      {activeStep.time}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.md }]}>
+                  <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                    Descripción
+                  </Text>
+                  <Text style={[styles.sectionText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                    {activeStep.description}
                   </Text>
                 </View>
 
-                <Text style={[styles.modalHeadline, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                  {activeStep.categoryEmoji} {activeStep.title}
-                </Text>
-
-                <Text style={[styles.modalSubHeadline, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
-                  📍 {activeStep.placeName} • {activeStep.estimatedCost}
-                </Text>
-
-                <Text style={[styles.modalParagraph, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                  {activeStep.description}
-                </Text>
-
-                <Text style={[styles.modalSectionHeading, { color: colors.text, fontFamily: typography.fonts.bold, marginTop: 20 }]}>
-                  Ubicación de la Cita
-                </Text>
-                <Text style={[styles.modalAddressText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                  {activeStep.address}
-                </Text>
-
-                <Text style={[styles.modalSectionHeading, { color: colors.text, fontFamily: typography.fonts.bold, marginTop: 12 }]}>
-                  Califica este Paso del Itinerario
-                </Text>
-                <View style={[styles.rateCardBox, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
-                  <View style={styles.starsRow}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <TouchableOpacity
-                        key={star}
-                        activeOpacity={0.7}
-                        onPress={() => setStepRating(star)}
-                        style={{ padding: 4 }}
-                      >
-                        <Text style={{ fontSize: 26, opacity: star <= stepRating ? 1 : 0.25 }}>
-                          ⭐
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-
-                  {stepRating > 0 && !stepRatingSubmitted ? (
-                    <TouchableOpacity
-                      style={[styles.rateActionBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
-                      onPress={() => setStepRatingSubmitted(true)}
-                    >
-                      <Text style={[styles.rateActionBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                        Enviar Calificación
-                      </Text>
-                    </TouchableOpacity>
-                  ) : stepRatingSubmitted ? (
-                    <Text style={[styles.rateSuccessText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
-                      ¡Gracias por calificar este paso! 🙌
+                <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.md }]}>
+                  <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                    Ubicación
+                  </Text>
+                  <View style={styles.addressRow}>
+                    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={accentBlue} strokeWidth={2}>
+                      <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                      <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                    </Svg>
+                    <Text style={[styles.addressText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                      {activeStep.address}
                     </Text>
-                  ) : null}
+                  </View>
                 </View>
 
-                <TouchableOpacity 
-                  style={[styles.modalPlanBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
+                <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.md }]}>
+                  <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                    Califica este paso
+                  </Text>
+                  <StarRating
+                    rating={stepRating}
+                    onRatingChange={setStepRating}
+                    onSubmit={() => setStepRatingSubmitted(true)}
+                    isSubmitted={stepRatingSubmitted}
+                  />
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.modalCta, { backgroundColor: accentBlue, borderRadius: borderRadius.md }]}
                   activeOpacity={0.9}
                   onPress={() => {
                     setShowDetailModal(false);
                     setIsNavigating(true);
                   }}
                 >
-                  <Text style={[styles.modalPlanBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                    Navegar este Paso en Vivo 🧭
+                  <Svg width={16} height={16} viewBox="0 0 24 24" fill="#FFFFFF">
+                    <Path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                  </Svg>
+                  <Text style={[styles.modalCtaText, { fontFamily: typography.fonts.bold }]}>
+                    Navegar a este paso
                   </Text>
                 </TouchableOpacity>
-
               </ScrollView>
             </View>
           ) : null}
         </SafeAreaView>
       </Modal>
-
-      {/* FLOATING PILL BOTTOM BAR REUTILIZABLE */}
-
 
     </SafeAreaView>
   );
@@ -687,350 +663,395 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     overflow: 'hidden',
   },
+
+  // Map elements
   cityBlock: {
     position: 'absolute',
-    borderRadius: 8,
   },
   parkZone: {
     position: 'absolute',
-    borderRadius: 16,
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
   },
-  parkZoneText: {
-    fontSize: 11,
+  parkLabel: {
+    fontSize: 10,
+    letterSpacing: 0.5,
   },
-  userGpsLocation: {
+  userGps: {
     position: 'absolute',
     width: 28,
     height: 28,
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
   },
-  userGpsDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+  gpsDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: '#007AFF',
-    borderWidth: 2,
+    borderWidth: 2.5,
     borderColor: '#FFFFFF',
     zIndex: 5,
   },
-  userGpsHalo: {
+  gpsHalo: {
     position: 'absolute',
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(0, 122, 255, 0.25)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 122, 255, 0.5)',
+    backgroundColor: 'rgba(0,122,255,0.18)',
   },
-  mapPinAnchor: {
+
+  // Pins
+  pinAnchor: {
     position: 'absolute',
     alignItems: 'center',
-    justify: 'center',
-    width: 60,
-    height: 60,
-    transform: [{ translateX: -30 }, { translateY: -30 }],
+    width: 120,
+    transform: [{ translateX: -60 }, { translateY: -20 }],
   },
-  timeChip: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 2,
-  },
-  timeChipText: {
-    fontSize: 9,
-  },
-  pinNode: {
+  pin: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    borderWidth: 2,
+    borderWidth: 2.5,
     alignItems: 'center',
-    justify: 'center',
-    zIndex: 10,
-    elevation: 6,
+    justifyContent: 'center',
+    elevation: 4,
   },
-  pinNodeNum: {
+  pinText: {
     fontSize: 13,
   },
-  pulseRing: {
-    position: 'absolute',
-    bottom: 4,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 1.5,
-    opacity: 0.6,
+  pinLabel: {
+    marginTop: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    maxWidth: 120,
   },
-  topHeaderOverlay: {
+  pinLabelText: {
+    fontSize: 10,
+    textAlign: 'center',
+  },
+
+  // Top overlay
+  topOverlay: {
     position: 'absolute',
-    top: 14,
+    top: 12,
     left: 16,
     right: 16,
     zIndex: 20,
   },
-  searchPillBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    height: 48,
-    borderWidth: 1,
-    gap: 10,
-    elevation: 6,
-  },
-  searchPillInput: {
-    flex: 1,
-    fontSize: 13,
-  },
-  dropdownPanel: {
-    marginTop: 8,
-    padding: 12,
-    borderWidth: 1,
-    elevation: 8,
-    gap: 8,
-  },
-  dropdownHeaderTitle: {
-    fontSize: 10,
-    letterSpacing: 1,
-    marginBottom: 4,
-  },
-  dropdownItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  dropdownItemTitle: {
-    fontSize: 14,
-  },
-  dropdownItemSub: {
-    fontSize: 11,
-  },
-  turnInstructionBanner: {
+
+  // Navigation banner
+  navBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 14,
     gap: 12,
     elevation: 8,
   },
-  turnIconBg: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#007AFF',
+  navIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
   },
-  turnMainText: {
+  navMainText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  navSubText: {
+    color: '#8E8E93',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  navStopBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  navStopText: {
+    color: '#FF3B30',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+
+  // Search bar
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 48,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    gap: 10,
+    elevation: 4,
+  },
+  searchBarText: {
+    flex: 1,
     fontSize: 14,
   },
-  turnSubText: {
-    fontSize: 11,
+
+  // Dropdown
+  dropdown: {
+    marginTop: 8,
+    padding: 14,
+    borderWidth: 1,
+    elevation: 8,
+    gap: 8,
   },
-  stopNavBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+  dropdownSearch: {
+    height: 40,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    fontSize: 13,
+    marginBottom: 4,
   },
-  stepsPillRow: {
+  dropdownLabel: {
+    fontSize: 10,
+    letterSpacing: 1.2,
+    marginBottom: 2,
+  },
+  dropdownItem: {
     flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderWidth: 1,
+    gap: 10,
+  },
+  dropdownItemIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dropdownItemTitle: {
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  dropdownItemSub: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  dropdownClose: {
+    borderTopWidth: 1,
+    paddingTop: 10,
+    alignItems: 'center',
+  },
+  dropdownCloseText: {
+    fontSize: 13,
+  },
+
+  // Step chips
+  stepsRow: {
     gap: 6,
     marginTop: 10,
+    paddingVertical: 2,
   },
   stepChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderWidth: 1,
   },
   stepChipText: {
     fontSize: 11,
   },
-  bottomCardContainer: {
+
+  // Bottom card
+  bottomCard: {
     position: 'absolute',
     bottom: 100,
     left: 16,
     right: 16,
     zIndex: 20,
   },
-  navCard: {
+  card: {
     flexDirection: 'row',
     padding: 12,
     borderWidth: 1,
-    elevation: 8,
+    elevation: 6,
   },
-  navCardImage: {
-    width: 86,
-    height: 86,
-    borderRadius: 10,
+  cardImage: {
+    width: 80,
+    height: 80,
     marginRight: 12,
   },
-  navCardContent: {
+  cardBody: {
     flex: 1,
-    justify: 'space-between',
+    justifyContent: 'space-between',
   },
-  cardHeaderRow: {
+  cardTop: {
     flexDirection: 'row',
-    justify: 'space-between',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 4,
   },
-  cardStepBadge: {
+  stepBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
   },
-  cardStepBadgeText: {
+  stepBadgeText: {
+    color: '#FFFFFF',
     fontSize: 10,
   },
-  cardTimeText: {
-    fontSize: 11,
+  cardTime: {
+    fontSize: 12,
   },
-  cardHeadline: {
-    fontSize: 15,
+  cardTitle: {
+    fontSize: 14,
+    lineHeight: 18,
+    marginBottom: 2,
   },
   cardPlace: {
     fontSize: 12,
+    marginBottom: 8,
   },
-  cardActionsRow: {
+  cardActions: {
     flexDirection: 'row',
     gap: 8,
-    marginTop: 4,
   },
-  detailActionBtn: {
+  detailBtn: {
     flex: 1,
     height: 34,
     alignItems: 'center',
-    justify: 'center',
-  },
-  detailActionBtnText: {
-    fontSize: 11,
-  },
-  navStartBtn: {
-    flex: 1,
-    height: 34,
-    alignItems: 'center',
-    justify: 'center',
-  },
-  navStartBtnText: {
-    fontSize: 11,
-  },
-  emptyPromptCard: {
-    padding: 16,
+    justifyContent: 'center',
     borderWidth: 1,
-    alignItems: 'center',
-    justify: 'center',
-    elevation: 6,
   },
-  emptyPromptTitle: {
-    fontSize: 15,
-    marginBottom: 2,
-    textAlign: 'center',
-  },
-  emptyPromptSub: {
+  detailBtnText: {
     fontSize: 12,
-    textAlign: 'center',
+  },
+  navBtn: {
+    flex: 1,
+    height: 34,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  navBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
   },
 
-  /* MODAL DETALLE */
-  modalArea: {
+  // Empty card
+  emptyCard: {
+    padding: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    gap: 6,
+    elevation: 4,
+  },
+  emptyCardTitle: {
+    fontSize: 15,
+    textAlign: 'center',
+  },
+  emptyCardSub: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+
+  // Modal
+  modalContainer: {
     flex: 1,
   },
-  modalCoverWrapper: {
+  modalHero: {
     position: 'relative',
     width: '100%',
-    height: 220,
+    height: 260,
   },
-  modalCover: {
+  modalHeroImage: {
     width: '100%',
     height: '100%',
   },
-  modalCloseBtn: {
+  modalClose: {
     position: 'absolute',
-    top: 36,
+    top: 16,
     right: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
     zIndex: 10,
+  },
+  modalHeroBadge: {
+    position: 'absolute',
+    bottom: 14,
+    left: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  modalHeroBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
   },
   modalBody: {
     padding: 20,
     paddingBottom: 40,
   },
-  modalHeaderRow: {
-    flexDirection: 'row',
-    justify: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  modalStepBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  modalStepBadgeText: {
-    fontSize: 11,
-  },
-  modalTimeText: {
-    fontSize: 13,
-  },
-  modalHeadline: {
-    fontSize: 22,
-    marginBottom: 4,
-  },
-  modalSubHeadline: {
-    fontSize: 13,
+  modalTitle: {
+    fontSize: 24,
+    lineHeight: 30,
     marginBottom: 12,
   },
-  modalParagraph: {
+  modalMeta: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 20,
+  },
+  modalMetaChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  modalMetaText: {
+    fontSize: 12,
+  },
+
+  // Section cards
+  sectionCard: {
+    padding: 16,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    marginBottom: 8,
+  },
+  sectionText: {
     fontSize: 14,
     lineHeight: 22,
   },
-  modalSectionHeading: {
-    fontSize: 16,
-    marginBottom: 6,
-  },
-  modalAddressText: {
-    fontSize: 13,
-    marginBottom: 10,
-  },
-  rateCardBox: {
-    padding: 14,
-    borderWidth: 1,
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  starsRow: {
+  addressRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
   },
-  rateActionBtn: {
-    height: 38,
-    width: '100%',
+  addressText: {
+    fontSize: 13,
+    flex: 1,
+  },
+
+  // CTA
+  modalCta: {
+    height: 52,
+    flexDirection: 'row',
     alignItems: 'center',
-    justify: 'center',
-    marginTop: 10,
-  },
-  rateActionBtnText: {
-    fontSize: 12,
-  },
-  rateSuccessText: {
-    fontSize: 12,
+    justifyContent: 'center',
+    gap: 8,
     marginTop: 8,
   },
-  modalPlanBtn: {
-    height: 50,
-    width: '100%',
-    alignItems: 'center',
-    justify: 'center',
-    marginTop: 12,
-  },
-  modalPlanBtnText: {
+  modalCtaText: {
+    color: '#FFFFFF',
     fontSize: 15,
   },
 });
