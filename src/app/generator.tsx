@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme } from '../hooks/useTheme';
+import BottomBar from '../components/ui/bottom-bar';
 
 type DateVibe = 'ROMANTIC' | 'CASUAL' | 'BOHEMIAN' | 'CULTURAL' | 'ADVENTURE';
 
@@ -398,50 +399,8 @@ export default function GeneratorScreen() {
         </SafeAreaView>
       </Modal>
 
-      {/* FLOATING PILL BOTTOM BAR */}
-      <View style={styles.floatingPillWrapper}>
-        <View style={styles.floatingPillBar}>
-          
-          <TouchableOpacity style={styles.pillTabItem} activeOpacity={0.8} onPress={() => router.push('/explore')}>
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#8E8E93" strokeWidth={2}>
-              <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-              <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-            </Svg>
-            <Text style={styles.pillTabText}>Explorar</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.pillTabItem} activeOpacity={0.8} onPress={() => router.push('/explore')}>
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#8E8E93" strokeWidth={2}>
-              <Path d="M1 6v13l7-4 8 4 7-4V2l-7 4-8-4-7 4zM8 2v13M16 6v13" />
-            </Svg>
-            <Text style={styles.pillTabText}>Mapa</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.pillTabItem, styles.activePillCapsule]} activeOpacity={0.8}>
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2}>
-              <Path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </Svg>
-            <Text style={[styles.pillTabText, styles.activePillText]}>AI Citas</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.pillTabItem} activeOpacity={0.8}>
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#8E8E93" strokeWidth={2}>
-              <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <Circle cx="9" cy="7" r="4" />
-            </Svg>
-            <Text style={styles.pillTabText}>Comunidad</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.pillTabItem} activeOpacity={0.8} onPress={() => router.push('/(onboarding)/setup-profile')}>
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#8E8E93" strokeWidth={2}>
-              <Circle cx="12" cy="7" r="4" />
-              <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            </Svg>
-            <Text style={styles.pillTabText}>Perfil</Text>
-          </TouchableOpacity>
-
-        </View>
-      </View>
+      {/* FLOATING PILL BOTTOM BAR REUTILIZABLE */}
+      <BottomBar activeTab="ai" />
 
     </SafeAreaView>
   );
