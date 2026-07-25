@@ -536,12 +536,17 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   cleanBubble: {
-    padding: 12,
-    maxWidth: '94%',
+    padding: 10,
+    maxWidth: '96%',
   },
-  userBubble: {},
+  userBubble: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
   aiBubble: {
-    borderWidth: 1,
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+    paddingHorizontal: 0,
   },
   msgText: {
     fontSize: 14,
