@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
   signInButtonText: {
     fontSize: 16,
     textAlign: 'center',
-    alignSelf: 'center',
+    width: '100%',
   },
   socialDivider: {
     flexDirection: 'row',

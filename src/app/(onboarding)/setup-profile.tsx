@@ -479,19 +479,26 @@ export default function SetupProfileScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* MODAL DE CALENDARIO NATIVO */}
+      {/* MODAL DE CALENDARIO NATIVO TOTALMENTE CENTRADO */}
       <Modal
         visible={showDateModal}
         transparent
         animationType="fade"
         onRequestClose={() => setShowDateModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.background, borderColor: colors.border, borderRadius: borderRadius.xl }]}>
-            
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowDateModal(false)}
+        >
+          <TouchableOpacity 
+            activeOpacity={1}
+            style={[styles.modalContent, { backgroundColor: colors.background, borderColor: colors.border, borderRadius: borderRadius.xl }]}
+            onPress={(e) => e.stopPropagation()}
+          >
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                Selecciona Fecha de Nacimiento
+                Fecha de Nacimiento
               </Text>
               <TouchableOpacity onPress={() => setShowDateModal(false)}>
                 <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
@@ -500,7 +507,7 @@ export default function SetupProfileScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Picker Nativo Web / Mobile dentro del Modal */}
+            {/* Picker Nativo Web / Mobile dentro del Modal Centrado */}
             <View style={styles.pickerWrapper}>
               {Platform.OS === 'web' ? (
                 <input 
@@ -525,7 +532,8 @@ export default function SetupProfileScreen() {
                     outline: 'none',
                     width: '100%',
                     boxSizing: 'border-box',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    textAlign: 'center'
                   }}
                 />
               ) : (
@@ -540,7 +548,7 @@ export default function SetupProfileScreen() {
               )}
             </View>
 
-            {/* Botón para Confirmar Fecha */}
+            {/* Botón para Confirmar Fecha Centrado */}
             <TouchableOpacity
               style={[styles.modalConfirmBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
               onPress={() => setShowDateModal(false)}
@@ -550,8 +558,8 @@ export default function SetupProfileScreen() {
               </Text>
             </TouchableOpacity>
 
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
 
     </SafeAreaView>
@@ -662,6 +670,7 @@ const styles = StyleSheet.create({
   },
   genderChip: {
     height: 48,
+    width: '100%',
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
@@ -671,7 +680,7 @@ const styles = StyleSheet.create({
   genderChipText: {
     fontSize: 14,
     textAlign: 'center',
-    alignSelf: 'center',
+    width: '100%',
   },
   categoriesGrid: {
     flexDirection: 'row',
@@ -769,20 +778,23 @@ const styles = StyleSheet.create({
   nextButtonText: {
     fontSize: 16,
     textAlign: 'center',
-    alignSelf: 'center',
+    width: '100%',
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
     alignItems: 'center',
-    justify: 'center',
     padding: 24,
+    width: '100%',
+    height: '100%',
   },
   modalContent: {
     width: '100%',
     maxWidth: 380,
     padding: 24,
     borderWidth: 1,
+    alignSelf: 'center',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -795,6 +807,7 @@ const styles = StyleSheet.create({
   },
   pickerWrapper: {
     marginBottom: 24,
+    width: '100%',
     alignItems: 'center',
     justify: 'center',
   },
@@ -808,6 +821,6 @@ const styles = StyleSheet.create({
   modalConfirmText: {
     fontSize: 14,
     textAlign: 'center',
-    alignSelf: 'center',
+    width: '100%',
   },
 });

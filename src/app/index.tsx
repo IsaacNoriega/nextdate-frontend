@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: 16,
     textAlign: 'center',
-    alignSelf: 'center',
+    width: '100%',
   },
   secondaryButton: {
     height: 52,
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     fontSize: 16,
     textAlign: 'center',
-    alignSelf: 'center',
+    width: '100%',
   },
   legalText: {
     fontSize: 11,
