@@ -77,11 +77,12 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingVertical: 32,
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    alignItems: 'center',
     width: '100%',
+    gap: 48,
   },
   centerSection: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -90,7 +91,7 @@ const styles = StyleSheet.create({
     height: 72,
     borderRadius: 20,
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
     marginBottom: 24,
   },
   title: {
@@ -115,7 +116,7 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
   },
   primaryButtonText: {
     fontSize: 16,
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
   },
   secondaryButtonText: {

@@ -27,7 +27,12 @@ export default function RootLayout() {
         barStyle={isDark ? 'light-content' : 'dark-content'} 
         backgroundColor={colors.background} 
       />
-      <Stack screenOptions={{ headerShown: false, animation: 'fade_from_bottom' }} />
+      <Stack 
+        screenOptions={{ 
+          headerShown: false, 
+          animation: 'slide_from_right',
+        }} 
+      />
     </ThemeProvider>
   );
 }
