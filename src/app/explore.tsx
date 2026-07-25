@@ -335,80 +335,69 @@ export default function ExploreScreen() {
 
       </View>
 
-      {/* FLOATING PILL BOTTOM NAVIGATION BAR (AL ESTILO WHATSAPP/META AI MOSTRADO) */}
+      {/* FLOATING PILL BOTTOM BAR — CON OPCIONES PROPIAS DE NEXTDATE */}
       <View style={styles.floatingPillWrapper}>
         <View style={styles.floatingPillBar}>
           
-          {/* TAB 1: Explorar / Novedades */}
+          {/* TAB 1: Explorar */}
           <TouchableOpacity 
             style={[styles.pillTabItem, activeTab === 'explore' && styles.activePillCapsule]} 
             activeOpacity={0.8}
             onPress={() => setActiveTab('explore')}
           >
-            <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2}>
-              <Path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2}>
+              <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+              <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
             </Svg>
             <Text style={[styles.pillTabText, activeTab === 'explore' && styles.activePillText]}>
-              Novedades
+              Explorar
             </Text>
           </TouchableOpacity>
 
-          {/* TAB 2: Mapa / Llamadas con Badge Verde */}
+          {/* TAB 2: Mapa */}
           <TouchableOpacity 
             style={[styles.pillTabItem, activeTab === 'map' && styles.activePillCapsule]} 
             activeOpacity={0.8}
             onPress={() => setActiveTab('map')}
           >
-            <View style={{ position: 'relative' }}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2}>
-                <Path d="M1 6v13l7-4 8 4 7-4V2l-7 4-8-4-7 4zM8 2v13M16 6v13" />
-              </Svg>
-              {/* Badge Verde */}
-              <View style={styles.greenBadge}>
-                <Text style={styles.badgeText}>3</Text>
-              </View>
-            </View>
+            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2}>
+              <Path d="M1 6v13l7-4 8 4 7-4V2l-7 4-8-4-7 4zM8 2v13M16 6v13" />
+            </Svg>
             <Text style={[styles.pillTabText, activeTab === 'map' && styles.activePillText]}>
               Mapa
             </Text>
           </TouchableOpacity>
 
-          {/* TAB 3: AI Citas / Comunidades */}
+          {/* TAB 3: NextDate AI */}
           <TouchableOpacity 
             style={[styles.pillTabItem, activeTab === 'ai' && styles.activePillCapsule]} 
             activeOpacity={0.8}
             onPress={() => setActiveTab('ai')}
           >
-            <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2}>
-              <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <Circle cx="9" cy="7" r="4" />
-              <Path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2}>
+              <Path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
             </Svg>
             <Text style={[styles.pillTabText, activeTab === 'ai' && styles.activePillText]}>
               AI Citas
             </Text>
           </TouchableOpacity>
 
-          {/* TAB 4: Comunidad / Chats con Badge Verde 66 */}
+          {/* TAB 4: Comunidad */}
           <TouchableOpacity 
             style={[styles.pillTabItem, activeTab === 'community' && styles.activePillCapsule]} 
             activeOpacity={0.8}
             onPress={() => setActiveTab('community')}
           >
-            <View style={{ position: 'relative' }}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2}>
-                <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </Svg>
-              <View style={styles.greenBadge}>
-                <Text style={styles.badgeText}>66</Text>
-              </View>
-            </View>
+            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2}>
+              <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <Circle cx="9" cy="7" r="4" />
+            </Svg>
             <Text style={[styles.pillTabText, activeTab === 'community' && styles.activePillText]}>
-              Chats
+              Comunidad
             </Text>
           </TouchableOpacity>
 
-          {/* TAB 5: Tú / Perfil con Avatar Redondo */}
+          {/* TAB 5: Perfil */}
           <TouchableOpacity 
             style={[styles.pillTabItem, activeTab === 'profile' && styles.activePillCapsule]} 
             activeOpacity={0.8}
@@ -417,11 +406,12 @@ export default function ExploreScreen() {
               router.push('/(onboarding)/setup-profile');
             }}
           >
-            <View style={styles.avatarBorder}>
-              <Text style={{ fontSize: 16 }}>👤</Text>
-            </View>
+            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2}>
+              <Circle cx="12" cy="7" r="4" />
+              <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            </Svg>
             <Text style={[styles.pillTabText, activeTab === 'profile' && styles.activePillText]}>
-              Tú
+              Perfil
             </Text>
           </TouchableOpacity>
 
@@ -693,7 +683,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
-  /* ESTILOS FLOTANTES DE LA PILL BOTTOM BAR ESTILO WHATSAPP/META AI */
+  /* ESTILOS FLOTANTES DE LA PILL BOTTOM BAR NATIVOS DE NEXTDATE */
   floatingPillWrapper: {
     position: 'absolute',
     bottom: 20,
@@ -738,31 +728,6 @@ const styles = StyleSheet.create({
   activePillText: {
     color: '#FFFFFF',
     fontWeight: 'bold',
-  },
-  greenBadge: {
-    position: 'absolute',
-    top: -6,
-    right: -10,
-    backgroundColor: '#25D366',
-    borderRadius: 10,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    minWidth: 18,
-    alignItems: 'center',
-    justify: 'center',
-  },
-  badgeText: {
-    color: '#000000',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  avatarBorder: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#3A3A3C',
-    alignItems: 'center',
-    justify: 'center',
   },
 
   fullScreenContainer: {
