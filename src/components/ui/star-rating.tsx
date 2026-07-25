@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     height: 38,
     width: '100%',
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
     marginTop: 10,
   },
   rateActionBtnText: {
