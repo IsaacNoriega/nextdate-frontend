@@ -31,54 +31,116 @@ interface RouteStep {
   leftPct: number;
 }
 
-const MOCK_NAV_ROUTE: RouteStep[] = [
+interface SavedItineraryOption {
+  id: string;
+  title: string;
+  tagline: string;
+  totalDistance: string;
+  totalTime: string;
+  matchScore: number;
+  steps: RouteStep[];
+}
+
+const AVAILABLE_ITINERARIES: SavedItineraryOption[] = [
   {
-    stepNumber: 1,
-    time: '18:30 PM',
-    title: 'Cócteles de Autor al Atardecer',
-    placeName: 'Terraza Luna Gastro Bar',
-    categoryEmoji: '🍸',
-    address: 'Av. Chapultepec Norte 340, Americana',
-    description: 'Coctelería artesanal y bocadillos con vista panorámica del atardecer.',
-    imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
-    estimatedCost: '$250 MXN',
-    turnInstruction: 'En 150m gira a la derecha en Av. Chapultepec Norte.',
-    distanceRemaining: '350m',
-    eta: '2 min',
-    topPct: 28,
-    leftPct: 32
+    id: 'itin-1',
+    title: 'Noche Mágica en la Americana',
+    tagline: 'Coctelería de autor, cena gourmet y caminata bajo las estrellas.',
+    totalDistance: '2.4 km',
+    totalTime: '12 min',
+    matchScore: 98,
+    steps: [
+      {
+        stepNumber: 1,
+        time: '18:30 PM',
+        title: 'Cócteles de Autor al Atardecer',
+        placeName: 'Terraza Luna Gastro Bar',
+        categoryEmoji: '🍸',
+        address: 'Av. Chapultepec Norte 340, Americana',
+        description: 'Coctelería artesanal y bocadillos con vista panorámica del atardecer.',
+        imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
+        estimatedCost: '$250 MXN',
+        turnInstruction: 'En 150m gira a la derecha en Av. Chapultepec Norte.',
+        distanceRemaining: '350m',
+        eta: '2 min',
+        topPct: 28,
+        leftPct: 32
+      },
+      {
+        stepNumber: 2,
+        time: '19:45 PM',
+        title: 'Cena a la Luz de las Velas',
+        placeName: 'Trattoria Barrio Americana',
+        categoryEmoji: '🍝',
+        address: 'Calle López Cotilla 1420, Americana',
+        description: 'Pasta artesanal italiana, vino tinto de la casa y ambiente romántico.',
+        imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80',
+        estimatedCost: '$480 MXN',
+        turnInstruction: 'Continúa recto durante 600m por Calle López Cotilla.',
+        distanceRemaining: '1.1 km',
+        eta: '5 min',
+        topPct: 50,
+        leftPct: 60
+      },
+      {
+        stepNumber: 3,
+        time: '21:15 PM',
+        title: 'Postre & Paseo Nocturno',
+        placeName: 'Jardín Botánico & Gelato',
+        categoryEmoji: '🍦',
+        address: 'Camino del Jardín s/n',
+        description: 'Gelato artesanal italiano y paseo tranquilo bajo las estrellas.',
+        imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80',
+        estimatedCost: '$120 MXN',
+        turnInstruction: 'Gira a la izquierda al final de la avenida.',
+        distanceRemaining: '950m',
+        eta: '4 min',
+        topPct: 72,
+        leftPct: 78
+      }
+    ]
   },
   {
-    stepNumber: 2,
-    time: '19:45 PM',
-    title: 'Cena a la Luz de las Velas',
-    placeName: 'Trattoria Barrio Americana',
-    categoryEmoji: '🍝',
-    address: 'Calle López Cotilla 1420, Americana',
-    description: 'Pasta artesanal italiana, vino tinto de la casa y ambiente romántico.',
-    imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80',
-    estimatedCost: '$480 MXN',
-    turnInstruction: 'Continúa recto durante 600m por Calle López Cotilla.',
-    distanceRemaining: '1.1 km',
-    eta: '5 min',
-    topPct: 50,
-    leftPct: 60
-  },
-  {
-    stepNumber: 3,
-    time: '21:15 PM',
-    title: 'Postre & Paseo Nocturno',
-    placeName: 'Jardín Botánico & Gelato',
-    categoryEmoji: '🍦',
-    address: 'Camino del Jardín s/n',
-    description: 'Gelato artesanal italiano y paseo tranquilo bajo las estrellas.',
-    imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80',
-    estimatedCost: '$120 MXN',
-    turnInstruction: 'Gira a la izquierda al final de la avenida.',
-    distanceRemaining: '950m',
-    eta: '4 min',
-    topPct: 72,
-    leftPct: 78
+    id: 'itin-2',
+    title: 'Tarde Romántica & Picnic',
+    tagline: 'Helado artesanal, caminata por el bosque y vista panorámica.',
+    totalDistance: '3.1 km',
+    totalTime: '15 min',
+    matchScore: 95,
+    steps: [
+      {
+        stepNumber: 1,
+        time: '16:00 PM',
+        title: 'Helado Artesanal & Café',
+        placeName: 'Gelateria Italiana',
+        categoryEmoji: '🍦',
+        address: 'Av. Vallarta 2100',
+        description: 'Café expreso italiano y helado artesanal de pistacho.',
+        imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80',
+        estimatedCost: '$140 MXN',
+        turnInstruction: 'En 300m mantente a la derecha por Av. Vallarta.',
+        distanceRemaining: '500m',
+        eta: '3 min',
+        topPct: 22,
+        leftPct: 68
+      },
+      {
+        stepNumber: 2,
+        time: '17:30 PM',
+        title: 'Picnic al Atardecer',
+        placeName: 'Mirador del Bosque',
+        categoryEmoji: '🌿',
+        address: 'Camino Mirador s/n',
+        description: 'Vista de toda la ciudad al atardecer sobre césped natural.',
+        imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
+        estimatedCost: '$200 MXN',
+        turnInstruction: 'Sigue el camino hacia el mirador principal.',
+        distanceRemaining: '1.4 km',
+        eta: '7 min',
+        topPct: 65,
+        leftPct: 25
+      }
+    ]
   }
 ];
 
@@ -86,27 +148,30 @@ export default function MapScreen() {
   const { colors, typography, borderRadius } = useTheme();
   const router = useRouter();
 
+  const [selectedItineraryId, setSelectedItineraryId] = useState<string>('itin-1');
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
   const [isNavigating, setIsNavigating] = useState<boolean>(false);
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
+  const [showItinerarySelectorModal, setShowItinerarySelectorModal] = useState<boolean>(false);
   const [stepRating, setStepRating] = useState<number>(0);
   const [stepRatingSubmitted, setStepRatingSubmitted] = useState<boolean>(false);
 
-  const activeStep = MOCK_NAV_ROUTE[activeStepIndex];
+  const currentItinerary = AVAILABLE_ITINERARIES.find((i) => i.id === selectedItineraryId) || AVAILABLE_ITINERARIES[0];
+  const activeStep = currentItinerary.steps[activeStepIndex] || currentItinerary.steps[0];
 
-  // Simulación de avance automático de navegación en tiempo real
+  // Simulación de navegación automática
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isNavigating) {
       interval = setInterval(() => {
-        setActiveStepIndex((prev) => (prev < MOCK_NAV_ROUTE.length - 1 ? prev + 1 : prev));
+        setActiveStepIndex((prev) => (prev < currentItinerary.steps.length - 1 ? prev + 1 : prev));
       }, 5000);
     }
     return () => clearInterval(interval);
-  }, [isNavigating]);
+  }, [isNavigating, currentItinerary]);
 
   const handleNextStep = () => {
-    if (activeStepIndex < MOCK_NAV_ROUTE.length - 1) {
+    if (activeStepIndex < currentItinerary.steps.length - 1) {
       setActiveStepIndex(activeStepIndex + 1);
     } else {
       setIsNavigating(false);
@@ -122,26 +187,31 @@ export default function MapScreen() {
         {/* Fondo del Mapa */}
         <View style={[styles.mapCanvas, { backgroundColor: colors.card }]}>
           
-          {/* Trazado de Ruta Estilo Google Maps con gradiente y animación */}
+          {/* Trazado de Ruta Estilo Google Maps */}
           <Svg style={StyleSheet.absoluteFill}>
-            <Line
-              x1="32%"
-              y1="28%"
-              x2="60%"
-              y2="50%"
-              stroke={colors.primary}
-              strokeWidth="5"
-              strokeDasharray={isNavigating ? '8, 4' : undefined}
-            />
-            <Line
-              x1="60%"
-              y1="50%"
-              x2="78%"
-              y2="72%"
-              stroke={colors.primary}
-              strokeWidth="5"
-              strokeDasharray={isNavigating ? '8, 4' : undefined}
-            />
+            {currentItinerary.steps.length > 1 ? (
+              <Line
+                x1={`${currentItinerary.steps[0].leftPct}%`}
+                y1={`${currentItinerary.steps[0].topPct}%`}
+                x2={`${currentItinerary.steps[1].leftPct}%`}
+                y2={`${currentItinerary.steps[1].topPct}%`}
+                stroke={colors.primary}
+                strokeWidth="5"
+                strokeDasharray={isNavigating ? '8, 4' : undefined}
+              />
+            ) : null}
+
+            {currentItinerary.steps.length > 2 ? (
+              <Line
+                x1={`${currentItinerary.steps[1].leftPct}%`}
+                y1={`${currentItinerary.steps[1].topPct}%`}
+                x2={`${currentItinerary.steps[2].leftPct}%`}
+                y2={`${currentItinerary.steps[2].topPct}%`}
+                stroke={colors.primary}
+                strokeWidth="5"
+                strokeDasharray={isNavigating ? '8, 4' : undefined}
+              />
+            ) : null}
           </Svg>
 
           {/* Bloques de la Ciudad */}
@@ -151,8 +221,8 @@ export default function MapScreen() {
             <Text style={{ fontSize: 16 }}>🌿</Text>
           </View>
 
-          {/* PINS INTERACTIVOS DE LA RUTA (1 -> 2 -> 3) */}
-          {MOCK_NAV_ROUTE.map((step, idx) => {
+          {/* PINS INTERACTIVOS DE LA RUTA */}
+          {currentItinerary.steps.map((step, idx) => {
             const isActive = idx === activeStepIndex;
             return (
               <TouchableOpacity
@@ -167,14 +237,12 @@ export default function MapScreen() {
                 activeOpacity={0.88}
                 onPress={() => setActiveStepIndex(idx)}
               >
-                {/* Badge de Horario */}
                 <View style={[styles.timeChip, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <Text style={[styles.timeChipText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
                     {step.time}
                   </Text>
                 </View>
 
-                {/* Marcador Pin */}
                 <View 
                   style={[
                     styles.pinNode,
@@ -190,7 +258,6 @@ export default function MapScreen() {
                   </Text>
                 </View>
 
-                {/* Anillo de Navegación Activa */}
                 {isActive && isNavigating ? (
                   <View style={[styles.pulseRing, { borderColor: colors.primary }]} />
                 ) : null}
@@ -200,10 +267,10 @@ export default function MapScreen() {
 
         </View>
 
-        {/* HEADER FLOTANTE DE INSTRUCCIÓN PASO A PASO (Navegación GPS In-App) */}
+        {/* HEADER FLOTANTE: SELECTOR DE ITINERARIOS Y NAVEGACIÓN */}
         <View style={styles.topHeaderOverlay}>
           {isNavigating ? (
-            /* Banner de Instrucción Giro a Giro en Vivo */
+            /* Banner de Instrucción Giro a Giro */
             <View style={[styles.turnInstructionBanner, { backgroundColor: '#1C1C1E', borderRadius: borderRadius.lg }]}>
               <View style={styles.turnIconBg}>
                 <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.5}>
@@ -228,23 +295,33 @@ export default function MapScreen() {
               </TouchableOpacity>
             </View>
           ) : (
-            /* Banner de Resumen de Ruta */
+            /* Banner de Selección de Itinerario */
             <View style={[styles.routeSummaryHeader, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
-              <View style={styles.summaryTitleRow}>
-                <Text style={{ fontSize: 18, marginRight: 8 }}>🧭</Text>
+              
+              <TouchableOpacity 
+                style={styles.selectItinBtnRow}
+                activeOpacity={0.8}
+                onPress={() => setShowItinerarySelectorModal(true)}
+              >
+                <Text style={{ fontSize: 18, marginRight: 8 }}>🗺️</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.summaryTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                    Itinerario Mágico Noche en la Americana
+                    {currentItinerary.title} ▾
                   </Text>
                   <Text style={[styles.summarySub, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                    3 Citas conectadas en mapa • 2.4 km total
+                    {currentItinerary.steps.length} Pasos • {currentItinerary.totalDistance} • {currentItinerary.totalTime}
                   </Text>
                 </View>
-              </View>
+                <View style={[styles.changeItinChip, { backgroundColor: colors.primary + '18' }]}>
+                  <Text style={[styles.changeItinChipText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+                    Cambiar Cita
+                  </Text>
+                </View>
+              </TouchableOpacity>
 
               {/* Selector Rápido de Pasos */}
               <View style={styles.stepsPillRow}>
-                {MOCK_NAV_ROUTE.map((st, i) => (
+                {currentItinerary.steps.map((st, i) => (
                   <TouchableOpacity
                     key={st.stepNumber}
                     style={[
@@ -283,7 +360,7 @@ export default function MapScreen() {
                 <View style={styles.cardHeaderRow}>
                   <View style={[styles.cardStepBadge, { backgroundColor: colors.primary }]}>
                     <Text style={[styles.cardStepBadgeText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                      Paso {activeStep.stepNumber} de 3
+                      Paso {activeStep.stepNumber} de {currentItinerary.steps.length}
                     </Text>
                   </View>
 
@@ -300,10 +377,9 @@ export default function MapScreen() {
                   📍 {activeStep.placeName}
                 </Text>
 
-                {/* BOTONES DE CONTROL DE NAVEGACIÓN DENTRO DE NEXTDATE */}
+                {/* CONTROLES DE NAVEGACIÓN */}
                 <View style={styles.cardActionsRow}>
                   
-                  {/* Botón Ver Detalle */}
                   <TouchableOpacity
                     style={[styles.detailActionBtn, { backgroundColor: colors.primary + '18', borderRadius: borderRadius.md }]}
                     activeOpacity={0.8}
@@ -318,7 +394,6 @@ export default function MapScreen() {
                     </Text>
                   </TouchableOpacity>
 
-                  {/* Botón Iniciar/Avanzar Navegación In-App */}
                   <TouchableOpacity
                     style={[styles.navStartBtn, { backgroundColor: isNavigating ? '#34C759' : colors.primary, borderRadius: borderRadius.md }]}
                     activeOpacity={0.88}
@@ -331,7 +406,7 @@ export default function MapScreen() {
                     }}
                   >
                     <Text style={[styles.navStartBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                      {isNavigating ? 'Siguiente Paso ➔' : '🧭 Iniciar Navegación'}
+                      {isNavigating ? 'Siguiente Paso ➔' : '🚀 Iniciar Navegación'}
                     </Text>
                   </TouchableOpacity>
 
@@ -345,7 +420,92 @@ export default function MapScreen() {
 
       </View>
 
-      {/* DETALLE COMPLETO MODAL FULL-SCREEN CON BOTÓN "X" A top: 36 */}
+      {/* MODAL PARA ELEGIR EL ITINERARIO DE NAVEGACIÓN */}
+      <Modal
+        visible={showItinerarySelectorModal}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setShowItinerarySelectorModal(false)}
+      >
+        <SafeAreaView style={[styles.modalArea, { backgroundColor: colors.background }]}>
+          <View style={{ flex: 1 }}>
+            
+            {/* Header con X a top: 36 */}
+            <View style={styles.modalSelectorTopBar}>
+              <Text style={[styles.modalSelectorTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                Elegir Itinerario para Navegar
+              </Text>
+              
+              <TouchableOpacity 
+                style={styles.modalCloseBtn}
+                activeOpacity={0.8}
+                onPress={() => setShowItinerarySelectorModal(false)}
+              >
+                <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.5}>
+                  <Path d="M18 6L6 18M6 6l12 12" />
+                </Svg>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.selectorBody} showsVerticalScrollIndicator={false}>
+              
+              {AVAILABLE_ITINERARIES.map((itin) => {
+                const isCurrent = itin.id === selectedItineraryId;
+                return (
+                  <TouchableOpacity
+                    key={itin.id}
+                    style={[
+                      styles.itinOptionCard,
+                      {
+                        backgroundColor: colors.card,
+                        borderColor: isCurrent ? colors.primary : colors.border,
+                        borderRadius: borderRadius.lg,
+                        borderWidth: isCurrent ? 2 : 1
+                      }
+                    ]}
+                    activeOpacity={0.88}
+                    onPress={() => {
+                      setSelectedItineraryId(itin.id);
+                      setActiveStepIndex(0);
+                      setIsNavigating(false);
+                      setShowItinerarySelectorModal(false);
+                    }}
+                  >
+                    <View style={styles.itinOptionHeader}>
+                      <Text style={[styles.itinOptionTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                        {itin.title}
+                      </Text>
+                      <Text style={[styles.itinOptionMatch, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+                        ✨ {itin.matchScore}%
+                      </Text>
+                    </View>
+
+                    <Text style={[styles.itinOptionSub, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                      {itin.tagline}
+                    </Text>
+
+                    <View style={styles.itinOptionFooter}>
+                      <Text style={[styles.itinOptionStats, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+                        📍 {itin.steps.length} Pasos • 📏 {itin.totalDistance} • 🕒 {itin.totalTime}
+                      </Text>
+
+                      <View style={[styles.selectBtnPill, { backgroundColor: isCurrent ? colors.primary : colors.primary + '18' }]}>
+                        <Text style={[styles.selectBtnPillText, { color: isCurrent ? colors.primaryContrast : colors.primary, fontFamily: typography.fonts.bold }]}>
+                          {isCurrent ? '✓ Seleccionado' : 'Elegir Este Plan'}
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+
+            </ScrollView>
+
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      {/* DETALLE COMPLETO MODAL FULL-SCREEN */}
       <Modal
         visible={showDetailModal}
         animationType="slide"
@@ -356,7 +516,6 @@ export default function MapScreen() {
           {activeStep ? (
             <View style={{ flex: 1 }}>
               
-              {/* Cover Image & Close X Button (top: 36) */}
               <View style={styles.modalCoverWrapper}>
                 <Image source={{ uri: activeStep.imageUrl }} style={styles.modalCover} />
                 
@@ -396,7 +555,6 @@ export default function MapScreen() {
                   {activeStep.description}
                 </Text>
 
-                {/* DIRECCIÓN NATIVA */}
                 <Text style={[styles.modalSectionHeading, { color: colors.text, fontFamily: typography.fonts.bold, marginTop: 20 }]}>
                   Ubicación de la Cita
                 </Text>
@@ -404,7 +562,6 @@ export default function MapScreen() {
                   {activeStep.address}
                 </Text>
 
-                {/* RATE DEL PLAN */}
                 <Text style={[styles.modalSectionHeading, { color: colors.text, fontFamily: typography.fonts.bold, marginTop: 12 }]}>
                   Califica este Paso del Itinerario
                 </Text>
@@ -440,7 +597,6 @@ export default function MapScreen() {
                   ) : null}
                 </View>
 
-                {/* BOTÓN INICIAR NAVEGACIÓN EN VIVO */}
                 <TouchableOpacity 
                   style={[styles.modalPlanBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
                   activeOpacity={0.9}
@@ -566,7 +722,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     elevation: 6,
   },
-  summaryTitleRow: {
+  selectItinBtnRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
@@ -575,6 +731,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   summarySub: {
+    fontSize: 11,
+  },
+  changeItinChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  changeItinChipText: {
     fontSize: 11,
   },
   stepsPillRow: {
@@ -658,10 +822,62 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
 
-  /* MODAL */
+  /* MODAL SELECTOR */
   modalArea: {
     flex: 1,
   },
+  modalSelectorTopBar: {
+    flexDirection: 'row',
+    justify: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 14,
+  },
+  modalSelectorTitle: {
+    fontSize: 18,
+  },
+  selectorBody: {
+    padding: 20,
+    gap: 14,
+  },
+  itinOptionCard: {
+    padding: 16,
+  },
+  itinOptionHeader: {
+    flexDirection: 'row',
+    justify: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  itinOptionTitle: {
+    fontSize: 17,
+  },
+  itinOptionMatch: {
+    fontSize: 13,
+  },
+  itinOptionSub: {
+    fontSize: 12,
+    marginBottom: 12,
+  },
+  itinOptionFooter: {
+    flexDirection: 'row',
+    justify: 'space-between',
+    alignItems: 'center',
+  },
+  itinOptionStats: {
+    fontSize: 12,
+  },
+  selectBtnPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  selectBtnPillText: {
+    fontSize: 12,
+  },
+
+  /* MODAL DETALLE */
   modalCoverWrapper: {
     position: 'relative',
     width: '100%',
