@@ -119,9 +119,19 @@ export default function GeneratorScreen() {
   const [isThinking, setIsThinking] = useState(false);
   const [selectedStep, setSelectedStep] = useState<ItineraryStep | null>(null);
   
+  // Guardado de planes de cita
+  const [savedItineraryIds, setSavedItineraryIds] = useState<Record<string, boolean>>({});
+
   // Rating de paso
   const [stepRating, setStepRating] = useState<number>(0);
   const [stepRatingSubmitted, setStepRatingSubmitted] = useState(false);
+
+  const toggleSaveItinerary = (id: string) => {
+    setSavedItineraryIds((prev) => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
 
   const handleSendMessage = () => {
     if (!inputPrompt.trim() || isThinking) return;
@@ -296,6 +306,23 @@ export default function GeneratorScreen() {
                             </View>
                           );
                         })}
+                      {/* Botón de Guardar Plan de Cita */}
+                      <View style={styles.savePlanActionRow}>
+                        <TouchableOpacity
+                          style={[
+                            styles.savePlanBtn,
+                            {
+                              backgroundColor: savedItineraryIds[msg.itinerary.id] ? '#34C759' : colors.primary,
+                              borderRadius: borderRadius.md
+                            }
+                          ]}
+                          activeOpacity={0.88}
+                          onPress={() => toggleSaveItinerary(msg.itinerary!.id)}
+                        >
+                          <Text style={[styles.savePlanBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                            {savedItineraryIds[msg.itinerary.id] ? '✅ ¡Plan Guardado en Mis Citas!' : '💾 Guardar este Plan de Cita'}
+                          </Text>
+                        </TouchableOpacity>
                       </View>
 
                     </View>
@@ -647,6 +674,19 @@ const styles = StyleSheet.create({
   },
   stepPlaceText: {
     fontSize: 11,
+  },
+  savePlanActionRow: {
+    marginTop: 12,
+    width: '100%',
+  },
+  savePlanBtn: {
+    height: 44,
+    width: '100%',
+    alignItems: 'center',
+    justify: 'center',
+  },
+  savePlanBtnText: {
+    fontSize: 13,
   },
   chatInputBar: {
     position: 'absolute',
