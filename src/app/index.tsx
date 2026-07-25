@@ -37,7 +37,7 @@ export default function WelcomeScreen() {
           </Text>
         </View>
 
-        {/* Acciones de Navegación Minimalistas */}
+        {/* Acciones de Navegación Minimalistas Centradas */}
         <View style={styles.actionsGroup}>
           <TouchableOpacity 
             style={[styles.primaryButton, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
@@ -112,20 +112,28 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     height: 52,
+    width: '100%',
+    flexDirection: 'row',
     alignItems: 'center',
     justify: 'center',
   },
   primaryButtonText: {
     fontSize: 16,
+    textAlign: 'center',
+    alignSelf: 'center',
   },
   secondaryButton: {
     height: 52,
+    width: '100%',
+    flexDirection: 'row',
     alignItems: 'center',
     justify: 'center',
     borderWidth: 1,
   },
   secondaryButtonText: {
     fontSize: 16,
+    textAlign: 'center',
+    alignSelf: 'center',
   },
   legalText: {
     fontSize: 11,

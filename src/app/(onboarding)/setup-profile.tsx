@@ -9,7 +9,8 @@ import {
   Platform, 
   ScrollView, 
   useWindowDimensions,
-  ActivityIndicator
+  ActivityIndicator,
+  Modal
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -62,7 +63,7 @@ export default function SetupProfileScreen() {
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [date, setDate] = useState<Date>(new Date(1998, 9, 20));
-  const [showNativePicker, setShowNativePicker] = useState(false);
+  const [showDateModal, setShowDateModal] = useState(false);
   const [gender, setGender] = useState<Gender>('OTHER');
   const [interests, setInterests] = useState<PlaceCategory[]>(['FOOD_DRINK', 'CULTURE']);
   const [preferredPriceRange, setPreferredPriceRange] = useState<PriceRange>('MODERATE');
@@ -76,9 +77,6 @@ export default function SetupProfileScreen() {
   const birthdateFormatted = date.toISOString().split('T')[0];
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS === 'android') {
-      setShowNativePicker(false);
-    }
     if (selectedDate) {
       setDate(selectedDate);
     }
@@ -130,7 +128,6 @@ export default function SetupProfileScreen() {
     setLoading(true);
     setErrorMessage(null);
     try {
-      // Simulación de la mutation GraphQL createProfile(input: CreateProfileInput!)
       await new Promise((resolve) => setTimeout(resolve, 1500));
       router.replace('/explore');
     } catch (err: any) {
@@ -216,66 +213,27 @@ export default function SetupProfileScreen() {
                   />
                 </View>
 
-                {/* Birthdate Input Nativo */}
+                {/* Selector que abre Modal de Calendario */}
                 <View style={styles.inputGroup}>
                   <Text style={[styles.label, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
                     Fecha de Nacimiento
                   </Text>
 
-                  {Platform.OS === 'web' ? (
-                    <input 
-                      type="date"
-                      value={birthdateFormatted}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val) {
-                          const [y, m, d] = val.split('-').map(Number);
-                          setDate(new Date(y, m - 1, d));
-                        }
-                      }}
-                      style={{
-                        height: '52px',
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: `${borderRadius.md}px`,
-                        backgroundColor: colors.card,
-                        color: colors.text,
-                        padding: '0 16px',
-                        fontSize: '15px',
-                        fontFamily: 'inherit',
-                        outline: 'none',
-                        width: '100%',
-                        boxSizing: 'border-box',
-                        cursor: 'pointer'
-                      }}
-                    />
-                  ) : (
-                    <TouchableOpacity 
-                      style={[styles.dateSelectorButton, { borderColor: colors.border, backgroundColor: colors.card, borderRadius: borderRadius.md }]}
-                      activeOpacity={0.8}
-                      onPress={() => setShowNativePicker(true)}
-                    >
-                      <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2} style={{ marginRight: 12 }}>
-                        <Path d="M19 4H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zM16 2v4M8 2v4M3 10h18" />
-                      </Svg>
-                      <Text style={[styles.dateSelectorText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
-                        {birthdateFormatted}
-                      </Text>
-                      <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
-                        <Path d="M6 9l6 6 6-6" />
-                      </Svg>
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Native DateTimePicker en iOS / Android */}
-                  {Platform.OS !== 'web' && (showNativePicker || Platform.OS === 'ios') && (
-                    <DateTimePicker
-                      value={date}
-                      mode="date"
-                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                      onChange={handleDateChange}
-                      maximumDate={new Date()}
-                    />
-                  )}
+                  <TouchableOpacity 
+                    style={[styles.dateSelectorButton, { borderColor: colors.border, backgroundColor: colors.card, borderRadius: borderRadius.md }]}
+                    activeOpacity={0.8}
+                    onPress={() => setShowDateModal(true)}
+                  >
+                    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2} style={{ marginRight: 12 }}>
+                      <Path d="M19 4H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zM16 2v4M8 2v4M3 10h18" />
+                    </Svg>
+                    <Text style={[styles.dateSelectorText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
+                      {birthdateFormatted}
+                    </Text>
+                    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
+                      <Path d="M6 9l6 6 6-6" />
+                    </Svg>
+                  </TouchableOpacity>
                 </View>
 
                 {/* Gender Selector con Centrado Perfecto */}
@@ -497,7 +455,7 @@ export default function SetupProfileScreen() {
               </View>
             )}
 
-            {/* Next / Submit Button */}
+            {/* Next / Submit Button Centrado */}
             <TouchableOpacity 
               style={[
                 styles.nextButton, 
@@ -520,6 +478,82 @@ export default function SetupProfileScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* MODAL DE CALENDARIO NATIVO */}
+      <Modal
+        visible={showDateModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDateModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.background, borderColor: colors.border, borderRadius: borderRadius.xl }]}>
+            
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                Selecciona Fecha de Nacimiento
+              </Text>
+              <TouchableOpacity onPress={() => setShowDateModal(false)}>
+                <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
+                  <Path d="M18 6L6 18M6 6l12 12" />
+                </Svg>
+              </TouchableOpacity>
+            </View>
+
+            {/* Picker Nativo Web / Mobile dentro del Modal */}
+            <View style={styles.pickerWrapper}>
+              {Platform.OS === 'web' ? (
+                <input 
+                  type="date"
+                  value={birthdateFormatted}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val) {
+                      const [y, m, d] = val.split('-').map(Number);
+                      setDate(new Date(y, m - 1, d));
+                    }
+                  }}
+                  style={{
+                    height: '52px',
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: `${borderRadius.md}px`,
+                    backgroundColor: colors.card,
+                    color: colors.text,
+                    padding: '0 16px',
+                    fontSize: '16px',
+                    fontFamily: 'inherit',
+                    outline: 'none',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    cursor: 'pointer'
+                  }}
+                />
+              ) : (
+                <DateTimePicker
+                  value={date}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={handleDateChange}
+                  maximumDate={new Date()}
+                  textColor={colors.text}
+                />
+              )}
+            </View>
+
+            {/* Botón para Confirmar Fecha */}
+            <TouchableOpacity
+              style={[styles.modalConfirmBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
+              onPress={() => setShowDateModal(false)}
+            >
+              <Text style={[styles.modalConfirmText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                Confirmar Fecha ({birthdateFormatted})
+              </Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -637,6 +671,7 @@ const styles = StyleSheet.create({
   genderChipText: {
     fontSize: 14,
     textAlign: 'center',
+    alignSelf: 'center',
   },
   categoriesGrid: {
     flexDirection: 'row',
@@ -724,6 +759,8 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     height: 54,
+    width: '100%',
+    flexDirection: 'row',
     alignItems: 'center',
     justify: 'center',
     marginTop: 8,
@@ -731,5 +768,46 @@ const styles = StyleSheet.create({
   },
   nextButtonText: {
     fontSize: 16,
+    textAlign: 'center',
+    alignSelf: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    alignItems: 'center',
+    justify: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 380,
+    padding: 24,
+    borderWidth: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 16,
+  },
+  pickerWrapper: {
+    marginBottom: 24,
+    alignItems: 'center',
+    justify: 'center',
+  },
+  modalConfirmBtn: {
+    height: 48,
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justify: 'center',
+  },
+  modalConfirmText: {
+    fontSize: 14,
+    textAlign: 'center',
+    alignSelf: 'center',
   },
 });

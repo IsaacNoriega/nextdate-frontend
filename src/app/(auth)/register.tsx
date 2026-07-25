@@ -411,6 +411,8 @@ const styles = StyleSheet.create({
   },
   registerButton: {
     height: 52,
+    width: '100%',
+    flexDirection: 'row',
     alignItems: 'center',
     justify: 'center',
     marginTop: 12,
@@ -418,6 +420,8 @@ const styles = StyleSheet.create({
   },
   registerButtonText: {
     fontSize: 16,
+    textAlign: 'center',
+    alignSelf: 'center',
   },
   footer: {
     flexDirection: 'row',
