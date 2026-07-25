@@ -6,10 +6,10 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
 
 ## 🔀 Estado de Branches Git
 
-- **Branch actual**: `feature/community-feed`
-- **Branches anteriores**: `feature/ai-itineraries`, `feature/explore-places`, `feature/onboarding-profile` (Pushed a origin)
+- **Branch actual**: `feature/user-profile`
+- **Branches anteriores**: `feature/community-feed`, `feature/ai-itineraries`, `feature/explore-places`, `feature/onboarding-profile` (Pushed a origin)
 - **Branch base**: `main`
-- **Propósito**: Implementación completa del Módulo 5: Feed de la Comunidad, Experiencias Compartidas y Publicaciones.
+- **Propósito**: Implementación completa del Módulo 6: Perfil del Usuario, Planes Guardados y Configuración.
 
 ---
 
@@ -63,10 +63,18 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
   - [x] Interacciones de Me Gusta (corazón rojo animado), comentarios y Guardar Plan en Mis Citas.
   - [x] Modal para publicar nueva experiencia con selector de estrellas y formulario.
 
+### 🟢 Módulo 6: Perfil del Usuario & Planes Guardados (`feature/user-profile`)
+- [x] Crear rama de trabajo `feature/user-profile`.
+- [x] Implementar pantalla de Perfil (`app/profile.tsx`):
+  - [x] Avatar de usuario con badge VIP, nombre, handle y vínculo de pareja.
+  - [x] Métricas de pareja (Planes guardados, citas completadas, rating promedio).
+  - [x] Pestaña de Planes Guardados con itinerarios y acceso directo a ejecución.
+  - [x] Pestaña de Preferencias y Configuración con botón de Cerrar Sesión.
+
 ---
 
 ## 📝 Registro de Cambios (Log de Ejecución)
 
 ### [2026-07-25]
-- **Comunidad NextDate (`src/app/community.tsx`)**:
-  - Implementada vista completa del Feed de la Comunidad y Modal para compartir reseñas de citas.
+- **Perfil de Usuario (`src/app/profile.tsx`)**:
+  - Implementada vista completa de Perfil del Usuario, Planes Guardados y Configuración.
