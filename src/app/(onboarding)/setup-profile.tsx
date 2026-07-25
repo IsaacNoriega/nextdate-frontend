@@ -5,15 +5,16 @@ import {
   Text, 
   TextInput, 
   TouchableOpacity, 
-  SafeAreaView, 
   KeyboardAvoidingView, 
   Platform, 
   ScrollView, 
   useWindowDimensions,
   ActivityIndicator
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../hooks/useTheme';
 
 // Enums del backend GraphQL
@@ -60,7 +61,8 @@ export default function SetupProfileScreen() {
   // Datos del formulario para createProfile(input: CreateProfileInput!)
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
-  const [birthdate, setBirthdate] = useState('1998-10-20');
+  const [date, setDate] = useState<Date>(new Date(1998, 9, 20));
+  const [showNativePicker, setShowNativePicker] = useState(false);
   const [gender, setGender] = useState<Gender>('OTHER');
   const [interests, setInterests] = useState<PlaceCategory[]>(['FOOD_DRINK', 'CULTURE']);
   const [preferredPriceRange, setPreferredPriceRange] = useState<PriceRange>('MODERATE');
@@ -70,6 +72,17 @@ export default function SetupProfileScreen() {
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const birthdateFormatted = date.toISOString().split('T')[0];
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowNativePicker(false);
+    }
+    if (selectedDate) {
+      setDate(selectedDate);
+    }
+  };
 
   const toggleInterest = (category: PlaceCategory) => {
     if (interests.includes(category)) {
@@ -87,10 +100,6 @@ export default function SetupProfileScreen() {
     if (currentStep === 1) {
       if (!username.trim()) {
         setErrorMessage('Por favor ingresa tu nombre de usuario.');
-        return;
-      }
-      if (!birthdate.trim()) {
-        setErrorMessage('Por favor selecciona tu fecha de nacimiento.');
         return;
       }
     }
@@ -139,15 +148,15 @@ export default function SetupProfileScreen() {
       >
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           
-          {/* Header con Back & Barra de Progreso */}
+          {/* Header con Flecha Limpia sin Círculo */}
           <View style={styles.header}>
             <TouchableOpacity 
-              style={[styles.backButton, { borderColor: colors.border, backgroundColor: colors.card }]}
+              style={styles.backButton}
               onPress={handlePrevStep}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M15 18l-6-6 6-6" />
+              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                <Path d="M19 12H5M12 19l-7-7 7-7" />
               </Svg>
             </TouchableOpacity>
 
@@ -212,11 +221,18 @@ export default function SetupProfileScreen() {
                   <Text style={[styles.label, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
                     Fecha de Nacimiento
                   </Text>
+
                   {Platform.OS === 'web' ? (
                     <input 
                       type="date"
-                      value={birthdate}
-                      onChange={(e) => setBirthdate(e.target.value)}
+                      value={birthdateFormatted}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val) {
+                          const [y, m, d] = val.split('-').map(Number);
+                          setDate(new Date(y, m - 1, d));
+                        }
+                      }}
                       style={{
                         height: '52px',
                         border: `1px solid ${colors.border}`,
@@ -233,18 +249,36 @@ export default function SetupProfileScreen() {
                       }}
                     />
                   ) : (
-                    <TextInput
-                      style={[styles.input, { color: colors.text, borderColor: colors.border, borderRadius: borderRadius.md, backgroundColor: colors.card }]}
-                      placeholder="YYYY-MM-DD"
-                      placeholderTextColor={colors.textSecondary}
-                      value={birthdate}
-                      onChangeText={setBirthdate}
-                      keyboardType="numbers-and-punctuation"
+                    <TouchableOpacity 
+                      style={[styles.dateSelectorButton, { borderColor: colors.border, backgroundColor: colors.card, borderRadius: borderRadius.md }]}
+                      activeOpacity={0.8}
+                      onPress={() => setShowNativePicker(true)}
+                    >
+                      <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2} style={{ marginRight: 12 }}>
+                        <Path d="M19 4H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zM16 2v4M8 2v4M3 10h18" />
+                      </Svg>
+                      <Text style={[styles.dateSelectorText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
+                        {birthdateFormatted}
+                      </Text>
+                      <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
+                        <Path d="M6 9l6 6 6-6" />
+                      </Svg>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Native DateTimePicker en iOS / Android */}
+                  {Platform.OS !== 'web' && (showNativePicker || Platform.OS === 'ios') && (
+                    <DateTimePicker
+                      value={date}
+                      mode="date"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={handleDateChange}
+                      maximumDate={new Date()}
                     />
                   )}
                 </View>
 
-                {/* Gender Selector con Alineación Centrada Perfecta */}
+                {/* Gender Selector con Centrado Perfecto */}
                 <View style={styles.inputGroup}>
                   <Text style={[styles.label, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
                     Género
@@ -448,7 +482,7 @@ export default function SetupProfileScreen() {
                     👤 Username: <Text style={{ color: colors.text }}>@{username}</Text>
                   </Text>
                   <Text style={[styles.summaryItem, { color: colors.textSecondary }]}>
-                    📅 Nacimiento: <Text style={{ color: colors.text }}>{birthdate}</Text>
+                    📅 Nacimiento: <Text style={{ color: colors.text }}>{birthdateFormatted}</Text>
                   </Text>
                   <Text style={[styles.summaryItem, { color: colors.textSecondary }]}>
                     ✨ Intereses: <Text style={{ color: colors.text }}>{interests.length} categorías seleccionadas</Text>
@@ -510,12 +544,10 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
+    paddingVertical: 8,
+    paddingRight: 12,
+    justifyContent: 'center',
     alignItems: 'center',
-    justify: 'center',
   },
   progressContainer: {
     flex: 1,
@@ -569,6 +601,18 @@ const styles = StyleSheet.create({
     height: 52,
     borderWidth: 1,
     paddingHorizontal: 16,
+    fontSize: 15,
+  },
+  dateSelectorButton: {
+    height: 52,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justify: 'space-between',
+  },
+  dateSelectorText: {
+    flex: 1,
     fontSize: 15,
   },
   textArea: {

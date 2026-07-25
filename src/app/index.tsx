@@ -4,9 +4,9 @@ import {
   View, 
   Text, 
   TouchableOpacity, 
-  SafeAreaView, 
   useWindowDimensions 
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../hooks/useTheme';
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
     height: 72,
     borderRadius: 20,
     alignItems: 'center',
-    justifyContent: 'center',
+    justify: 'center',
     marginBottom: 24,
   },
   title: {
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   primaryButton: {
     height: 52,
     alignItems: 'center',
-    justifyContent: 'center',
+    justify: 'center',
   },
   primaryButtonText: {
     fontSize: 16,
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   secondaryButton: {
     height: 52,
     alignItems: 'center',
-    justifyContent: 'center',
+    justify: 'center',
     borderWidth: 1,
   },
   secondaryButtonText: {
