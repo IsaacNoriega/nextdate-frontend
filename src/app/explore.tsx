@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme } from '../hooks/useTheme';
 
 type PlaceCategory = 'ALL' | 'FOOD_DRINK' | 'CULTURE' | 'NATURE' | 'ENTERTAINMENT' | 'SHOPPING' | 'SPORTS';
@@ -148,7 +148,7 @@ export default function ExploreScreen() {
   });
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       <View style={styles.mainWrapper}>
 
         {/* Top Header */}
@@ -167,32 +167,6 @@ export default function ExploreScreen() {
               </Text>
               <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
                 <Path d="M6 9l6 6 6-6" />
-              </Svg>
-            </TouchableOpacity>
-          </View>
-
-          {/* Toggle Modo Lista / Mapa */}
-          <View style={[styles.viewToggleWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <TouchableOpacity 
-              style={[
-                styles.toggleBtn, 
-                viewMode === 'list' && { backgroundColor: colors.primary }
-              ]}
-              onPress={() => setViewMode('list')}
-            >
-              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={viewMode === 'list' ? colors.primaryContrast : colors.textSecondary} strokeWidth={2}>
-                <Path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
-              </Svg>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[
-                styles.toggleBtn, 
-                viewMode === 'map' && { backgroundColor: colors.primary }
-              ]}
-              onPress={() => setViewMode('map')}
-            >
-              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={viewMode === 'map' ? colors.primaryContrast : colors.textSecondary} strokeWidth={2}>
-                <Path d="M1 6v13l7-4 8 4 7-4V2l-7 4-8-4-7 4zM8 2v13M16 6v13" />
               </Svg>
             </TouchableOpacity>
           </View>
@@ -360,6 +334,47 @@ export default function ExploreScreen() {
 
       </View>
 
+      {/* BOTTOM NAVIGATION BAR (BARRA NAVEGACIÓN INFERIOR) */}
+      <View style={[styles.bottomBarContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <TouchableOpacity style={styles.bottomTabItem} activeOpacity={0.8} onPress={() => setViewMode('list')}>
+          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={viewMode === 'list' ? colors.primary : colors.textSecondary} strokeWidth={2.2}>
+            <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+            <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+          </Svg>
+          <Text style={[styles.bottomTabText, { color: viewMode === 'list' ? colors.primary : colors.textSecondary, fontFamily: viewMode === 'list' ? typography.fonts.bold : typography.fonts.medium }]}>
+            Explorar
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.bottomTabItem} activeOpacity={0.8} onPress={() => setViewMode(viewMode === 'list' ? 'map' : 'list')}>
+          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={viewMode === 'map' ? colors.primary : colors.textSecondary} strokeWidth={2.2}>
+            <Path d="M1 6v13l7-4 8 4 7-4V2l-7 4-8-4-7 4zM8 2v13M16 6v13" />
+          </Svg>
+          <Text style={[styles.bottomTabText, { color: viewMode === 'map' ? colors.primary : colors.textSecondary, fontFamily: viewMode === 'map' ? typography.fonts.bold : typography.fonts.medium }]}>
+            Mapa
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.bottomTabItem} activeOpacity={0.8}>
+          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2.2}>
+            <Path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          </Svg>
+          <Text style={[styles.bottomTabText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+            AI Citas
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.bottomTabItem} activeOpacity={0.8} onPress={() => router.push('/(onboarding)/setup-profile')}>
+          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2.2}>
+            <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <Circle cx="12" cy="7" r="4" />
+          </Svg>
+          <Text style={[styles.bottomTabText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+            Perfil
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {/* PANTALLA COMPLETA NATIVA CON BOTÓN "X" Y MAPA DE UBICACIÓN */}
       <Modal
         visible={!!selectedPlace}
@@ -495,19 +510,6 @@ const styles = StyleSheet.create({
   locationText: {
     fontSize: 16,
   },
-  viewToggleWrapper: {
-    flexDirection: 'row',
-    padding: 3,
-    borderWidth: 1,
-    borderRadius: 20,
-  },
-  toggleBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justify: 'center',
-  },
   searchContainer: {
     marginBottom: 16,
   },
@@ -560,7 +562,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   listContent: {
-    paddingBottom: 30,
+    paddingBottom: 20,
     gap: 16,
   },
   placeCard: {
@@ -636,6 +638,22 @@ const styles = StyleSheet.create({
   },
   mapPlaceholderSub: {
     fontSize: 13,
+  },
+  bottomBarContainer: {
+    height: 60,
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    justify: 'space-around',
+    alignItems: 'center',
+  },
+  bottomTabItem: {
+    alignItems: 'center',
+    justify: 'center',
+    flex: 1,
+  },
+  bottomTabText: {
+    fontSize: 11,
+    marginTop: 3,
   },
   fullScreenContainer: {
     flex: 1,
