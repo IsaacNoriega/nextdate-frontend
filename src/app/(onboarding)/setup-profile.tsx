@@ -18,19 +18,18 @@ import Svg, { Path } from 'react-native-svg';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../hooks/useTheme';
 
-// Enums del backend GraphQL
 type Gender = 'MALE' | 'FEMALE' | 'OTHER';
 type PlaceCategory = 'FOOD_DRINK' | 'CULTURE' | 'NATURE' | 'ENTERTAINMENT' | 'SHOPPING' | 'SPORTS' | 'OTHER';
 type PriceRange = 'CHEAP' | 'MODERATE' | 'EXPENSIVE' | 'LUXURY';
 type DietaryPreference = 'NONE' | 'VEGETARIAN' | 'VEGAN' | 'GLUTEN_FREE' | 'DAIRY_FREE' | 'PESCATARIAN' | 'OTHER';
 
 const CATEGORIES: { id: PlaceCategory; label: string; icon: string }[] = [
-  { id: 'FOOD_DRINK', label: 'Gastronomía & Bares', icon: '🍷' },
+  { id: 'FOOD_DRINK', label: 'Gastronomía', icon: '🍷' },
   { id: 'CULTURE', label: 'Cultura & Arte', icon: '🎭' },
-  { id: 'NATURE', label: 'Naturaleza & Aire Libre', icon: '🌿' },
+  { id: 'NATURE', label: 'Naturaleza', icon: '🌿' },
   { id: 'ENTERTAINMENT', label: 'Entretenimiento', icon: '🎬' },
   { id: 'SHOPPING', label: 'Compras', icon: '🛍️' },
-  { id: 'SPORTS', label: 'Deportes & Aventura', icon: '⚽' },
+  { id: 'SPORTS', label: 'Deportes', icon: '⚽' },
   { id: 'OTHER', label: 'Otros', icon: '✨' },
 ];
 
@@ -52,24 +51,21 @@ const DIETARY_OPTIONS: { id: DietaryPreference; label: string }[] = [
 ];
 
 export default function SetupProfileScreen() {
-  const { colors, typography, borderRadius } = useTheme();
+  const { colors, typography, borderRadius, isDark } = useTheme();
   const router = useRouter();
   const { width } = useWindowDimensions();
 
-  // Estado del Stepper (Pasos 1 a 4)
   const [currentStep, setCurrentStep] = useState(1);
 
-  // Datos del formulario para createProfile(input: CreateProfileInput!)
+  // Form state
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
-  const [date, setDate] = useState<Date>(new Date(1998, 9, 20));
+  const [date, setDate] = useState<Date>(new Date(2000, 0, 1));
   const [showDateModal, setShowDateModal] = useState(false);
   const [gender, setGender] = useState<Gender>('OTHER');
   const [interests, setInterests] = useState<PlaceCategory[]>(['FOOD_DRINK', 'CULTURE']);
   const [preferredPriceRange, setPreferredPriceRange] = useState<PriceRange>('MODERATE');
   const [dietaryPreference, setDietaryPreference] = useState<DietaryPreference>('NONE');
-  const [latitude, setLatitude] = useState<number>(20.6736);
-  const [longitude, setLongitude] = useState<number>(-103.344);
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -77,9 +73,7 @@ export default function SetupProfileScreen() {
   const birthdateFormatted = date.toISOString().split('T')[0];
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
-    if (selectedDate) {
-      setDate(selectedDate);
-    }
+    if (selectedDate) setDate(selectedDate);
   };
 
   const toggleInterest = (category: PlaceCategory) => {
@@ -97,7 +91,7 @@ export default function SetupProfileScreen() {
 
     if (currentStep === 1) {
       if (!username.trim()) {
-        setErrorMessage('Por favor ingresa tu nombre de usuario.');
+        setErrorMessage('Por favor ingresa un nombre de usuario.');
         return;
       }
     }
@@ -119,8 +113,7 @@ export default function SetupProfileScreen() {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     } else {
-      if (router.canGoBack()) router.back();
-      else router.replace('/');
+      router.replace('/');
     }
   };
 
@@ -128,84 +121,89 @@ export default function SetupProfileScreen() {
     setLoading(true);
     setErrorMessage(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 1200));
       router.replace('/(tabs)/explore');
     } catch (err: any) {
-      setErrorMessage('Ocurrió un error al guardar el perfil. Intenta nuevamente.');
+      setErrorMessage('Ocurrió un error al guardar el perfil.');
     } finally {
       setLoading(false);
     }
   };
 
+  const stepTitles = [
+    { title: 'Crea tu perfil', sub: 'Cuéntanos un poco sobre ti para personalizar NextDate' },
+    { title: 'Tus intereses', sub: '¿Qué tipo de citas y experiencias prefieren?' },
+    { title: 'Preferencias & Presupuesto', sub: 'Ajusta tu rango de precios y requerimientos dietéticos' },
+    { title: '¡Todo listo!', sub: 'Confirma tus datos para comenzar a explorar' },
+  ];
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
+        style={{ flex: 1 }}
       >
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           
-          {/* Header con Flecha Limpia sin Círculo */}
+          {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity 
               style={styles.backButton}
               onPress={handlePrevStep}
               activeOpacity={0.7}
             >
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+              <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth={2.2}>
                 <Path d="M19 12H5M12 19l-7-7 7-7" />
               </Svg>
             </TouchableOpacity>
 
-            <View style={styles.progressContainer}>
-              <View style={styles.progressBars}>
-                {[1, 2, 3, 4].map((step) => (
-                  <View 
-                    key={step} 
-                    style={[
-                      styles.progressBar, 
-                      { backgroundColor: step <= currentStep ? colors.primary : colors.border }
-                    ]} 
-                  />
-                ))}
-              </View>
-              <Text style={[styles.stepText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
-                Paso {currentStep} de 4
-              </Text>
+            <View style={styles.progressBars}>
+              {[1, 2, 3, 4].map((step) => (
+                <View 
+                  key={step} 
+                  style={[
+                    styles.progressBar, 
+                    { backgroundColor: step <= currentStep ? colors.primary : colors.border }
+                  ]} 
+                />
+              ))}
             </View>
+
+            <Text style={[styles.stepCounterText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+              {currentStep}/4
+            </Text>
           </View>
 
           <View style={[styles.formWrapper, { maxWidth: width > 430 ? 440 : '100%', alignSelf: 'center' }]}>
             
-            {/* Banner de Errores */}
+            {/* Title & Subtitle */}
+            <View style={styles.titleBlock}>
+              <Text style={[styles.stepTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                {stepTitles[currentStep - 1].title}
+              </Text>
+              <Text style={[styles.stepSubtitle, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                {stepTitles[currentStep - 1].sub}
+              </Text>
+            </View>
+
+            {/* Error Banner */}
             {errorMessage ? (
               <View style={[styles.errorBanner, { backgroundColor: colors.notification + '15', borderColor: colors.notification }]}>
-                <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.notification} strokeWidth={2} style={{ marginRight: 8 }}>
-                  <Path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </Svg>
                 <Text style={[styles.errorBannerText, { color: colors.notification, fontFamily: typography.fonts.medium }]}>
                   {errorMessage}
                 </Text>
               </View>
             ) : null}
 
-            {/* PASO 1: Información Básica */}
+            {/* STEP 1: Basic Info */}
             {currentStep === 1 && (
               <View>
-                <Text style={[styles.stepTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                  Información Personal
-                </Text>
-                <Text style={[styles.stepSubtitle, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                  Cuéntanos un poco sobre ti para personalizar tu experiencia.
-                </Text>
-
-                {/* Username Input */}
                 <View style={styles.inputGroup}>
                   <Text style={[styles.label, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
                     Nombre de Usuario
                   </Text>
                   <TextInput
-                    style={[styles.input, { color: colors.text, borderColor: colors.border, borderRadius: borderRadius.md, backgroundColor: colors.card }]}
+                    style={[styles.input, { color: colors.text, borderColor: colors.border, borderRadius: borderRadius.md, backgroundColor: colors.card, fontFamily: typography.fonts.regular }]}
                     placeholder="Ej. alex_morgan"
                     placeholderTextColor={colors.textSecondary}
                     value={username}
@@ -213,30 +211,27 @@ export default function SetupProfileScreen() {
                   />
                 </View>
 
-                {/* Selector que abre Modal de Calendario */}
                 <View style={styles.inputGroup}>
                   <Text style={[styles.label, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
                     Fecha de Nacimiento
                   </Text>
-
                   <TouchableOpacity 
                     style={[styles.dateSelectorButton, { borderColor: colors.border, backgroundColor: colors.card, borderRadius: borderRadius.md }]}
                     activeOpacity={0.8}
                     onPress={() => setShowDateModal(true)}
                   >
-                    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2} style={{ marginRight: 12 }}>
+                    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2} style={{ marginRight: 10 }}>
                       <Path d="M19 4H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zM16 2v4M8 2v4M3 10h18" />
                     </Svg>
                     <Text style={[styles.dateSelectorText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
                       {birthdateFormatted}
                     </Text>
-                    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
+                    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
                       <Path d="M6 9l6 6 6-6" />
                     </Svg>
                   </TouchableOpacity>
                 </View>
 
-                {/* Gender Selector con Centrado Perfecto */}
                 <View style={styles.inputGroup}>
                   <Text style={[styles.label, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
                     Género
@@ -271,14 +266,13 @@ export default function SetupProfileScreen() {
                   </View>
                 </View>
 
-                {/* Bio Input */}
                 <View style={styles.inputGroup}>
                   <Text style={[styles.label, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
                     Bio / Breve Descripción
                   </Text>
                   <TextInput
-                    style={[styles.textArea, { color: colors.text, borderColor: colors.border, borderRadius: borderRadius.md, backgroundColor: colors.card }]}
-                    placeholder="Apasionado del café, los libros y las caminatas al atardecer..."
+                    style={[styles.textArea, { color: colors.text, borderColor: colors.border, borderRadius: borderRadius.md, backgroundColor: colors.card, fontFamily: typography.fonts.regular }]}
+                    placeholder="Cuéntanos un poco sobre ti..."
                     placeholderTextColor={colors.textSecondary}
                     value={bio}
                     onChangeText={setBio}
@@ -289,58 +283,41 @@ export default function SetupProfileScreen() {
               </View>
             )}
 
-            {/* PASO 2: Intereses */}
+            {/* STEP 2: Interests */}
             {currentStep === 2 && (
-              <View>
-                <Text style={[styles.stepTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                  Tus Intereses
-                </Text>
-                <Text style={[styles.stepSubtitle, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                  Selecciona los tipos de lugares y actividades que más disfrutas.
-                </Text>
-
-                <View style={styles.categoriesGrid}>
-                  {CATEGORIES.map((cat) => {
-                    const isSelected = interests.includes(cat.id);
-                    return (
-                      <TouchableOpacity
-                        key={cat.id}
-                        style={[
-                          styles.categoryCard,
-                          {
-                            borderColor: isSelected ? colors.primary : colors.border,
-                            backgroundColor: isSelected ? colors.primary + '10' : colors.card,
-                            borderRadius: borderRadius.lg
-                          }
-                        ]}
-                        activeOpacity={0.8}
-                        onPress={() => toggleInterest(cat.id)}
-                      >
-                        <Text style={styles.categoryEmoji}>{cat.icon}</Text>
-                        <Text style={[
-                          styles.categoryTitle,
-                          { color: colors.text, fontFamily: isSelected ? typography.fonts.bold : typography.fonts.medium }
-                        ]}>
-                          {cat.label}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
+              <View style={styles.categoriesGrid}>
+                {CATEGORIES.map((cat) => {
+                  const isSelected = interests.includes(cat.id);
+                  return (
+                    <TouchableOpacity
+                      key={cat.id}
+                      style={[
+                        styles.categoryCard,
+                        {
+                          borderColor: isSelected ? colors.primary : colors.border,
+                          backgroundColor: isSelected ? (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)') : colors.card,
+                          borderRadius: borderRadius.md
+                        }
+                      ]}
+                      activeOpacity={0.8}
+                      onPress={() => toggleInterest(cat.id)}
+                    >
+                      <Text style={styles.categoryEmoji}>{cat.icon}</Text>
+                      <Text style={[
+                        styles.categoryTitle,
+                        { color: colors.text, fontFamily: isSelected ? typography.fonts.bold : typography.fonts.medium }
+                      ]}>
+                        {cat.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             )}
 
-            {/* PASO 3: Presupuesto & Dieta */}
+            {/* STEP 3: Preferences & Budget */}
             {currentStep === 3 && (
               <View>
-                <Text style={[styles.stepTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                  Preferencias de Citas
-                </Text>
-                <Text style={[styles.stepSubtitle, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                  Personaliza tu rango de precios predeterminado y requerimientos dietéticos.
-                </Text>
-
-                {/* Price Range */}
                 <Text style={[styles.sectionHeading, { color: colors.text, fontFamily: typography.fonts.bold }]}>
                   Rango de Presupuesto
                 </Text>
@@ -354,7 +331,7 @@ export default function SetupProfileScreen() {
                           styles.priceOption,
                           {
                             borderColor: isSelected ? colors.primary : colors.border,
-                            backgroundColor: isSelected ? colors.primary + '08' : colors.card,
+                            backgroundColor: isSelected ? (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)') : colors.card,
                             borderRadius: borderRadius.md
                           }
                         ]}
@@ -372,9 +349,8 @@ export default function SetupProfileScreen() {
                   })}
                 </View>
 
-                {/* Dietary Preference */}
                 <Text style={[styles.sectionHeading, { color: colors.text, fontFamily: typography.fonts.bold, marginTop: 24 }]}>
-                  Preferencia Alimenticia
+                  Preferencias Gastronómicas
                 </Text>
                 <View style={styles.dietaryWrap}>
                   {DIETARY_OPTIONS.map((d) => {
@@ -406,56 +382,32 @@ export default function SetupProfileScreen() {
               </View>
             )}
 
-            {/* PASO 4: Ubicación GPS y Confirmación */}
+            {/* STEP 4: Summary */}
             {currentStep === 4 && (
-              <View>
-                <Text style={[styles.stepTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                  Ubicación & Confirmación
+              <View style={[styles.summaryCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.md }]}>
+                <Text style={[styles.summaryHeader, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                  Resumen de tu perfil
                 </Text>
-                <Text style={[styles.stepSubtitle, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                  Usamos tu ubicación para mostrarte los mejores lugares y rutas de cita cercanos.
-                </Text>
-
-                <View style={[styles.locationCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
-                  <View style={[styles.locationIconBox, { backgroundColor: colors.primary + '12' }]}>
-                    <Svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2}>
-                      <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                      <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-                    </Svg>
-                  </View>
-                  <Text style={[styles.locationTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                    Ubicación Detectada
-                  </Text>
-                  <Text style={[styles.locationCoords, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                    Latitud: {latitude} | Longitud: {longitude}
-                  </Text>
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>Username:</Text>
+                  <Text style={[styles.summaryValue, { color: colors.text, fontFamily: typography.fonts.bold }]}>@{username || 'usuario'}</Text>
                 </View>
-
-                {/* Resumen del Perfil */}
-                <View style={[styles.summaryCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
-                  <Text style={[styles.summaryHeader, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                    Resumen de tu Perfil
-                  </Text>
-                  <Text style={[styles.summaryItem, { color: colors.textSecondary }]}>
-                    👤 Username: <Text style={{ color: colors.text }}>@{username}</Text>
-                  </Text>
-                  <Text style={[styles.summaryItem, { color: colors.textSecondary }]}>
-                    📅 Nacimiento: <Text style={{ color: colors.text }}>{birthdateFormatted}</Text>
-                  </Text>
-                  <Text style={[styles.summaryItem, { color: colors.textSecondary }]}>
-                    ✨ Intereses: <Text style={{ color: colors.text }}>{interests.length} categorías seleccionadas</Text>
-                  </Text>
-                  <Text style={[styles.summaryItem, { color: colors.textSecondary }]}>
-                    💳 Presupuesto: <Text style={{ color: colors.text }}>{preferredPriceRange}</Text>
-                  </Text>
-                  <Text style={[styles.summaryItem, { color: colors.textSecondary }]}>
-                    🥗 Dieta: <Text style={{ color: colors.text }}>{dietaryPreference}</Text>
-                  </Text>
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>Nacimiento:</Text>
+                  <Text style={[styles.summaryValue, { color: colors.text, fontFamily: typography.fonts.bold }]}>{birthdateFormatted}</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>Intereses:</Text>
+                  <Text style={[styles.summaryValue, { color: colors.text, fontFamily: typography.fonts.bold }]}>{interests.length} categorías</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>Presupuesto:</Text>
+                  <Text style={[styles.summaryValue, { color: colors.text, fontFamily: typography.fonts.bold }]}>{preferredPriceRange}</Text>
                 </View>
               </View>
             )}
 
-            {/* Next / Submit Button Centrado */}
+            {/* Next Button */}
             <TouchableOpacity 
               style={[
                 styles.nextButton, 
@@ -470,7 +422,7 @@ export default function SetupProfileScreen() {
                 <ActivityIndicator color={colors.primaryContrast} />
               ) : (
                 <Text style={[styles.nextButtonText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                  {currentStep === 4 ? 'Completar Perfil y Comenzar' : 'Siguiente Paso'}
+                  {currentStep === 4 ? 'Comenzar a explorar' : 'Siguiente'}
                 </Text>
               )}
             </TouchableOpacity>
@@ -479,7 +431,7 @@ export default function SetupProfileScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* MODAL DE CALENDARIO NATIVO TOTALMENTE CENTRADO */}
+      {/* Date Modal */}
       <Modal
         visible={showDateModal}
         transparent
@@ -493,21 +445,20 @@ export default function SetupProfileScreen() {
         >
           <TouchableOpacity 
             activeOpacity={1}
-            style={[styles.modalContent, { backgroundColor: colors.background, borderColor: colors.border, borderRadius: borderRadius.xl }]}
+            style={[styles.modalContent, { backgroundColor: colors.background, borderColor: colors.border, borderRadius: borderRadius.lg }]}
             onPress={(e) => e.stopPropagation()}
           >
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                Fecha de Nacimiento
+                Fecha de nacimiento
               </Text>
               <TouchableOpacity onPress={() => setShowDateModal(false)}>
-                <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
+                <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
                   <Path d="M18 6L6 18M6 6l12 12" />
                 </Svg>
               </TouchableOpacity>
             </View>
 
-            {/* Picker Nativo Web / Mobile dentro del Modal Centrado */}
             <View style={styles.pickerWrapper}>
               {Platform.OS === 'web' ? (
                 <input 
@@ -521,13 +472,13 @@ export default function SetupProfileScreen() {
                     }
                   }}
                   style={{
-                    height: '52px',
+                    height: '48px',
                     border: `1px solid ${colors.border}`,
                     borderRadius: `${borderRadius.md}px`,
                     backgroundColor: colors.card,
                     color: colors.text,
                     padding: '0 16px',
-                    fontSize: '16px',
+                    fontSize: '15px',
                     fontFamily: 'inherit',
                     outline: 'none',
                     width: '100%',
@@ -548,13 +499,12 @@ export default function SetupProfileScreen() {
               )}
             </View>
 
-            {/* Botón para Confirmar Fecha Centrado */}
             <TouchableOpacity
               style={[styles.modalConfirmBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
               onPress={() => setShowDateModal(false)}
             >
               <Text style={[styles.modalConfirmText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                Confirmar Fecha ({birthdateFormatted})
+                Confirmar
               </Text>
             </TouchableOpacity>
 
@@ -570,9 +520,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  keyboardView: {
-    flex: 1,
-  },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
@@ -580,49 +527,45 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 16,
-    paddingBottom: 24,
+    paddingBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 14,
   },
   backButton: {
-    paddingVertical: 8,
-    paddingRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  progressContainer: {
-    flex: 1,
+    paddingVertical: 4,
+    paddingRight: 4,
   },
   progressBars: {
+    flex: 1,
     flexDirection: 'row',
     gap: 6,
-    marginBottom: 6,
   },
   progressBar: {
     flex: 1,
     height: 4,
     borderRadius: 2,
   },
-  stepText: {
+  stepCounterText: {
     fontSize: 12,
   },
   formWrapper: {
     width: '100%',
   },
+  titleBlock: {
+    marginBottom: 24,
+  },
   stepTitle: {
     fontSize: 26,
     lineHeight: 32,
-    marginBottom: 8,
+    letterSpacing: -0.5,
+    marginBottom: 6,
   },
   stepSubtitle: {
     fontSize: 14,
     lineHeight: 20,
-    marginBottom: 24,
   },
   errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
     padding: 12,
     borderRadius: 10,
     borderWidth: 1,
@@ -630,7 +573,6 @@ const styles = StyleSheet.create({
   },
   errorBannerText: {
     fontSize: 13,
-    flex: 1,
   },
   inputGroup: {
     marginBottom: 18,
@@ -640,27 +582,27 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    height: 52,
+    height: 48,
     borderWidth: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     fontSize: 15,
   },
   dateSelectorButton: {
-    height: 52,
+    height: 48,
     borderWidth: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    justify: 'space-between',
+    justifyContent: 'space-between',
   },
   dateSelectorText: {
     flex: 1,
     fontSize: 15,
   },
   textArea: {
-    height: 90,
+    height: 86,
     borderWidth: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingTop: 12,
     fontSize: 15,
     textAlignVertical: 'top',
@@ -669,18 +611,16 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   genderChip: {
-    height: 48,
+    height: 46,
     width: '100%',
     borderWidth: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 16,
   },
   genderChipText: {
     fontSize: 14,
     textAlign: 'center',
-    width: '100%',
   },
   categoriesGrid: {
     flexDirection: 'row',
@@ -694,7 +634,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryEmoji: {
-    fontSize: 28,
+    fontSize: 26,
     marginBottom: 8,
   },
   categoryTitle: {
@@ -702,8 +642,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   sectionHeading: {
-    fontSize: 16,
-    marginBottom: 12,
+    fontSize: 15,
+    marginBottom: 10,
   },
   priceList: {
     gap: 10,
@@ -732,53 +672,38 @@ const styles = StyleSheet.create({
   dietChipText: {
     fontSize: 13,
   },
-  locationCard: {
-    padding: 20,
-    borderWidth: 1,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  locationIconBox: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justify: 'center',
-    marginBottom: 12,
-  },
-  locationTitle: {
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  locationCoords: {
-    fontSize: 13,
-  },
   summaryCard: {
     padding: 18,
     borderWidth: 1,
-    gap: 8,
+    gap: 10,
     marginBottom: 24,
   },
   summaryHeader: {
-    fontSize: 15,
-    marginBottom: 6,
+    fontSize: 16,
+    marginBottom: 4,
   },
-  summaryItem: {
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  summaryLabel: {
+    fontSize: 13,
+  },
+  summaryValue: {
     fontSize: 13,
   },
   nextButton: {
-    height: 54,
+    height: 52,
     width: '100%',
-    flexDirection: 'row',
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
     marginTop: 8,
     marginBottom: 24,
   },
   nextButtonText: {
     fontSize: 16,
     textAlign: 'center',
-    width: '100%',
   },
   modalOverlay: {
     flex: 1,
@@ -786,41 +711,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
-    width: '100%',
-    height: '100%',
   },
   modalContent: {
     width: '100%',
-    maxWidth: 380,
-    padding: 24,
+    maxWidth: 360,
+    padding: 20,
     borderWidth: 1,
-    alignSelf: 'center',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   modalTitle: {
-    fontSize: 16,
+    fontSize: 17,
   },
   pickerWrapper: {
-    marginBottom: 24,
-    width: '100%',
+    marginVertical: 10,
     alignItems: 'center',
-    justify: 'center',
   },
   modalConfirmBtn: {
-    height: 48,
+    height: 46,
     width: '100%',
-    flexDirection: 'row',
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
+    marginTop: 14,
   },
   modalConfirmText: {
-    fontSize: 14,
-    textAlign: 'center',
-    width: '100%',
+    fontSize: 15,
   },
 });

@@ -32,7 +32,7 @@ export default function TabsLayout() {
       }}
       screenOptions={{ 
         headerShown: false,
-        // Disable default tab bar
+        animation: 'fade',
       }}
     >
       <Tabs.Screen name="explore" />
