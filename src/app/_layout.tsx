@@ -34,6 +34,7 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)/register" />
         <Stack.Screen name="(auth)/forgot-password" />
         <Stack.Screen name="(auth)/reset-password" />
+        <Stack.Screen name="(onboarding)/setup-profile" />
       </Stack>
     </ThemeProvider>
   );

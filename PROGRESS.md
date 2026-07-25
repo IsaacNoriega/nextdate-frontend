@@ -6,9 +6,10 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
 
 ## 🔀 Estado de Branches Git
 
-- **Branch actual**: `feature/auth-views`
+- **Branch actual**: `feature/onboarding-profile`
+- **Branch anterior**: `feature/auth-views` (Merged/Pushed a origin)
 - **Branch base**: `main`
-- **Propósito**: Implementación completa del Módulo 1 de Autenticación y Recuperación de Contraseña.
+- **Propósito**: Implementación completa del Módulo 2 de Onboarding y Creación de Perfil de Usuario.
 
 ---
 
@@ -16,21 +17,30 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
 
 ### 🟢 Módulo 1: Autenticación y Onboarding (`feature/auth-views`)
 - [x] Ajustar proyecto a versión estable **Expo SDK 54**.
-- [x] Crear rama de trabajo `feature/auth-views`.
-- [x] Crear archivo de contexto de progreso `PROGRESS.md`.
-- [x] Rediseñar raíz (`app/index.tsx`) con estética ultra-minimalista alineada al diseño del resto de las pantallas.
+- [x] Rediseñar raíz (`app/index.tsx`) con estética ultra-minimalista.
 - [x] Implementar pantalla de Login (`app/(auth)/login.tsx`).
 - [x] Implementar pantalla de Registro (`app/(auth)/register.tsx`).
 - [x] Implementar pantalla de Olvidé mi Contraseña (`app/(auth)/forgot-password.tsx`).
 - [x] Implementar pantalla de Restablecer Contraseña (`app/(auth)/reset-password.tsx`).
-- [x] Navegación de retorno segura (`handleBack` con fallback) en todas las vistas de auth.
-- [x] Validaciones de formulario en cliente (Email regex, coincidencia de passwords, fuerza de clave).
 
-### ⏳ Módulo 2: Onboarding de Perfil (`setup-profile`)
-- [ ] Paso 1: Datos personales (Username, Fecha de Nacimiento, Género, Bio).
-- [ ] Paso 2: Selección de Intereses (`PlaceCategory`).
-- [ ] Paso 3: Rango de precios (`PriceRange`) y Preferencia dietética (`DietaryPreference`).
-- [ ] Paso 4: Permiso de Ubicación GPS (`latitude`, `longitude`).
+### 🟢 Módulo 2: Onboarding de Perfil (`feature/onboarding-profile`)
+- [x] Crear rama de trabajo `feature/onboarding-profile`.
+- [x] Diseñar e implementar flujo por pasos de Onboarding (`app/(onboarding)/setup-profile.tsx`):
+  - [x] Paso 1: Datos personales (Username, Fecha de Nacimiento con Modal Nativo de Calendario, Género centrado, Bio).
+  - [x] Paso 2: Selección de Intereses/Categorías (`PlaceCategory` multiselect).
+  - [x] Paso 3: Presupuesto (`PriceRange`) y Preferencia dietética (`DietaryPreference`).
+  - [x] Paso 4: Coordenadas de Ubicación GPS (`latitude`, `longitude`) y Resumen antes de `createProfile`.
+- [x] Integrar `@react-native-community/datetimepicker` y Modal flotante centrado para Fecha de Nacimiento.
+- [x] Reemplazar `SafeAreaView` por `react-native-safe-area-context` en todas las pantallas.
+- [x] Alineación centrada de textos e iconos SVG en todos los botones primarios, secundarios y redes sociales.
+
+### ⏳ Módulo 3: Exploración y Descubrimiento (`(tabs)/explore`)
+- [ ] Vista de Mapa Interactivo & Lista de Lugares Cercanos.
+- [ ] Detalle de Lugar (`place/[id]`).
+
+### ⏳ Módulo 4: NextDate AI & Itinerarios (`(tabs)/generator`, `itineraries`)
+- [ ] Asistente por Prompt AI (`recommendItinerary`).
+- [ ] Diseñador y Ejecución de Cita (`itinerary/[id]`).
 
 ### ⏳ Módulo 5: Feed de la Comunidad & Perfil (`(tabs)/feed`, `profile`)
 - [ ] Feed de Citas Compartidas (`sharedExperiences`).
@@ -42,10 +52,9 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
 ## 📝 Registro de Cambios (Log de Ejecución)
 
 ### [2026-07-24 / 2026-07-25]
-- **Versión de Expo**: Migrado con éxito a **Expo SDK 54** (`expo: ~54.0.0`, `react: 19.1.0`, `react-native: 0.81.5`) garantizando máxima compatibilidad con Expo Go.
-- **Pantalla Raíz (`src/app/index.tsx`)**: Rediseñada a un estilo **ultra-clean y minimalista** basado en el lenguaje de diseño Apple/SF Pro.
-- **Vistas de Auth**:
-  - `src/app/(auth)/login.tsx`
-  - `src/app/(auth)/register.tsx`
-  - `src/app/(auth)/forgot-password.tsx`
-  - `src/app/(auth)/reset-password.tsx`
+- **Onboarding de Perfil (`src/app/(onboarding)/setup-profile.tsx`)**:
+  - Implementado Stepper de 4 pasos con indicador visual de progreso.
+  - Integrado con la mutation GraphQL `createProfile(input: CreateProfileInput!)`.
+  - Mapeo completo de enums (`Gender`, `PlaceCategory`, `PriceRange`, `DietaryPreference`).
+  - Modal flotante centrado en pantalla con DatePicker nativo (HTML5 type="date" en Web y DateTimePicker nativo en móvil).
+  - Botón de navegación sin borde circular en toda la aplicación.

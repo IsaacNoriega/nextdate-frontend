@@ -5,13 +5,13 @@ import {
   Text, 
   TextInput, 
   TouchableOpacity, 
-  SafeAreaView, 
   KeyboardAvoidingView, 
   Platform, 
   ScrollView,
   useWindowDimensions,
   ActivityIndicator
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
@@ -62,7 +62,6 @@ export default function ResetPasswordScreen() {
 
     setLoading(true);
     try {
-      // Simulación de la mutation resetPassword(input: ResetPasswordInput!)
       await new Promise((resolve) => setTimeout(resolve, 1400));
       setSuccess(true);
     } catch (err: any) {
@@ -87,15 +86,15 @@ export default function ResetPasswordScreen() {
         style={styles.keyboardView}
       >
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          {/* Header */}
+          {/* Header con Flecha Limpia sin Círculo */}
           <View style={styles.header}>
             <TouchableOpacity 
-              style={[styles.backButton, { borderColor: colors.border, backgroundColor: colors.card }]}
+              style={styles.backButton}
               onPress={handleBack}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M15 18l-6-6 6-6" />
+              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                <Path d="M19 12H5M12 19l-7-7 7-7" />
               </Svg>
             </TouchableOpacity>
           </View>
@@ -328,12 +327,9 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    alignItems: 'center',
-    justify: 'center',
+    paddingVertical: 8,
+    paddingRight: 12,
+    alignSelf: 'flex-start',
   },
   formContainer: {
     width: '100%',
