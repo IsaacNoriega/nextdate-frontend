@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -8,15 +8,15 @@ import {
   ScrollView, 
   Image, 
   ActivityIndicator,
-  Modal
+  Modal,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme } from '../hooks/useTheme';
 import BottomBar from '../components/ui/bottom-bar';
-
-type DateVibe = 'ROMANTIC' | 'CASUAL' | 'BOHEMIAN' | 'CULTURAL' | 'ADVENTURE';
 
 interface ItineraryStep {
   stepNumber: number;
@@ -42,12 +42,21 @@ interface GeneratedItinerary {
   steps: ItineraryStep[];
 }
 
-const VIBES: { id: DateVibe; label: string; icon: string }[] = [
-  { id: 'ROMANTIC', label: 'Romántico', icon: '✨' },
-  { id: 'CASUAL', label: 'Casual', icon: '☕' },
-  { id: 'BOHEMIAN', label: 'Nocturno', icon: '🍷' },
-  { id: 'CULTURAL', label: 'Cultura', icon: '🎭' },
-  { id: 'ADVENTURE', label: 'Aventura', icon: '⚡' },
+interface ChatMessage {
+  id: string;
+  sender: 'ai' | 'user';
+  text?: string;
+  itinerary?: GeneratedItinerary;
+  timestamp: string;
+}
+
+const INITIAL_MESSAGES: ChatMessage[] = [
+  {
+    id: 'msg-1',
+    sender: 'ai',
+    text: '¡Hola! 🪄 Soy tu Asistente NextDate AI. Cuéntame cómo imaginas tu cita ideal (ej. "Cita romántica para nuestro aniversario con cena italiana") y crearé el itinerario paso a paso perfecto para ti.',
+    timestamp: 'Ahora'
+  }
 ];
 
 const MOCK_GENERATED_ITINERARY: GeneratedItinerary = {
@@ -103,23 +112,51 @@ const MOCK_GENERATED_ITINERARY: GeneratedItinerary = {
 export default function GeneratorScreen() {
   const { colors, typography, borderRadius } = useTheme();
   const router = useRouter();
+  const scrollViewRef = useRef<ScrollView>(null);
 
-  const [promptText, setPromptText] = useState('');
-  const [selectedVibe, setSelectedVibe] = useState<DateVibe>('ROMANTIC');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [itinerary, setItinerary] = useState<GeneratedItinerary | null>(MOCK_GENERATED_ITINERARY);
+  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
+  const [inputPrompt, setInputPrompt] = useState('');
+  const [isThinking, setIsThinking] = useState(false);
   const [selectedStep, setSelectedStep] = useState<ItineraryStep | null>(null);
   
   // Rating de paso
   const [stepRating, setStepRating] = useState<number>(0);
   const [stepRatingSubmitted, setStepRatingSubmitted] = useState(false);
 
-  const handleGenerate = () => {
-    setIsGenerating(true);
+  const handleSendMessage = () => {
+    if (!inputPrompt.trim() || isThinking) return;
+
+    const userText = inputPrompt.trim();
+    const userMsg: ChatMessage = {
+      id: `user-${Date.now()}`,
+      sender: 'user',
+      text: userText,
+      timestamp: 'Ahora'
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    setInputPrompt('');
+    setIsThinking(true);
+
     setTimeout(() => {
-      setIsGenerating(false);
-      setItinerary(MOCK_GENERATED_ITINERARY);
-    }, 1500);
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+
+    // Simular respuesta inteligente de la IA
+    setTimeout(() => {
+      setIsThinking(false);
+      const aiResponse: ChatMessage = {
+        id: `ai-${Date.now()}`,
+        sender: 'ai',
+        text: `¡Excelente idea! Basado en "${userText}", he diseñado el siguiente itinerario personalizado:`,
+        itinerary: MOCK_GENERATED_ITINERARY,
+        timestamp: 'Ahora'
+      };
+      setMessages((prev) => [...prev, aiResponse]);
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 150);
+    }, 1600);
   };
 
   const openStepDetail = (step: ItineraryStep) => {
@@ -130,149 +167,188 @@ export default function GeneratorScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-      
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         
-        {/* Minimalist Header */}
-        <View style={styles.header}>
-          <Text style={[styles.headerSub, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-            NEXTDATE AI
-          </Text>
-          <Text style={[styles.title, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-            Diseña tu Cita
-          </Text>
+        {/* Header Superior del Chat AI */}
+        <View style={[styles.chatHeader, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.avatarAi}>
+            <Text style={{ fontSize: 18 }}>🪄</Text>
+          </View>
+          <View>
+            <Text style={[styles.chatHeaderTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+              NextDate AI
+            </Text>
+            <View style={styles.statusRow}>
+              <View style={styles.greenDot} />
+              <Text style={[styles.chatHeaderStatus, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+                En línea • Asistente Inteligente
+              </Text>
+            </View>
+          </View>
         </View>
 
-        {/* Minimalist Prompt Bar */}
-        <View style={[styles.minimalBox, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
-          <TextInput
-            style={[styles.minimalInput, { color: colors.text, fontFamily: typography.fonts.regular }]}
-            placeholder="¿Qué tienes en mente para tu cita? (ej. Cena italiana y caminata...)"
-            placeholderTextColor={colors.textSecondary}
-            multiline
-            numberOfLines={2}
-            value={promptText}
-            onChangeText={setPromptText}
-          />
+        {/* Lista de Mensajes del Chat */}
+        <ScrollView 
+          ref={scrollViewRef}
+          contentContainerStyle={styles.chatScroll}
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+        >
+          {messages.map((msg) => {
+            const isUser = msg.sender === 'user';
+            return (
+              <View 
+                key={msg.id} 
+                style={[
+                  styles.messageWrapper,
+                  isUser ? styles.userMessageWrapper : styles.aiMessageWrapper
+                ]}
+              >
+                {!isUser ? (
+                  <View style={styles.smallAiAvatar}>
+                    <Text style={{ fontSize: 12 }}>🪄</Text>
+                  </View>
+                ) : null}
 
-          {/* Vibe Selection Chips */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.vibeScroll}>
-            {VIBES.map((vibe) => {
-              const isSelected = selectedVibe === vibe.id;
-              return (
-                <TouchableOpacity
-                  key={vibe.id}
+                <View 
                   style={[
-                    styles.vibeChip,
-                    {
-                      backgroundColor: isSelected ? colors.primary : colors.background,
-                      borderColor: isSelected ? colors.primary : colors.border,
-                      borderRadius: borderRadius.round
-                    }
+                    styles.messageBubble,
+                    isUser ? [styles.userBubble, { backgroundColor: colors.primary }] : [styles.aiBubble, { backgroundColor: colors.card, borderColor: colors.border }],
+                    { borderRadius: borderRadius.lg }
                   ]}
-                  onPress={() => setSelectedVibe(vibe.id)}
-                  activeOpacity={0.8}
                 >
-                  <Text style={{ fontSize: 12, marginRight: 4 }}>{vibe.icon}</Text>
-                  <Text style={[
-                    styles.vibeChipText,
-                    { color: isSelected ? colors.primaryContrast : colors.textSecondary, fontFamily: isSelected ? typography.fonts.bold : typography.fonts.medium }
-                  ]}>
-                    {vibe.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+                  {msg.text ? (
+                    <Text 
+                      style={[
+                        styles.messageText, 
+                        { color: isUser ? colors.primaryContrast : colors.text, fontFamily: typography.fonts.regular }
+                      ]}
+                    >
+                      {msg.text}
+                    </Text>
+                  ) : null}
 
-          {/* Botón Minimalista */}
+                  {/* ITINERARIO PASO A PASO EN FORMATO STEPPER DENTRO DEL CHAT */}
+                  {msg.itinerary ? (
+                    <View style={styles.itineraryContainer}>
+                      
+                      <View style={styles.itineraryHeader}>
+                        <Text style={[styles.matchBadge, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+                          🎯 {msg.itinerary.matchScore}% Compatibilidad
+                        </Text>
+                        <Text style={[styles.itineraryTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                          {msg.itinerary.title}
+                        </Text>
+                        <Text style={[styles.itineraryTagline, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                          {msg.itinerary.tagline}
+                        </Text>
+                      </View>
+
+                      {/* STEPPER VERTICAL INTERACTIVO */}
+                      <View style={styles.stepperContainer}>
+                        {msg.itinerary.steps.map((step, index) => {
+                          const isLast = index === msg.itinerary!.steps.length - 1;
+                          return (
+                            <View key={step.stepNumber} style={styles.stepperRow}>
+                              
+                              {/* Nodo y línea conectora */}
+                              <View style={styles.stepperNodeCol}>
+                                <View style={[styles.stepperCircle, { backgroundColor: colors.primary }]}>
+                                  <Text style={[styles.stepperCircleText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                                    {step.stepNumber}
+                                  </Text>
+                                </View>
+                                {!isLast ? (
+                                  <View style={[styles.stepperLine, { backgroundColor: colors.primary + '50' }]} />
+                                ) : null}
+                              </View>
+
+                              {/* Card del Paso */}
+                              <TouchableOpacity
+                                style={[styles.stepperCard, { backgroundColor: colors.background, borderColor: colors.border, borderRadius: borderRadius.md }]}
+                                activeOpacity={0.88}
+                                onPress={() => openStepDetail(step)}
+                              >
+                                <Image source={{ uri: step.imageUrl }} style={styles.stepThumb} />
+                                
+                                <View style={styles.stepInfo}>
+                                  <Text style={[styles.stepTime, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+                                    🕒 {step.time}
+                                  </Text>
+
+                                  <Text style={[styles.stepTitleText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                                    {step.categoryEmoji} {step.title}
+                                  </Text>
+
+                                  <Text style={[styles.stepPlaceText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]} numberOfLines={1}>
+                                    📍 {step.placeName}
+                                  </Text>
+                                </View>
+
+                                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
+                                  <Path d="M9 18l6-6-6-6" />
+                                </Svg>
+                              </TouchableOpacity>
+
+                            </View>
+                          );
+                        })}
+                      </View>
+
+                    </View>
+                  ) : null}
+
+                </View>
+              </View>
+            );
+          })}
+
+          {/* Indicador de Pensando/Diseñando de la IA */}
+          {isThinking ? (
+            <View style={styles.aiThinkingWrapper}>
+              <View style={styles.smallAiAvatar}>
+                <Text style={{ fontSize: 12 }}>🪄</Text>
+              </View>
+              <View style={[styles.thinkingBubble, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
+                <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 8 }} />
+                <Text style={[styles.thinkingText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+                  Diseñando la cita perfecta para ti...
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
+        </ScrollView>
+
+        {/* INPUT DE CHAT EN LA PARTE INFERIOR */}
+        <View style={[styles.chatInputBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <TextInput
+            style={[styles.chatTextInput, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border, borderRadius: borderRadius.round, fontFamily: typography.fonts.regular }]}
+            placeholder="Escribe cómo quieres tu cita..."
+            placeholderTextColor={colors.textSecondary}
+            value={inputPrompt}
+            onChangeText={setInputPrompt}
+            onSubmitEditing={handleSendMessage}
+            returnKeyType="send"
+          />
           <TouchableOpacity 
-            style={[styles.generateBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
-            activeOpacity={0.9}
-            onPress={handleGenerate}
-            disabled={isGenerating}
+            style={[styles.sendBtn, { backgroundColor: inputPrompt.trim() ? colors.primary : colors.border, borderRadius: 22 }]}
+            activeOpacity={0.8}
+            onPress={handleSendMessage}
+            disabled={!inputPrompt.trim() || isThinking}
           >
-            {isGenerating ? (
-              <ActivityIndicator color={colors.primaryContrast} size="small" />
-            ) : (
-              <Text style={[styles.generateBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                Generar con IA ✨
-              </Text>
-            )}
+            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2.5}>
+              <Path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+            </Svg>
           </TouchableOpacity>
         </View>
 
-        {/* RESULTADO ULTRA MINIMALISTA */}
-        {itinerary && !isGenerating ? (
-          <View style={styles.resultsContainer}>
-            <View style={styles.resultsHeader}>
-              <Text style={[styles.matchText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                {itinerary.matchScore}% Compatibilidad
-              </Text>
-              <Text style={[styles.itineraryTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                {itinerary.title}
-              </Text>
-              <Text style={[styles.itineraryTagline, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                {itinerary.tagline}
-              </Text>
-            </View>
+      </KeyboardAvoidingView>
 
-            {/* Cronograma en Formato Stepper */}
-            <View style={styles.stepperContainer}>
-              {itinerary.steps.map((step, index) => {
-                const isLast = index === itinerary.steps.length - 1;
-                return (
-                  <View key={step.stepNumber} style={styles.stepperRow}>
-                    
-                    {/* Columna del Nodo Numérico y Línea Conectora */}
-                    <View style={styles.stepperNodeCol}>
-                      <View style={[styles.stepperCircle, { backgroundColor: colors.primary }]}>
-                        <Text style={[styles.stepperCircleText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                          {step.stepNumber}
-                        </Text>
-                      </View>
-                      {!isLast ? (
-                        <View style={[styles.stepperLine, { backgroundColor: colors.primary + '50' }]} />
-                      ) : null}
-                    </View>
-
-                    {/* Tarjeta del Paso */}
-                    <TouchableOpacity
-                      style={[styles.stepperCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}
-                      activeOpacity={0.88}
-                      onPress={() => openStepDetail(step)}
-                    >
-                      <Image source={{ uri: step.imageUrl }} style={styles.stepThumb} />
-                      
-                      <View style={styles.stepInfo}>
-                        <Text style={[styles.stepTime, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                          🕒 {step.time}
-                        </Text>
-
-                        <Text style={[styles.stepTitleText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                          {step.categoryEmoji} {step.title}
-                        </Text>
-
-                        <Text style={[styles.stepPlaceText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]} numberOfLines={1}>
-                          📍 {step.placeName}
-                        </Text>
-                      </View>
-
-                      <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
-                        <Path d="M9 18l6-6-6-6" />
-                      </Svg>
-                    </TouchableOpacity>
-
-                  </View>
-                );
-              })}
-            </View>
-          </View>
-        ) : null}
-
-      </ScrollView>
-
-      {/* DETALLE COMPLETO DEL PASO AL DARLE CLICK EN LA CARD */}
+      {/* DETALLE COMPLETO DEL PASO AL DARLE CLICK EN CUALQUIER STEP CARD */}
       <Modal
         visible={!!selectedStep}
         animationType="slide"
@@ -283,7 +359,7 @@ export default function GeneratorScreen() {
           {selectedStep ? (
             <View style={{ flex: 1 }}>
               
-              {/* Imagen & Botón X */}
+              {/* Imagen & Botón X de Cierre con top: 36 para librar el notch */}
               <View style={styles.modalImageWrapper}>
                 <Image source={{ uri: selectedStep.imageUrl }} style={styles.modalImage} />
                 
@@ -410,76 +486,113 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 110,
-  },
-  header: {
-    marginBottom: 14,
-  },
-  headerSub: {
-    fontSize: 11,
-    letterSpacing: 1,
-    marginBottom: 2,
-  },
-  title: {
-    fontSize: 26,
-  },
-  minimalBox: {
-    padding: 14,
-    borderWidth: 1,
-    marginBottom: 20,
-  },
-  minimalInput: {
-    minHeight: 56,
-    fontSize: 14,
-    marginBottom: 10,
-  },
-  vibeScroll: {
-    gap: 6,
-    marginBottom: 12,
-  },
-  vibeChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
+  chatHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    gap: 12,
   },
-  vibeChipText: {
-    fontSize: 12,
-  },
-  generateBtn: {
-    height: 44,
-    width: '100%',
+  avatarAi: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justify: 'center',
   },
-  generateBtnText: {
-    fontSize: 14,
+  chatHeaderTitle: {
+    fontSize: 16,
   },
-  resultsContainer: {
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  greenDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#34C759',
+  },
+  chatHeaderStatus: {
+    fontSize: 11,
+  },
+  chatScroll: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 150,
+  },
+  messageWrapper: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    maxWidth: '90%',
+  },
+  userMessageWrapper: {
+    alignSelf: 'flex-end',
+    justifyContent: 'flex-end',
+  },
+  aiMessageWrapper: {
+    alignSelf: 'flex-start',
+    gap: 8,
+  },
+  smallAiAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justify: 'center',
     marginTop: 4,
   },
-  resultsHeader: {
-    marginBottom: 12,
+  messageBubble: {
+    padding: 14,
+    maxWidth: '100%',
   },
-  matchText: {
+  userBubble: {},
+  aiBubble: {
+    borderWidth: 1,
+  },
+  messageText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  aiThinkingWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  thinkingBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+  },
+  thinkingText: {
+    fontSize: 13,
+  },
+  itineraryContainer: {
+    marginTop: 10,
+  },
+  itineraryHeader: {
+    marginBottom: 10,
+  },
+  matchBadge: {
     fontSize: 12,
     marginBottom: 2,
   },
   itineraryTitle: {
-    fontSize: 20,
-    lineHeight: 26,
+    fontSize: 18,
     marginBottom: 2,
   },
   itineraryTagline: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
   },
   stepperContainer: {
-    marginTop: 12,
+    marginTop: 8,
   },
   stepperRow: {
     flexDirection: 'row',
@@ -487,20 +600,20 @@ const styles = StyleSheet.create({
   },
   stepperNodeCol: {
     alignItems: 'center',
-    width: 32,
-    marginRight: 10,
+    width: 28,
+    marginRight: 8,
     paddingTop: 4,
   },
   stepperCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justify: 'center',
     zIndex: 2,
   },
   stepperCircleText: {
-    fontSize: 13,
+    fontSize: 12,
   },
   stepperLine: {
     width: 2,
@@ -513,27 +626,53 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
+    padding: 8,
   },
   stepThumb: {
-    width: 54,
-    height: 54,
-    borderRadius: 8,
-    marginRight: 10,
+    width: 48,
+    height: 48,
+    borderRadius: 6,
+    marginRight: 8,
   },
   stepInfo: {
     flex: 1,
   },
   stepTime: {
-    fontSize: 11,
-    marginBottom: 2,
+    fontSize: 10,
+    marginBottom: 1,
   },
   stepTitleText: {
-    fontSize: 14,
-    marginBottom: 2,
+    fontSize: 13,
+    marginBottom: 1,
   },
   stepPlaceText: {
-    fontSize: 12,
+    fontSize: 11,
+  },
+  chatInputBar: {
+    position: 'absolute',
+    bottom: 96,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderRadius: 28,
+    gap: 8,
+  },
+  chatTextInput: {
+    flex: 1,
+    height: 42,
+    paddingHorizontal: 16,
+    fontSize: 14,
+    borderWidth: 1,
+  },
+  sendBtn: {
+    width: 42,
+    height: 42,
+    alignItems: 'center',
+    justify: 'center',
   },
 
   /* MODAL STEP DETAIL */
@@ -657,55 +796,5 @@ const styles = StyleSheet.create({
   },
   confirmStepText: {
     fontSize: 15,
-  },
-
-  /* FLOTANTE BOTTOM BAR */
-  floatingPillWrapper: {
-    position: 'absolute',
-    bottom: 20,
-    left: 16,
-    right: 16,
-    alignItems: 'center',
-    justify: 'center',
-  },
-  floatingPillBar: {
-    height: 68,
-    width: '100%',
-    maxWidth: 420,
-    backgroundColor: '#1E1E22',
-    borderRadius: 34,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justify: 'space-around',
-    paddingHorizontal: 8,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.45,
-    shadowRadius: 18,
-    elevation: 12,
-    borderWidth: 1,
-    borderColor: '#2A2A30',
-  },
-  pillTabItem: {
-    flex: 1,
-    alignItems: 'center',
-    justify: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    borderRadius: 24,
-  },
-  activePillCapsule: {
-    backgroundColor: 'rgba(255, 255, 255, 0.16)',
-  },
-  pillTabText: {
-    fontSize: 11,
-    color: '#8E8E93',
-    marginTop: 3,
-    textAlign: 'center',
-    width: '100%',
-  },
-  activePillText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
   },
 });
