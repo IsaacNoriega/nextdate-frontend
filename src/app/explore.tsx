@@ -19,6 +19,7 @@ import { useTheme } from '../hooks/useTheme';
 
 type PlaceCategory = 'ALL' | 'FOOD_DRINK' | 'CULTURE' | 'NATURE' | 'ENTERTAINMENT' | 'SHOPPING' | 'SPORTS';
 type PriceRange = 'ALL' | 'CHEAP' | 'MODERATE' | 'EXPENSIVE' | 'LUXURY';
+type ActiveTab = 'explore' | 'map' | 'ai' | 'community' | 'profile';
 
 interface Place {
   id: string;
@@ -135,7 +136,7 @@ export default function ExploreScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<PlaceCategory>('ALL');
   const [selectedPrice, setSelectedPrice] = useState<PriceRange>('ALL');
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('explore');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
 
   // Filtrado dinámico
@@ -261,7 +262,7 @@ export default function ExploreScreen() {
         </View>
 
         {/* Contenido Principal: Mapa o Lista de Lugares */}
-        {viewMode === 'map' ? (
+        {activeTab === 'map' ? (
           <View style={[styles.mapPlaceholder, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
             <Svg width={48} height={48} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={1.5} style={{ marginBottom: 12 }}>
               <Path d="M1 6v13l7-4 8 4 7-4V2l-7 4-8-4-7 4zM8 2v13M16 6v13" />
@@ -334,45 +335,97 @@ export default function ExploreScreen() {
 
       </View>
 
-      {/* BOTTOM NAVIGATION BAR (BARRA NAVEGACIÓN INFERIOR) */}
-      <View style={[styles.bottomBarContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <TouchableOpacity style={styles.bottomTabItem} activeOpacity={0.8} onPress={() => setViewMode('list')}>
-          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={viewMode === 'list' ? colors.primary : colors.textSecondary} strokeWidth={2.2}>
-            <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-            <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-          </Svg>
-          <Text style={[styles.bottomTabText, { color: viewMode === 'list' ? colors.primary : colors.textSecondary, fontFamily: viewMode === 'list' ? typography.fonts.bold : typography.fonts.medium }]}>
-            Explorar
-          </Text>
-        </TouchableOpacity>
+      {/* FLOATING PILL BOTTOM NAVIGATION BAR (AL ESTILO WHATSAPP/META AI MOSTRADO) */}
+      <View style={styles.floatingPillWrapper}>
+        <View style={styles.floatingPillBar}>
+          
+          {/* TAB 1: Explorar / Novedades */}
+          <TouchableOpacity 
+            style={[styles.pillTabItem, activeTab === 'explore' && styles.activePillCapsule]} 
+            activeOpacity={0.8}
+            onPress={() => setActiveTab('explore')}
+          >
+            <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2}>
+              <Path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+            </Svg>
+            <Text style={[styles.pillTabText, activeTab === 'explore' && styles.activePillText]}>
+              Novedades
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.bottomTabItem} activeOpacity={0.8} onPress={() => setViewMode(viewMode === 'list' ? 'map' : 'list')}>
-          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={viewMode === 'map' ? colors.primary : colors.textSecondary} strokeWidth={2.2}>
-            <Path d="M1 6v13l7-4 8 4 7-4V2l-7 4-8-4-7 4zM8 2v13M16 6v13" />
-          </Svg>
-          <Text style={[styles.bottomTabText, { color: viewMode === 'map' ? colors.primary : colors.textSecondary, fontFamily: viewMode === 'map' ? typography.fonts.bold : typography.fonts.medium }]}>
-            Mapa
-          </Text>
-        </TouchableOpacity>
+          {/* TAB 2: Mapa / Llamadas con Badge Verde */}
+          <TouchableOpacity 
+            style={[styles.pillTabItem, activeTab === 'map' && styles.activePillCapsule]} 
+            activeOpacity={0.8}
+            onPress={() => setActiveTab('map')}
+          >
+            <View style={{ position: 'relative' }}>
+              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2}>
+                <Path d="M1 6v13l7-4 8 4 7-4V2l-7 4-8-4-7 4zM8 2v13M16 6v13" />
+              </Svg>
+              {/* Badge Verde */}
+              <View style={styles.greenBadge}>
+                <Text style={styles.badgeText}>3</Text>
+              </View>
+            </View>
+            <Text style={[styles.pillTabText, activeTab === 'map' && styles.activePillText]}>
+              Mapa
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.bottomTabItem} activeOpacity={0.8}>
-          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2.2}>
-            <Path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-          </Svg>
-          <Text style={[styles.bottomTabText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
-            AI Citas
-          </Text>
-        </TouchableOpacity>
+          {/* TAB 3: AI Citas / Comunidades */}
+          <TouchableOpacity 
+            style={[styles.pillTabItem, activeTab === 'ai' && styles.activePillCapsule]} 
+            activeOpacity={0.8}
+            onPress={() => setActiveTab('ai')}
+          >
+            <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2}>
+              <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <Circle cx="9" cy="7" r="4" />
+              <Path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+            </Svg>
+            <Text style={[styles.pillTabText, activeTab === 'ai' && styles.activePillText]}>
+              AI Citas
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.bottomTabItem} activeOpacity={0.8} onPress={() => router.push('/(onboarding)/setup-profile')}>
-          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2.2}>
-            <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <Circle cx="12" cy="7" r="4" />
-          </Svg>
-          <Text style={[styles.bottomTabText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
-            Perfil
-          </Text>
-        </TouchableOpacity>
+          {/* TAB 4: Comunidad / Chats con Badge Verde 66 */}
+          <TouchableOpacity 
+            style={[styles.pillTabItem, activeTab === 'community' && styles.activePillCapsule]} 
+            activeOpacity={0.8}
+            onPress={() => setActiveTab('community')}
+          >
+            <View style={{ position: 'relative' }}>
+              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2}>
+                <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </Svg>
+              <View style={styles.greenBadge}>
+                <Text style={styles.badgeText}>66</Text>
+              </View>
+            </View>
+            <Text style={[styles.pillTabText, activeTab === 'community' && styles.activePillText]}>
+              Chats
+            </Text>
+          </TouchableOpacity>
+
+          {/* TAB 5: Tú / Perfil con Avatar Redondo */}
+          <TouchableOpacity 
+            style={[styles.pillTabItem, activeTab === 'profile' && styles.activePillCapsule]} 
+            activeOpacity={0.8}
+            onPress={() => {
+              setActiveTab('profile');
+              router.push('/(onboarding)/setup-profile');
+            }}
+          >
+            <View style={styles.avatarBorder}>
+              <Text style={{ fontSize: 16 }}>👤</Text>
+            </View>
+            <Text style={[styles.pillTabText, activeTab === 'profile' && styles.activePillText]}>
+              Tú
+            </Text>
+          </TouchableOpacity>
+
+        </View>
       </View>
 
       {/* PANTALLA COMPLETA NATIVA CON BOTÓN "X" Y MAPA DE UBICACIÓN */}
@@ -562,7 +615,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   listContent: {
-    paddingBottom: 20,
+    paddingBottom: 110,
     gap: 16,
   },
   placeCard: {
@@ -630,7 +683,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justify: 'center',
     padding: 24,
-    marginBottom: 20,
+    marginBottom: 100,
   },
   mapPlaceholderTitle: {
     fontSize: 18,
@@ -639,22 +692,79 @@ const styles = StyleSheet.create({
   mapPlaceholderSub: {
     fontSize: 13,
   },
-  bottomBarContainer: {
-    height: 60,
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    justify: 'space-around',
-    alignItems: 'center',
-  },
-  bottomTabItem: {
+
+  /* ESTILOS FLOTANTES DE LA PILL BOTTOM BAR ESTILO WHATSAPP/META AI */
+  floatingPillWrapper: {
+    position: 'absolute',
+    bottom: 20,
+    left: 16,
+    right: 16,
     alignItems: 'center',
     justify: 'center',
-    flex: 1,
   },
-  bottomTabText: {
+  floatingPillBar: {
+    height: 68,
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#1E1E22',
+    borderRadius: 34,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justify: 'space-around',
+    paddingHorizontal: 8,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.45,
+    shadowRadius: 18,
+    elevation: 12,
+    borderWidth: 1,
+    borderColor: '#2A2A30',
+  },
+  pillTabItem: {
+    alignItems: 'center',
+    justify: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 24,
+  },
+  activePillCapsule: {
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+  },
+  pillTabText: {
     fontSize: 11,
+    color: '#8E8E93',
     marginTop: 3,
   },
+  activePillText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  greenBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -10,
+    backgroundColor: '#25D366',
+    borderRadius: 10,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    minWidth: 18,
+    alignItems: 'center',
+    justify: 'center',
+  },
+  badgeText: {
+    color: '#000000',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  avatarBorder: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#3A3A3C',
+    alignItems: 'center',
+    justify: 'center',
+  },
+
   fullScreenContainer: {
     flex: 1,
   },
