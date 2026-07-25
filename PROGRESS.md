@@ -6,10 +6,10 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
 
 ## 🔀 Estado de Branches Git
 
-- **Branch actual**: `feature/ai-itineraries`
-- **Branches anteriores**: `feature/explore-places`, `feature/onboarding-profile` (Pushed a origin)
+- **Branch actual**: `feature/community-feed`
+- **Branches anteriores**: `feature/ai-itineraries`, `feature/explore-places`, `feature/onboarding-profile` (Pushed a origin)
 - **Branch base**: `main`
-- **Propósito**: Implementación completa del Módulo 4: Asistente Conversacional NextDate AI e Itinerarios de Citas.
+- **Propósito**: Implementación completa del Módulo 5: Feed de la Comunidad, Experiencias Compartidas y Publicaciones.
 
 ---
 
@@ -54,16 +54,19 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
   - [x] Detalle de paso modal a pantalla completa con mapa, rate del plan y botón de cierre **"X"** a `top: 36px`.
   - [x] Botón ultra-premium en cápsula centrada *"✨ Guardar este Itinerario Mágico"* que cambia a `✓ ¡Itinerario Guardado con Éxito!`.
 
-### ⏳ Módulo 5: Feed de la Comunidad & Perfil (`(tabs)/feed`, `profile`)
-- [ ] Feed de Citas Compartidas (`sharedExperiences`).
-- [ ] Formulario de Reseña y Fotos (`experience/share`).
-- [ ] Mi Perfil y Edición.
+### 🟢 Módulo 5: Feed de la Comunidad & Experiencias (`feature/community-feed`)
+- [x] Crear rama de trabajo `feature/community-feed`.
+- [x] Implementar pantalla de Feed de la Comunidad (`app/community.tsx`):
+  - [x] Header con título y botón `+ Publicar` alineado a la extrema derecha (`marginLeft: 'auto'`).
+  - [x] Filtros horizontales por categorías de citas (Todas, Románticas, Naturaleza, Gastronomía, Cultura).
+  - [x] Tarjetas de experiencias con avatar del autor, rating, foto a pantalla completa y reseña.
+  - [x] Interacciones de Me Gusta (corazón rojo animado), comentarios y Guardar Plan en Mis Citas.
+  - [x] Modal para publicar nueva experiencia con selector de estrellas y formulario.
 
 ---
 
 ## 📝 Registro de Cambios (Log de Ejecución)
 
-### [2026-07-24 / 2026-07-25]
-- **NextDate AI (`src/app/generator.tsx`)**:
-  - Creada experiencia conversacional completa de generación de itinerarios.
-  - Componente universal `<BottomBar />` reutilizado.
+### [2026-07-25]
+- **Comunidad NextDate (`src/app/community.tsx`)**:
+  - Implementada vista completa del Feed de la Comunidad y Modal para compartir reseñas de citas.
