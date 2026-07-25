@@ -6,10 +6,10 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
 
 ## 🔀 Estado de Branches Git
 
-- **Branch actual**: `feature/explore-places`
-- **Branch anterior**: `feature/onboarding-profile` (Merged/Pushed a origin)
+- **Branch actual**: `feature/ai-itineraries`
+- **Branches anteriores**: `feature/explore-places`, `feature/onboarding-profile` (Pushed a origin)
 - **Branch base**: `main`
-- **Propósito**: Implementación completa del Módulo 3 de Exploración y Descubrimiento de Lugares.
+- **Propósito**: Implementación completa del Módulo 4: Asistente Conversacional NextDate AI e Itinerarios de Citas.
 
 ---
 
@@ -39,14 +39,20 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
 - [x] Diseñar e implementar pantalla de Exploración (`app/explore.tsx`):
   - [x] Filtros por búsqueda, categorías (`PlaceCategory`) y rango de precios (`PriceRange`).
   - [x] Tarjetas de lugares con botón *"Planear Cita"* ubicado abajo a la derecha.
-  - [x] Vista completa nativa con botón de cierre **"X"** superior.
+  - [x] Vista completa nativa con botón de cierre **"X"** superior (`top: 36px`).
   - [x] Sección de mapa de ubicación interactivo con pin GPS.
   - [x] Calificador interactivo de 5 estrellas (*Rate Plan*) colocado debajo del mapa.
-  - [x] Floating Pill Bottom Navigation Bar (Barra de Navegación Flotante estilo WhatsApp / Meta AI) con tabs centrados (*Explorar, Mapa, AI Citas, Comunidad, Perfil*).
+  - [x] Componente reutilizable Floating Pill Bottom Navigation Bar (`src/components/ui/bottom-bar.tsx`).
 
-### ⏳ Módulo 4: NextDate AI & Itinerarios (`(tabs)/generator`, `itineraries`)
-- [ ] Asistente por Prompt AI (`recommendItinerary`).
-- [ ] Diseñador y Ejecución de Cita (`itinerary/[id]`).
+### 🟢 Módulo 4: NextDate AI & Itinerarios (`feature/ai-itineraries`)
+- [x] Crear rama de trabajo `feature/ai-itineraries`.
+- [x] Implementar pantalla de Asistente de Citas Conversacional (`app/generator.tsx`):
+  - [x] Chat en tiempo real con saludo de bienvenida e indicador de estado en línea.
+  - [x] Entrada flotante estilo píldora para enviar prompts en lenguaje natural.
+  - [x] Respuestas de la IA integradas sin bordes pesados con compatibilidad `✨ 98%`.
+  - [x] Cronograma en formato Stepper Vertical Interactivo con nodos numéricos y línea conectora.
+  - [x] Detalle de paso modal a pantalla completa con mapa, rate del plan y botón de cierre **"X"** a `top: 36px`.
+  - [x] Botón ultra-premium en cápsula centrada *"✨ Guardar este Itinerario Mágico"* que cambia a `✓ ¡Itinerario Guardado con Éxito!`.
 
 ### ⏳ Módulo 5: Feed de la Comunidad & Perfil (`(tabs)/feed`, `profile`)
 - [ ] Feed de Citas Compartidas (`sharedExperiences`).
@@ -58,7 +64,6 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
 ## 📝 Registro de Cambios (Log de Ejecución)
 
 ### [2026-07-24 / 2026-07-25]
-- **Exploración de Lugares (`src/app/explore.tsx`)**:
-  - Implementada navegación completa y vista de lugares basada en GraphQL schema (`Place`).
-  - Integrada barra flotante tipo píldora con diseño premium.
-  - Detalle modal a pantalla completa con mapa y calificador de planes.
+- **NextDate AI (`src/app/generator.tsx`)**:
+  - Creada experiencia conversacional completa de generación de itinerarios.
+  - Componente universal `<BottomBar />` reutilizado.
