@@ -104,8 +104,7 @@ const INITIAL_MESSAGES: ChatMessage[] = [
   {
     id: 'msg-1',
     sender: 'ai',
-    text: '¡Hola! 🪄 Soy tu Asistente NextDate AI. Aquí tienes una propuesta recomendada paso a paso. También puedes escribir tu propio deseo abajo:',
-    itinerary: MOCK_GENERATED_ITINERARY,
+    text: '¡Hola! 🪄 Soy tu Asistente NextDate AI. Escribe en el cuadro de abajo cómo imaginas tu cita ideal (ej. "Cita romántica para nuestro aniversario con cena italiana") y diseñaré el plan perfecto paso a paso para ti.',
     timestamp: 'Ahora'
   }
 ];
