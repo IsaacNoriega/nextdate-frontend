@@ -157,7 +157,7 @@ export default function GeneratorScreen() {
       const aiResponse: ChatMessage = {
         id: `ai-${Date.now()}`,
         sender: 'ai',
-        text: `Basado en "${userText}", he preparado este itinerario exclusivo para ti:`,
+        text: `Basado en tu deseo "${userText}", he creado esta propuesta exclusiva paso a paso:`,
         itinerary: MOCK_GENERATED_ITINERARY,
         timestamp: 'Ahora'
       };
@@ -181,18 +181,23 @@ export default function GeneratorScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         
-        {/* Minimal Clean Header */}
-        <View style={styles.cleanHeader}>
+        {/* Encabezado Superior Pulido */}
+        <View style={[styles.cleanHeader, { borderBottomColor: colors.border }]}>
           <View style={styles.headerTitleRow}>
-            <Text style={{ fontSize: 16, marginRight: 6 }}>🪄</Text>
+            <Text style={{ fontSize: 18, marginRight: 8 }}>🪄</Text>
             <Text style={[styles.cleanTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
               NextDate AI
             </Text>
-            <View style={styles.onlineDot} />
+            <View style={styles.onlineBadge}>
+              <View style={styles.onlineDot} />
+              <Text style={[styles.onlineText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+                En línea
+              </Text>
+            </View>
           </View>
         </View>
 
-        {/* Scroll de Conversación Ultra-Minimalista */}
+        {/* Scroll de Mensajes del Chat */}
         <ScrollView 
           ref={scrollViewRef}
           contentContainerStyle={styles.chatScroll}
@@ -229,7 +234,7 @@ export default function GeneratorScreen() {
                     </Text>
                   ) : null}
 
-                  {/* ITINERARIO STEPPER ULTRA-CLEAN */}
+                  {/* PROPUESTA DE ITINERARIO PREMUM */}
                   {msg.itinerary ? (() => {
                     const itin = msg.itinerary;
                     const isSaved = itin ? !!savedItineraryIds[itin.id] : false;
@@ -237,9 +242,12 @@ export default function GeneratorScreen() {
                       <View style={styles.itineraryBox}>
                         
                         <View style={styles.itineraryTitleBlock}>
-                          <Text style={[styles.matchText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                            ✨ {itin.matchScore}% Compatibilidad
-                          </Text>
+                          <View style={styles.matchChip}>
+                            <Text style={[styles.matchChipText, { fontFamily: typography.fonts.bold }]}>
+                              ✨ {itin.matchScore}% Compatibilidad
+                            </Text>
+                          </View>
+
                           <Text style={[styles.itinTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
                             {itin.title}
                           </Text>
@@ -248,14 +256,14 @@ export default function GeneratorScreen() {
                           </Text>
                         </View>
 
-                        {/* STEPPER CONECTOR DE NODOS */}
+                        {/* STEPPER VERTICAL ULTRA-PREMIUM */}
                         <View style={styles.stepperWrap}>
                           {itin.steps.map((step, index) => {
                             const isLast = index === itin.steps.length - 1;
                             return (
                               <View key={step.stepNumber} style={styles.stepperItem}>
                                 
-                                {/* Nodo Numérico & Línea */}
+                                {/* Nodo Numérico & Línea Conectora */}
                                 <View style={styles.nodeColumn}>
                                   <View style={[styles.nodeCircle, { backgroundColor: colors.primary }]}>
                                     <Text style={[styles.nodeNum, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
@@ -267,9 +275,9 @@ export default function GeneratorScreen() {
                                   ) : null}
                                 </View>
 
-                                {/* Card del Paso */}
+                                {/* Tarjeta Elegante del Paso */}
                                 <TouchableOpacity
-                                  style={[styles.stepCard, { backgroundColor: colors.background, borderColor: colors.border, borderRadius: borderRadius.md }]}
+                                  style={[styles.stepCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}
                                   activeOpacity={0.88}
                                   onPress={() => openStepDetail(step)}
                                 >
@@ -277,7 +285,7 @@ export default function GeneratorScreen() {
                                   
                                   <View style={styles.stepDetails}>
                                     <Text style={[styles.stepTime, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                                      {step.time}
+                                      🕒 {step.time}
                                     </Text>
 
                                     <Text style={[styles.stepHeadline, { color: colors.text, fontFamily: typography.fonts.bold }]}>
@@ -289,7 +297,7 @@ export default function GeneratorScreen() {
                                     </Text>
                                   </View>
 
-                                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
+                                  <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
                                     <Path d="M9 18l6-6-6-6" />
                                   </Svg>
                                 </TouchableOpacity>
@@ -298,22 +306,24 @@ export default function GeneratorScreen() {
                             );
                           })}
 
-                          {/* Botón Minimalista Guardar Plan */}
-                          <TouchableOpacity
-                            style={[
-                              styles.minimalSaveBtn,
-                              {
-                                backgroundColor: isSaved ? '#34C759' : colors.primary,
-                                borderRadius: borderRadius.md
-                              }
-                            ]}
-                            activeOpacity={0.88}
-                            onPress={() => toggleSaveItinerary(itin.id)}
-                          >
-                            <Text style={[styles.minimalSaveBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                              {isSaved ? '✓ Plan Guardado' : '💾 Guardar este Plan'}
-                            </Text>
-                          </TouchableOpacity>
+                          {/* BOTÓN ULTRA-PREMIUM CENTRADO DE GUARDAR ITINERARIO */}
+                          <View style={styles.saveBtnContainer}>
+                            <TouchableOpacity
+                              style={[
+                                styles.premiumSaveBtn,
+                                {
+                                  backgroundColor: isSaved ? '#34C759' : colors.primary,
+                                  borderRadius: borderRadius.round
+                                }
+                              ]}
+                              activeOpacity={0.88}
+                              onPress={() => toggleSaveItinerary(itin.id)}
+                            >
+                              <Text style={[styles.premiumSaveBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                                {isSaved ? '✓ ¡Itinerario Guardado con Éxito!' : '✨ Guardar este Itinerario Mágico'}
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
 
                         </View>
 
@@ -326,11 +336,11 @@ export default function GeneratorScreen() {
             );
           })}
 
-          {/* Thinking State */}
+          {/* Estado Generando */}
           {isThinking ? (
             <View style={styles.thinkingRow}>
               <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 8 }} />
-              <Text style={[styles.thinkingLabel, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+              <Text style={[styles.thinkingLabel, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
                 Diseñando tu cita...
               </Text>
             </View>
@@ -338,11 +348,11 @@ export default function GeneratorScreen() {
 
         </ScrollView>
 
-        {/* Floating Minimal Chat Input */}
+        {/* Input Flotante del Chat */}
         <View style={[styles.floatingInputRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <TextInput
             style={[styles.cleanTextInput, { color: colors.text, fontFamily: typography.fonts.regular }]}
-            placeholder="Describe tu cita ideal..."
+            placeholder="Escribe cómo imaginas tu cita..."
             placeholderTextColor={colors.textSecondary}
             value={inputPrompt}
             onChangeText={setInputPrompt}
@@ -363,7 +373,7 @@ export default function GeneratorScreen() {
 
       </KeyboardAvoidingView>
 
-      {/* DETALLE A PANTALLA COMPLETA NATIVA (MODAL STEP) */}
+      {/* DETALLE COMPLETO MODAL FULL-SCREEN */}
       <Modal
         visible={!!selectedStep}
         animationType="slide"
@@ -374,7 +384,7 @@ export default function GeneratorScreen() {
           {selectedStep ? (
             <View style={{ flex: 1 }}>
               
-              {/* Cover Image & Close X Button (top: 36) */}
+              {/* Imagen & Botón X (top: 36) */}
               <View style={styles.modalCoverWrapper}>
                 <Image source={{ uri: selectedStep.imageUrl }} style={styles.modalCover} />
                 
@@ -472,7 +482,7 @@ export default function GeneratorScreen() {
                   ) : null}
                 </View>
 
-                {/* BOTÓN PLANEAR ESTE PASO SEPARADO */}
+                {/* BOTÓN SEPARADO PLANEAR PASO */}
                 <TouchableOpacity 
                   style={[styles.modalPlanBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
                   activeOpacity={0.9}
@@ -504,6 +514,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     alignItems: 'center',
+    borderBottomWidth: 1,
   },
   headerTitleRow: {
     flexDirection: 'row',
@@ -512,20 +523,28 @@ const styles = StyleSheet.create({
   cleanTitle: {
     fontSize: 18,
   },
+  onlineBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 10,
+    gap: 4,
+  },
   onlineDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
     backgroundColor: '#34C759',
-    marginLeft: 6,
+  },
+  onlineText: {
+    fontSize: 11,
   },
   chatScroll: {
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 150,
+    paddingTop: 14,
+    paddingBottom: 160,
   },
   messageRow: {
-    marginBottom: 14,
+    marginBottom: 16,
     width: '100%',
   },
   userRow: {
@@ -535,12 +554,12 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   cleanBubble: {
-    padding: 10,
-    maxWidth: '96%',
+    padding: 12,
+    maxWidth: '98%',
   },
   userBubble: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   aiBubble: {
     borderWidth: 0,
@@ -548,8 +567,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   msgText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 22,
   },
   thinkingRow: {
     flexDirection: 'row',
@@ -563,87 +582,111 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   itineraryBox: {
-    marginTop: 8,
+    marginTop: 12,
+    width: '100%',
   },
   itineraryTitleBlock: {
-    marginBottom: 10,
+    marginBottom: 14,
   },
-  matchText: {
-    fontSize: 11,
-    marginBottom: 2,
+  matchChip: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(52, 199, 89, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 6,
+  },
+  matchChipText: {
+    color: '#34C759',
+    fontSize: 12,
   },
   itinTitle: {
-    fontSize: 17,
-    marginBottom: 2,
+    fontSize: 21,
+    lineHeight: 26,
+    marginBottom: 4,
   },
   itinSub: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 13,
+    lineHeight: 18,
   },
   stepperWrap: {
-    marginTop: 6,
+    marginTop: 10,
+    width: '100%',
   },
   stepperItem: {
     flexDirection: 'row',
-    marginBottom: 6,
+    marginBottom: 10,
   },
   nodeColumn: {
     alignItems: 'center',
-    width: 24,
-    marginRight: 6,
+    width: 30,
+    marginRight: 10,
     paddingTop: 4,
   },
   nodeCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: 'center',
     justify: 'center',
     zIndex: 2,
   },
   nodeNum: {
-    fontSize: 11,
+    fontSize: 12,
   },
   nodeLine: {
-    width: 1.5,
+    width: 2,
     flex: 1,
-    marginTop: 2,
-    marginBottom: -6,
+    marginTop: 4,
+    marginBottom: -8,
   },
   stepCard: {
     flex: 1,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 8,
+    padding: 10,
   },
   stepImage: {
-    width: 44,
-    height: 44,
-    borderRadius: 6,
-    marginRight: 8,
+    width: 58,
+    height: 58,
+    borderRadius: 10,
+    marginRight: 12,
   },
   stepDetails: {
     flex: 1,
   },
   stepTime: {
-    fontSize: 10,
+    fontSize: 11,
+    marginBottom: 2,
   },
   stepHeadline: {
-    fontSize: 13,
+    fontSize: 14,
+    marginBottom: 2,
   },
   stepAddress: {
-    fontSize: 11,
+    fontSize: 12,
   },
-  minimalSaveBtn: {
-    height: 40,
+  saveBtnContainer: {
+    marginTop: 16,
     width: '100%',
+  },
+  premiumSaveBtn: {
+    height: 48,
+    width: '100%',
+    flexDirection: 'row',
     alignItems: 'center',
     justify: 'center',
-    marginTop: 10,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  minimalSaveBtnText: {
-    fontSize: 13,
+  premiumSaveBtnText: {
+    fontSize: 14,
+    textAlign: 'center',
+    width: '100%',
   },
   floatingInputRow: {
     position: 'absolute',
@@ -652,22 +695,21 @@ const styles = StyleSheet.create({
     right: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderWidth: 1,
-    borderRadius: 24,
+    borderRadius: 26,
     gap: 8,
   },
   cleanTextInput: {
     flex: 1,
-    height: 38,
-    paddingHorizontal: 12,
-    fontSize: 13,
+    height: 40,
+    fontSize: 14,
   },
   cleanSendBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justify: 'center',
   },
