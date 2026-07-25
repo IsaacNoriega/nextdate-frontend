@@ -15,8 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
-import { useTheme } from '../hooks/useTheme';
-import BottomBar from '../components/ui/bottom-bar';
+import { useTheme } from '../../hooks/useTheme';
 
 interface ItineraryStep {
   stepNumber: number;
@@ -500,7 +499,7 @@ export default function GeneratorScreen() {
       </Modal>
 
       {/* FLOATING PILL BOTTOM BAR REUTILIZABLE */}
-      <BottomBar activeTab="ai" />
+
 
     </SafeAreaView>
   );

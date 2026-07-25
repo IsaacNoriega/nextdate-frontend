@@ -129,7 +129,7 @@ export default function SetupProfileScreen() {
     setErrorMessage(null);
     try {
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      router.replace('/explore');
+      router.replace('/(tabs)/explore');
     } catch (err: any) {
       setErrorMessage('Ocurrió un error al guardar el perfil. Intenta nuevamente.');
     } finally {

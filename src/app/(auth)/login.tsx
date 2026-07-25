@@ -54,7 +54,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 1200));
-      router.replace('/explore');
+      router.replace('/(tabs)/explore');
     } catch (err: any) {
       setErrorMessage('Credenciales inválidas. Por favor intenta de nuevo.');
     } finally {
