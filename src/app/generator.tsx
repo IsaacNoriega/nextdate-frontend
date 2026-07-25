@@ -243,91 +243,98 @@ export default function GeneratorScreen() {
                   ) : null}
 
                   {/* ITINERARIO PASO A PASO EN FORMATO STEPPER DENTRO DEL CHAT */}
-                  {msg.itinerary ? (
-                    <View style={styles.itineraryContainer}>
-                      
-                      <View style={styles.itineraryHeader}>
-                        <Text style={[styles.matchBadge, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                          🎯 {msg.itinerary.matchScore}% Compatibilidad
-                        </Text>
-                        <Text style={[styles.itineraryTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                          {msg.itinerary.title}
-                        </Text>
-                        <Text style={[styles.itineraryTagline, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                          {msg.itinerary.tagline}
-                        </Text>
-                      </View>
-
-                      {/* STEPPER VERTICAL INTERACTIVO */}
-                      <View style={styles.stepperContainer}>
-                        {msg.itinerary.steps.map((step, index) => {
-                          const isLast = index === msg.itinerary!.steps.length - 1;
-                          return (
-                            <View key={step.stepNumber} style={styles.stepperRow}>
-                              
-                              {/* Nodo y línea conectora */}
-                              <View style={styles.stepperNodeCol}>
-                                <View style={[styles.stepperCircle, { backgroundColor: colors.primary }]}>
-                                  <Text style={[styles.stepperCircleText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                                    {step.stepNumber}
-                                  </Text>
-                                </View>
-                                {!isLast ? (
-                                  <View style={[styles.stepperLine, { backgroundColor: colors.primary + '50' }]} />
-                                ) : null}
-                              </View>
-
-                              {/* Card del Paso */}
-                              <TouchableOpacity
-                                style={[styles.stepperCard, { backgroundColor: colors.background, borderColor: colors.border, borderRadius: borderRadius.md }]}
-                                activeOpacity={0.88}
-                                onPress={() => openStepDetail(step)}
-                              >
-                                <Image source={{ uri: step.imageUrl }} style={styles.stepThumb} />
-                                
-                                <View style={styles.stepInfo}>
-                                  <Text style={[styles.stepTime, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                                    🕒 {step.time}
-                                  </Text>
-
-                                  <Text style={[styles.stepTitleText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                                    {step.categoryEmoji} {step.title}
-                                  </Text>
-
-                                  <Text style={[styles.stepPlaceText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]} numberOfLines={1}>
-                                    📍 {step.placeName}
-                                  </Text>
-                                </View>
-
-                                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
-                                  <Path d="M9 18l6-6-6-6" />
-                                </Svg>
-                              </TouchableOpacity>
-
-                            </View>
-                          );
-                        })}
-                      {/* Botón de Guardar Plan de Cita */}
-                      <View style={styles.savePlanActionRow}>
-                        <TouchableOpacity
-                          style={[
-                            styles.savePlanBtn,
-                            {
-                              backgroundColor: savedItineraryIds[msg.itinerary.id] ? '#34C759' : colors.primary,
-                              borderRadius: borderRadius.md
-                            }
-                          ]}
-                          activeOpacity={0.88}
-                          onPress={() => toggleSaveItinerary(msg.itinerary!.id)}
-                        >
-                          <Text style={[styles.savePlanBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                            {savedItineraryIds[msg.itinerary.id] ? '✅ ¡Plan Guardado en Mis Citas!' : '💾 Guardar este Plan de Cita'}
+                  {msg.itinerary ? (() => {
+                    const itin = msg.itinerary;
+                    const isSaved = itin ? !!savedItineraryIds[itin.id] : false;
+                    return (
+                      <View style={styles.itineraryContainer}>
+                        
+                        <View style={styles.itineraryHeader}>
+                          <Text style={[styles.matchBadge, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+                            🎯 {itin.matchScore}% Compatibilidad
                           </Text>
-                        </TouchableOpacity>
-                      </View>
+                          <Text style={[styles.itineraryTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                            {itin.title}
+                          </Text>
+                          <Text style={[styles.itineraryTagline, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                            {itin.tagline}
+                          </Text>
+                        </View>
 
-                    </View>
-                  ) : null}
+                        {/* STEPPER VERTICAL INTERACTIVO */}
+                        <View style={styles.stepperContainer}>
+                          {itin.steps.map((step, index) => {
+                            const isLast = index === itin.steps.length - 1;
+                            return (
+                              <View key={step.stepNumber} style={styles.stepperRow}>
+                                
+                                {/* Nodo y línea conectora */}
+                                <View style={styles.stepperNodeCol}>
+                                  <View style={[styles.stepperCircle, { backgroundColor: colors.primary }]}>
+                                    <Text style={[styles.stepperCircleText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                                      {step.stepNumber}
+                                    </Text>
+                                  </View>
+                                  {!isLast ? (
+                                    <View style={[styles.stepperLine, { backgroundColor: colors.primary + '50' }]} />
+                                  ) : null}
+                                </View>
+
+                                {/* Card del Paso */}
+                                <TouchableOpacity
+                                  style={[styles.stepperCard, { backgroundColor: colors.background, borderColor: colors.border, borderRadius: borderRadius.md }]}
+                                  activeOpacity={0.88}
+                                  onPress={() => openStepDetail(step)}
+                                >
+                                  <Image source={{ uri: step.imageUrl }} style={styles.stepThumb} />
+                                  
+                                  <View style={styles.stepInfo}>
+                                    <Text style={[styles.stepTime, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+                                      🕒 {step.time}
+                                    </Text>
+
+                                    <Text style={[styles.stepTitleText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                                      {step.categoryEmoji} {step.title}
+                                    </Text>
+
+                                    <Text style={[styles.stepPlaceText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]} numberOfLines={1}>
+                                      📍 {step.placeName}
+                                    </Text>
+                                  </View>
+
+                                  <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
+                                    <Path d="M9 18l6-6-6-6" />
+                                  </Svg>
+                                </TouchableOpacity>
+
+                              </View>
+                            );
+                          })}
+
+                          {/* Botón de Guardar Plan de Cita */}
+                          <View style={styles.savePlanActionRow}>
+                            <TouchableOpacity
+                              style={[
+                                styles.savePlanBtn,
+                                {
+                                  backgroundColor: isSaved ? '#34C759' : colors.primary,
+                                  borderRadius: borderRadius.md
+                                }
+                              ]}
+                              activeOpacity={0.88}
+                              onPress={() => toggleSaveItinerary(itin.id)}
+                            >
+                              <Text style={[styles.savePlanBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                                {isSaved ? '✅ ¡Plan Guardado en Mis Citas!' : '💾 Guardar este Plan de Cita'}
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+
+                        </View>
+
+                      </View>
+                    );
+                  })() : null}
 
                 </View>
               </View>
