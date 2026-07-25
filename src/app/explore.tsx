@@ -711,10 +711,11 @@ const styles = StyleSheet.create({
     borderColor: '#2A2A30',
   },
   pillTabItem: {
+    flex: 1,
     alignItems: 'center',
     justify: 'center',
-    paddingHorizontal: 14,
     paddingVertical: 8,
+    paddingHorizontal: 4,
     borderRadius: 24,
   },
   activePillCapsule: {
@@ -724,6 +725,8 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#8E8E93',
     marginTop: 3,
+    textAlign: 'center',
+    width: '100%',
   },
   activePillText: {
     color: '#FFFFFF',
