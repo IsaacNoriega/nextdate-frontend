@@ -139,6 +139,16 @@ export default function ExploreScreen() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('explore');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
 
+  // Estado del Rating del Plan
+  const [userRating, setUserRating] = useState<number>(0);
+  const [ratingSubmitted, setRatingSubmitted] = useState<boolean>(false);
+
+  const openPlaceDetails = (place: Place) => {
+    setSelectedPlace(place);
+    setUserRating(0);
+    setRatingSubmitted(false);
+  };
+
   // Filtrado dinámico
   const filteredPlaces = MOCK_PLACES.filter((place) => {
     const matchesSearch = place.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -284,7 +294,7 @@ export default function ExploreScreen() {
               <TouchableOpacity 
                 style={[styles.placeCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}
                 activeOpacity={0.9}
-                onPress={() => setSelectedPlace(item)}
+                onPress={() => openPlaceDetails(item)}
               >
                 <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />
                 
@@ -320,7 +330,7 @@ export default function ExploreScreen() {
 
                     <TouchableOpacity 
                       style={[styles.planButton, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
-                      onPress={() => setSelectedPlace(item)}
+                      onPress={() => openPlaceDetails(item)}
                     >
                       <Text style={[styles.planButtonText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
                         Planear Cita
@@ -418,7 +428,7 @@ export default function ExploreScreen() {
         </View>
       </View>
 
-      {/* PANTALLA COMPLETA NATIVA CON BOTÓN "X" Y MAPA DE UBICACIÓN */}
+      {/* PANTALLA COMPLETA NATIVA CON BOTÓN "X", MAPA Y CALIFICADOR DE PLAN (RATE) */}
       <Modal
         visible={!!selectedPlace}
         animationType="slide"
@@ -477,6 +487,56 @@ export default function ExploreScreen() {
                   {selectedPlace.description}
                 </Text>
 
+                {/* SECCIÓN DE CALIFICACIÓN DE PLAN (RATE THE PLAN) */}
+                <Text style={[styles.fullScreenSectionHeader, { color: colors.text, fontFamily: typography.fonts.bold, marginTop: 24 }]}>
+                  Califica este Lugar / Plan
+                </Text>
+                <View style={[styles.ratingCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
+                  <Text style={[styles.ratingCardTitle, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+                    ¿Qué te pareció la experiencia para una cita?
+                  </Text>
+                  
+                  <View style={styles.starsRow}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <TouchableOpacity
+                        key={star}
+                        activeOpacity={0.7}
+                        onPress={() => setUserRating(star)}
+                        style={styles.starBtn}
+                      >
+                        <Text style={[styles.starEmoji, { opacity: star <= userRating ? 1 : 0.3 }]}>
+                          ⭐
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {userRating > 0 ? (
+                    <View style={styles.ratingFeedbackBox}>
+                      <Text style={[styles.ratingFeedbackText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+                        {userRating === 5 ? '¡Excelente plan de cita! 🌟' : userRating >= 4 ? '¡Muy recomendado! 👍' : 'Buena opción 😊'}
+                      </Text>
+                      
+                      {!ratingSubmitted ? (
+                        <TouchableOpacity
+                          style={[styles.submitRatingBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
+                          onPress={() => setRatingSubmitted(true)}
+                        >
+                          <Text style={[styles.submitRatingText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                            Enviar Calificación
+                          </Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <View style={styles.ratingSuccessBox}>
+                          <Text style={[styles.ratingSuccessText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
+                            ¡Gracias por calificar este plan! 🙌
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  ) : null}
+                </View>
+
                 {/* SECCIÓN DEL MAPA DE UBICACIÓN INTERACTIVO */}
                 <Text style={[styles.fullScreenSectionHeader, { color: colors.text, fontFamily: typography.fonts.bold, marginTop: 24 }]}>
                   Ubicación en el Mapa
@@ -486,7 +546,6 @@ export default function ExploreScreen() {
                 </Text>
 
                 <View style={[styles.interactiveMapCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
-                  {/* Visual Pin Overlay Map */}
                   <View style={[styles.mapGridBackground, { backgroundColor: colors.primary + '08' }]}>
                     <View style={[styles.locationPinBox, { backgroundColor: colors.primary }]}>
                       <Svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2}>
@@ -799,6 +858,52 @@ const styles = StyleSheet.create({
   fullScreenDesc: {
     fontSize: 15,
     lineHeight: 24,
+  },
+  ratingCard: {
+    padding: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  ratingCardTitle: {
+    fontSize: 13,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  starsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  starBtn: {
+    padding: 4,
+  },
+  starEmoji: {
+    fontSize: 32,
+  },
+  ratingFeedbackBox: {
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 6,
+  },
+  ratingFeedbackText: {
+    fontSize: 14,
+    marginBottom: 12,
+  },
+  submitRatingBtn: {
+    height: 42,
+    width: '100%',
+    alignItems: 'center',
+    justify: 'center',
+  },
+  submitRatingText: {
+    fontSize: 13,
+  },
+  ratingSuccessBox: {
+    paddingVertical: 6,
+  },
+  ratingSuccessText: {
+    fontSize: 13,
   },
   fullScreenAddressText: {
     fontSize: 14,
