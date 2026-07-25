@@ -331,17 +331,8 @@ export default function ExploreScreen() {
                     📍 {item.address} • {item.distance}
                   </Text>
 
-                  {/* Footer con Botón Planear Cita ABAJO A LA IZQUIERDA */}
+                  {/* Footer con Botón Planear Cita ABAJO A LA DERECHA */}
                   <View style={styles.cardFooter}>
-                    <TouchableOpacity 
-                      style={[styles.planButton, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
-                      onPress={() => setSelectedPlace(item)}
-                    >
-                      <Text style={[styles.planButtonText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                        Planear Cita
-                      </Text>
-                    </TouchableOpacity>
-
                     <View style={styles.ratingBadge}>
                       <Text style={{ fontSize: 13, marginRight: 4 }}>⭐</Text>
                       <Text style={[styles.ratingText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
@@ -351,6 +342,15 @@ export default function ExploreScreen() {
                         ({item.reviewsCount})
                       </Text>
                     </View>
+
+                    <TouchableOpacity 
+                      style={[styles.planButton, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
+                      onPress={() => setSelectedPlace(item)}
+                    >
+                      <Text style={[styles.planButtonText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                        Planear Cita
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               </TouchableOpacity>
