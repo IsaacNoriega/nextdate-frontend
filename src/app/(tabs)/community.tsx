@@ -1,21 +1,19 @@
 import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  ScrollView, 
-  Image, 
+import {
+  StyleSheet,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
   FlatList,
   Modal,
-  SafeAreaView as RNSafeAreaView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 import CommunityCard from '../../components/community/community-card';
+import StarRating from '../../components/ui/star-rating';
 
 type FeedCategory = 'ALL' | 'ROMANTIC' | 'OUTDOOR' | 'GASTRO' | 'CULTURE';
 
@@ -93,14 +91,13 @@ const MOCK_EXPERIENCES: SharedExperience[] = [
 
 export default function CommunityScreen() {
   const { colors, typography, borderRadius } = useTheme();
-  const router = useRouter();
 
   const [selectedCategory, setSelectedCategory] = useState<FeedCategory>('ALL');
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const [savedPosts, setSavedPosts] = useState<Record<string, boolean>>({});
   const [showShareModal, setShowShareModal] = useState(false);
 
-  // Formulario para compartir nueva experiencia
+  // Form states
   const [newTitle, setNewTitle] = useState('');
   const [newPlace, setNewPlace] = useState('');
   const [newReview, setNewReview] = useState('');
@@ -120,17 +117,16 @@ export default function CommunityScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-      
-      {/* Header de la Comunidad */}
       <View style={styles.mainWrapper}>
         
+        {/* Header */}
         <View style={styles.headerRow}>
           <View>
-            <Text style={[styles.headerSub, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-              EXPERIENCIAS REALES
-            </Text>
             <Text style={[styles.headerTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-              Comunidad NextDate
+              Comunidad
+            </Text>
+            <Text style={[styles.headerSub, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+              Experiencia e historias reales de parejas
             </Text>
           </View>
 
@@ -139,13 +135,16 @@ export default function CommunityScreen() {
             activeOpacity={0.88}
             onPress={() => setShowShareModal(true)}
           >
+            <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2.5}>
+              <Path d="M12 5v14M5 12h14" />
+            </Svg>
             <Text style={[styles.shareBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-              + Publicar
+              Publicar
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Filtro Horizontal de Categorías */}
+        {/* Categories */}
         <View style={styles.categoriesSection}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesScroll}>
             {FEED_CATEGORIES.map((cat) => {
@@ -164,7 +163,7 @@ export default function CommunityScreen() {
                   onPress={() => setSelectedCategory(cat.id)}
                   activeOpacity={0.8}
                 >
-                  <Text style={{ marginRight: 4, fontSize: 12 }}>{cat.icon}</Text>
+                  <Text style={{ marginRight: 6, fontSize: 13 }}>{cat.icon}</Text>
                   <Text style={[
                     styles.categoryChipText,
                     { color: isSelected ? colors.primaryContrast : colors.text, fontFamily: isSelected ? typography.fonts.bold : typography.fonts.medium }
@@ -177,7 +176,7 @@ export default function CommunityScreen() {
           </ScrollView>
         </View>
 
-        {/* FEED DE EXPERIENCIAS */}
+        {/* Feed */}
         <FlatList
           data={filteredExperiences}
           keyExtractor={(item) => item.id}
@@ -211,7 +210,7 @@ export default function CommunityScreen() {
 
       </View>
 
-      {/* MODAL PARA PUBLICAR NUEVA EXPERIENCIA CON BOTÓN "X" A top: 36 */}
+      {/* Share Modal */}
       <Modal
         visible={showShareModal}
         animationType="slide"
@@ -221,10 +220,10 @@ export default function CommunityScreen() {
         <SafeAreaView style={[styles.modalArea, { backgroundColor: colors.background }]}>
           <View style={{ flex: 1 }}>
             
-            {/* Header del Modal con X a top: 36 */}
+            {/* Header */}
             <View style={styles.modalTopBar}>
               <Text style={[styles.modalTitleText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                Compartir Experiencia de Cita
+                Compartir cita
               </Text>
               
               <TouchableOpacity 
@@ -232,7 +231,7 @@ export default function CommunityScreen() {
                 activeOpacity={0.8}
                 onPress={() => setShowShareModal(false)}
               >
-                <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.5}>
+                <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.5}>
                   <Path d="M18 6L6 18M6 6l12 12" />
                 </Svg>
               </TouchableOpacity>
@@ -241,7 +240,7 @@ export default function CommunityScreen() {
             <ScrollView contentContainerStyle={styles.modalScrollBody} showsVerticalScrollIndicator={false}>
               
               <Text style={[styles.fieldLabel, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
-                Título de tu Cita
+                Título de tu cita
               </Text>
               <TextInput
                 style={[styles.inputField, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card, borderRadius: borderRadius.md, fontFamily: typography.fonts.regular }]}
@@ -252,7 +251,7 @@ export default function CommunityScreen() {
               />
 
               <Text style={[styles.fieldLabel, { color: colors.textSecondary, fontFamily: typography.fonts.medium, marginTop: 14 }]}>
-                Lugar Visitado
+                Lugar visitado
               </Text>
               <TextInput
                 style={[styles.inputField, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card, borderRadius: borderRadius.md, fontFamily: typography.fonts.regular }]}
@@ -263,11 +262,11 @@ export default function CommunityScreen() {
               />
 
               <Text style={[styles.fieldLabel, { color: colors.textSecondary, fontFamily: typography.fonts.medium, marginTop: 14 }]}>
-                Tu Reseña / Historia
+                Tu reseña o historia
               </Text>
               <TextInput
                 style={[styles.inputField, styles.textAreaField, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card, borderRadius: borderRadius.md, fontFamily: typography.fonts.regular }]}
-                placeholder="Cuéntanos qué fue lo que más les gustó del lugar y qué les recomiendas a otras parejas..."
+                placeholder="Cuéntanos qué fue lo que más les gustó y qué recomiendan a otras parejas..."
                 placeholderTextColor={colors.textSecondary}
                 multiline
                 numberOfLines={4}
@@ -276,24 +275,16 @@ export default function CommunityScreen() {
               />
 
               <Text style={[styles.fieldLabel, { color: colors.textSecondary, fontFamily: typography.fonts.medium, marginTop: 14 }]}>
-                Califica tu experiencia
+                Calificación
               </Text>
-              <View style={styles.starsSelectRow}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <TouchableOpacity
-                    key={star}
-                    activeOpacity={0.7}
-                    onPress={() => setNewRating(star)}
-                    style={{ padding: 4 }}
-                  >
-                    <Text style={{ fontSize: 30, opacity: star <= newRating ? 1 : 0.25 }}>
-                      ⭐
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+              <View style={[styles.starRatingWrap, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.md }]}>
+                <StarRating
+                  rating={newRating}
+                  onRatingChange={setNewRating}
+                />
               </View>
 
-              {/* Botón de Publicación */}
+              {/* Publish CTA */}
               <TouchableOpacity 
                 style={[styles.publishBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
                 activeOpacity={0.9}
@@ -305,7 +296,7 @@ export default function CommunityScreen() {
                 }}
               >
                 <Text style={[styles.publishBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                  Publicar en la Comunidad ✨
+                  Publicar experiencia
                 </Text>
               </TouchableOpacity>
 
@@ -314,8 +305,6 @@ export default function CommunityScreen() {
           </View>
         </SafeAreaView>
       </Modal>
-
-
 
     </SafeAreaView>
   );
@@ -328,27 +317,30 @@ const styles = StyleSheet.create({
   mainWrapper: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingTop: 8,
   },
   headerRow: {
     flexDirection: 'row',
-    justify: 'space-between',
+    justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    marginBottom: 14,
-  },
-  headerSub: {
-    fontSize: 11,
-    letterSpacing: 1,
-    marginBottom: 2,
+    marginBottom: 16,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
+    lineHeight: 34,
+    letterSpacing: -0.5,
+  },
+  headerSub: {
+    fontSize: 13,
+    marginTop: 2,
   },
   shareBtn: {
-    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    marginLeft: 'auto',
   },
   shareBtnText: {
     fontSize: 13,
@@ -358,94 +350,23 @@ const styles = StyleSheet.create({
   },
   categoriesScroll: {
     gap: 8,
+    paddingRight: 12,
+    paddingVertical: 4,
+    alignItems: 'center',
   },
   categoryChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
   },
   categoryChipText: {
-    fontSize: 12,
+    fontSize: 13,
   },
   feedScroll: {
     paddingBottom: 110,
     gap: 18,
-  },
-  postCard: {
-    padding: 16,
-    borderWidth: 1,
-  },
-  postHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    gap: 10,
-  },
-  avatarImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  authorName: {
-    fontSize: 14,
-  },
-  postTime: {
-    fontSize: 11,
-  },
-  ratingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ratingNumber: {
-    fontSize: 13,
-  },
-  planTitleText: {
-    fontSize: 17,
-    marginBottom: 4,
-  },
-  placeTag: {
-    marginBottom: 12,
-  },
-  placeTagText: {
-    fontSize: 12,
-  },
-  postImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  reviewText: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 14,
-    fontStyle: 'italic',
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    gap: 16,
-  },
-  actionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  actionText: {
-    fontSize: 13,
-  },
-  savePlanPill: {
-    marginLeft: 'auto',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-  },
-  savePlanPillText: {
-    fontSize: 12,
   },
 
   /* MODAL */
@@ -454,22 +375,22 @@ const styles = StyleSheet.create({
   },
   modalTopBar: {
     flexDirection: 'row',
-    justify: 'space-between',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 14,
   },
   modalTitleText: {
-    fontSize: 18,
+    fontSize: 20,
   },
   modalCloseBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
   },
   modalScrollBody: {
     padding: 20,
@@ -490,17 +411,17 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     textAlignVertical: 'top',
   },
-  starsSelectRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 6,
+  starRatingWrap: {
+    padding: 14,
+    borderWidth: 1,
+    alignItems: 'center',
     marginBottom: 24,
   },
   publishBtn: {
     height: 52,
     width: '100%',
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
   },
   publishBtnText: {
     fontSize: 15,
