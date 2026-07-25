@@ -564,11 +564,14 @@ const styles = StyleSheet.create({
   aiBubble: {
     borderWidth: 0,
     backgroundColor: 'transparent',
-    paddingHorizontal: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
   },
   msgText: {
     fontSize: 15,
     lineHeight: 22,
+    marginHorizontal: 4,
+    marginVertical: 2,
   },
   thinkingRow: {
     flexDirection: 'row',
@@ -582,7 +585,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   itineraryBox: {
-    marginTop: 12,
+    marginTop: 14,
+    marginBottom: 12,
+    paddingHorizontal: 4,
     width: '100%',
   },
   itineraryTitleBlock: {
