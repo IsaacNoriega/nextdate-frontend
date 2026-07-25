@@ -278,7 +278,7 @@ export default function RegisterScreen() {
               </View>
             </View>
 
-            {/* Action Button */}
+            {/* Action Button Centrado Total */}
             <TouchableOpacity 
               style={[
                 styles.registerButton, 
@@ -421,11 +421,11 @@ const styles = StyleSheet.create({
   registerButtonText: {
     fontSize: 16,
     textAlign: 'center',
-    alignSelf: 'center',
+    width: '100%',
   },
   footer: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justify: 'center',
     alignItems: 'center',
   },
   footerText: {
