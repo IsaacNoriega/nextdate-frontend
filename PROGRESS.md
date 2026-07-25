@@ -26,10 +26,13 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
 ### 🟢 Módulo 2: Onboarding de Perfil (`feature/onboarding-profile`)
 - [x] Crear rama de trabajo `feature/onboarding-profile`.
 - [x] Diseñar e implementar flujo por pasos de Onboarding (`app/(onboarding)/setup-profile.tsx`):
-  - [x] Paso 1: Datos personales (Username, Fecha de Nacimiento, Género, Bio).
+  - [x] Paso 1: Datos personales (Username, Fecha de Nacimiento con Modal Nativo de Calendario, Género centrado, Bio).
   - [x] Paso 2: Selección de Intereses/Categorías (`PlaceCategory` multiselect).
   - [x] Paso 3: Presupuesto (`PriceRange`) y Preferencia dietética (`DietaryPreference`).
   - [x] Paso 4: Coordenadas de Ubicación GPS (`latitude`, `longitude`) y Resumen antes de `createProfile`.
+- [x] Integrar `@react-native-community/datetimepicker` y Modal flotante centrado para Fecha de Nacimiento.
+- [x] Reemplazar `SafeAreaView` por `react-native-safe-area-context` en todas las pantallas.
+- [x] Alineación centrada de textos e iconos SVG en todos los botones primarios, secundarios y redes sociales.
 
 ### ⏳ Módulo 3: Exploración y Descubrimiento (`(tabs)/explore`)
 - [ ] Vista de Mapa Interactivo & Lista de Lugares Cercanos.
@@ -53,3 +56,5 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
   - Implementado Stepper de 4 pasos con indicador visual de progreso.
   - Integrado con la mutation GraphQL `createProfile(input: CreateProfileInput!)`.
   - Mapeo completo de enums (`Gender`, `PlaceCategory`, `PriceRange`, `DietaryPreference`).
+  - Modal flotante centrado en pantalla con DatePicker nativo (HTML5 type="date" en Web y DateTimePicker nativo en móvil).
+  - Botón de navegación sin borde circular en toda la aplicación.
