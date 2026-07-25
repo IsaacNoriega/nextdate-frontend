@@ -382,7 +382,10 @@ export default function ExploreScreen() {
           <TouchableOpacity 
             style={[styles.pillTabItem, activeTab === 'ai' && styles.activePillCapsule]} 
             activeOpacity={0.8}
-            onPress={() => setActiveTab('ai')}
+            onPress={() => {
+              setActiveTab('ai');
+              router.push('/generator');
+            }}
           >
             <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2}>
               <Path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
