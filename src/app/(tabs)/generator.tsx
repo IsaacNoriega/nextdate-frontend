@@ -7,10 +7,10 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
-  ActivityIndicator,
   Modal,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  PanResponder
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -126,6 +126,20 @@ export default function GeneratorScreen() {
   const [stepRating, setStepRating] = useState<number>(0);
   const [stepRatingSubmitted, setStepRatingSubmitted] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
+
+  // Swipe right-to-left to close step detail modal
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > 25 && gestureState.dx < 0;
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx < -40 || gestureState.vx < -0.4) {
+          setSelectedStep(null);
+        }
+      },
+    })
+  ).current;
 
   const toggleSaveItinerary = (id: string) => {
     setSavedItineraryIds((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -425,7 +439,10 @@ export default function GeneratorScreen() {
         presentationStyle="fullScreen"
         onRequestClose={() => setSelectedStep(null)}
       >
-        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+        <SafeAreaView 
+          style={[styles.modalContainer, { backgroundColor: colors.background }]}
+          {...panResponder.panHandlers}
+        >
           {selectedStep ? (
             <View style={{ flex: 1 }}>
               <View style={styles.modalHero}>
@@ -446,86 +463,86 @@ export default function GeneratorScreen() {
                 </View>
               </View>
 
-              <ScrollView contentContainerStyle={styles.modalBody} showsVerticalScrollIndicator={false}>
-                <Text style={[styles.modalTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                  {selectedStep.title}
-                </Text>
+                <ScrollView contentContainerStyle={styles.modalBody} showsVerticalScrollIndicator={false}>
+                  <Text style={[styles.modalTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                    {selectedStep.title}
+                  </Text>
 
-                <View style={styles.modalMeta}>
-                  <View style={[styles.modalMetaChip, { backgroundColor: colors.card }]}>
-                    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
-                      <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                      <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                  <View style={styles.modalMeta}>
+                    <View style={[styles.modalMetaChip, { backgroundColor: colors.card }]}>
+                      <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
+                        <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                      </Svg>
+                      <Text style={[styles.modalMetaText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
+                        {selectedStep.placeName}
+                      </Text>
+                    </View>
+                    <View style={[styles.modalMetaChip, { backgroundColor: colors.card }]}>
+                      <Text style={[styles.modalMetaText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
+                        {selectedStep.estimatedCost}
+                      </Text>
+                    </View>
+                    <View style={[styles.modalMetaChip, { backgroundColor: colors.card }]}>
+                      <Text style={[styles.modalMetaText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
+                        {selectedStep.time}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.md }]}>
+                    <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                      Descripción
+                    </Text>
+                    <Text style={[styles.sectionText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                      {selectedStep.description}
+                    </Text>
+                  </View>
+
+                  <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.md }]}>
+                    <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                      Ubicación
+                    </Text>
+                    <View style={styles.addressRow}>
+                      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2}>
+                        <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                      </Svg>
+                      <Text style={[styles.addressText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                        {selectedStep.address}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.md }]}>
+                    <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                      Califica este paso
+                    </Text>
+                    <StarRating
+                      rating={stepRating}
+                      onRatingChange={setStepRating}
+                      onSubmit={() => setStepRatingSubmitted(true)}
+                      isSubmitted={stepRatingSubmitted}
+                    />
+                  </View>
+
+                  <TouchableOpacity
+                    style={[styles.modalCta, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
+                    activeOpacity={0.9}
+                    onPress={() => setSelectedStep(null)}
+                  >
+                    <Svg width={16} height={16} viewBox="0 0 24 24" fill={colors.primaryContrast}>
+                      <Path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                     </Svg>
-                    <Text style={[styles.modalMetaText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
-                      {selectedStep.placeName}
+                    <Text style={[styles.modalCtaText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                      Agregar al itinerario
                     </Text>
-                  </View>
-                  <View style={[styles.modalMetaChip, { backgroundColor: colors.card }]}>
-                    <Text style={[styles.modalMetaText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
-                      {selectedStep.estimatedCost}
-                    </Text>
-                  </View>
-                  <View style={[styles.modalMetaChip, { backgroundColor: colors.card }]}>
-                    <Text style={[styles.modalMetaText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
-                      {selectedStep.time}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.md }]}>
-                  <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                    Descripción
-                  </Text>
-                  <Text style={[styles.sectionText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                    {selectedStep.description}
-                  </Text>
-                </View>
-
-                <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.md }]}>
-                  <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                    Ubicación
-                  </Text>
-                  <View style={styles.addressRow}>
-                    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2}>
-                      <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                      <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-                    </Svg>
-                    <Text style={[styles.addressText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                      {selectedStep.address}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.md }]}>
-                  <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                    Califica este paso
-                  </Text>
-                  <StarRating
-                    rating={stepRating}
-                    onRatingChange={setStepRating}
-                    onSubmit={() => setStepRatingSubmitted(true)}
-                    isSubmitted={stepRatingSubmitted}
-                  />
-                </View>
-
-                <TouchableOpacity
-                  style={[styles.modalCta, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
-                  activeOpacity={0.9}
-                  onPress={() => setSelectedStep(null)}
-                >
-                  <Svg width={16} height={16} viewBox="0 0 24 24" fill={colors.primaryContrast}>
-                    <Path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                  </Svg>
-                  <Text style={[styles.modalCtaText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                    Agregar al itinerario
-                  </Text>
-                </TouchableOpacity>
-              </ScrollView>
-            </View>
-          ) : null}
-        </SafeAreaView>
-      </Modal>
+                  </TouchableOpacity>
+                </ScrollView>
+              </View>
+            ) : null}
+          </SafeAreaView>
+        </Modal>
 
     </SafeAreaView>
   );
@@ -892,5 +909,39 @@ const styles = StyleSheet.create({
   },
   modalCtaText: {
     fontSize: 15,
+  },
+
+  // Overlay Drawer Panel Styles
+  modalOverlay: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  modalBackdrop: {
+    width: '12%',
+    height: '100%',
+  },
+  drawerPanel: {
+    flex: 1,
+    height: '100%',
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: -4, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  drawerHandleBar: {
+    width: '100%',
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  drawerHandlePill: {
+    width: 36,
+    height: 5,
+    borderRadius: 2.5,
   },
 });

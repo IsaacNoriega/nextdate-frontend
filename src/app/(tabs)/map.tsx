@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -8,6 +8,7 @@ import {
   ScrollView,
   Image,
   Modal,
+  PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Line } from 'react-native-svg';
@@ -155,6 +156,20 @@ export default function MapScreen() {
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState<boolean>(false);
   const [stepRating, setStepRating] = useState<number>(0);
   const [stepRatingSubmitted, setStepRatingSubmitted] = useState<boolean>(false);
+
+  // Swipe right-to-left gesture to close detail modal
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > 25 && gestureState.dx < 0;
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx < -40 || gestureState.vx < -0.4) {
+          setShowDetailModal(false);
+        }
+      },
+    })
+  ).current;
 
   const currentItinerary = selectedItineraryId
     ? AVAILABLE_ITINERARIES.find((i) => i.id === selectedItineraryId) || null
@@ -542,7 +557,10 @@ export default function MapScreen() {
         presentationStyle="fullScreen"
         onRequestClose={() => setShowDetailModal(false)}
       >
-        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+        <SafeAreaView 
+          style={[styles.modalContainer, { backgroundColor: colors.background }]}
+          {...panResponder.panHandlers}
+        >
           {activeStep ? (
             <View style={{ flex: 1 }}>
               <View style={styles.modalHero}>
@@ -683,18 +701,21 @@ const styles = StyleSheet.create({
     height: 28,
     alignItems: 'center',
     justifyContent: 'center',
+    transform: [{ translateX: -14 }, { translateY: -14 }],
   },
   gpsDot: {
     width: 12,
     height: 12,
     borderRadius: 6,
     backgroundColor: '#007AFF',
-    borderWidth: 2.5,
+    borderWidth: 2,
     borderColor: '#FFFFFF',
     zIndex: 5,
   },
   gpsHalo: {
     position: 'absolute',
+    top: 0,
+    left: 0,
     width: 28,
     height: 28,
     borderRadius: 14,
@@ -1053,5 +1074,39 @@ const styles = StyleSheet.create({
   modalCtaText: {
     color: '#FFFFFF',
     fontSize: 15,
+  },
+
+  // Overlay Drawer Panel Styles
+  modalOverlay: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  modalBackdrop: {
+    width: '12%',
+    height: '100%',
+  },
+  drawerPanel: {
+    flex: 1,
+    height: '100%',
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: -4, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  drawerHandleBar: {
+    width: '100%',
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  drawerHandlePill: {
+    width: 36,
+    height: 5,
+    borderRadius: 2.5,
   },
 });

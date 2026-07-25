@@ -144,11 +144,12 @@ export default function CommunityScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Categories */}
+        {/* Filtro Horizontal de Categorías */}
         <View style={styles.categoriesSection}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesScroll}>
             {FEED_CATEGORIES.map((cat) => {
               const isSelected = selectedCategory === cat.id;
+              const strokeColor = isSelected ? colors.primaryContrast : colors.text;
               return (
                 <TouchableOpacity
                   key={cat.id}
@@ -163,7 +164,34 @@ export default function CommunityScreen() {
                   onPress={() => setSelectedCategory(cat.id)}
                   activeOpacity={0.8}
                 >
-                  <Text style={{ marginRight: 6, fontSize: 13 }}>{cat.icon}</Text>
+                  <View style={{ marginRight: 6 }}>
+                    {cat.id === 'ALL' && (
+                      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={2}>
+                        <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </Svg>
+                    )}
+                    {cat.id === 'ROMANTIC' && (
+                      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={2}>
+                        <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                      </Svg>
+                    )}
+                    {cat.id === 'OUTDOOR' && (
+                      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={2}>
+                        <Path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z" />
+                        <Path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+                      </Svg>
+                    )}
+                    {cat.id === 'GASTRO' && (
+                      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={2}>
+                        <Path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3" />
+                      </Svg>
+                    )}
+                    {cat.id === 'CULTURE' && (
+                      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={2}>
+                        <Path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15z" />
+                      </Svg>
+                    )}
+                  </View>
                   <Text style={[
                     styles.categoryChipText,
                     { color: isSelected ? colors.primaryContrast : colors.text, fontFamily: isSelected ? typography.fonts.bold : typography.fonts.medium }
