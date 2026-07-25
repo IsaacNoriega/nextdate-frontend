@@ -1,21 +1,19 @@
 import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  ScrollView, 
-  Image, 
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Image,
   Switch,
-  FlatList,
-  Modal
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 
-type ProfileTab = 'SAVED' | 'POSTS' | 'SETTINGS';
+type ProfileTab = 'SAVED' | 'SETTINGS';
 
 interface SavedPlan {
   id: string;
@@ -49,7 +47,7 @@ const MOCK_SAVED_PLANS: SavedPlan[] = [
 ];
 
 export default function ProfileScreen() {
-  const { colors, typography, borderRadius } = useTheme();
+  const { colors, typography, borderRadius, isDark } = useTheme();
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<ProfileTab>('SAVED');
@@ -60,17 +58,13 @@ export default function ProfileScreen() {
       
       <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
         
-        {/* Header del Perfil */}
+        {/* Profile Header */}
         <View style={styles.profileHeader}>
-          
           <View style={styles.avatarWrapper}>
             <Image 
               source={{ uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80' }} 
               style={styles.avatarImage} 
             />
-            <View style={[styles.vipBadge, { backgroundColor: colors.primary }]}>
-              <Text style={{ fontSize: 10 }}>✨</Text>
-            </View>
           </View>
 
           <Text style={[styles.userNameText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
@@ -80,25 +74,18 @@ export default function ProfileScreen() {
             @isaac_noriega
           </Text>
 
-          <View style={[styles.relationshipPill, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.relationshipText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
-              En relación con <Text style={{ color: colors.primary, fontFamily: typography.fonts.bold }}>Valeria 💕</Text>
-            </Text>
-          </View>
-
           <TouchableOpacity 
             style={[styles.editProfileBtn, { borderColor: colors.border, borderRadius: borderRadius.round }]}
             activeOpacity={0.8}
-            onPress={() => router.push('/(onboarding)/setup-profile')}
+            onPress={() => router.push('/edit-profile?mode=profile')}
           >
             <Text style={[styles.editProfileBtnText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
               Editar Perfil
             </Text>
           </TouchableOpacity>
-
         </View>
 
-        {/* Métricas de Pareja */}
+        {/* Metrics */}
         <View style={[styles.metricsContainer, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
           <View style={styles.metricItem}>
             <Text style={[styles.metricNumber, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
@@ -123,23 +110,31 @@ export default function ProfileScreen() {
           <View style={[styles.metricDivider, { backgroundColor: colors.border }]} />
 
           <View style={styles.metricItem}>
-            <Text style={[styles.metricNumber, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-              4.9 ⭐
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+              <Svg width={14} height={14} viewBox="0 0 24 24" fill="#FFD700">
+                <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </Svg>
+              <Text style={[styles.metricNumber, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+                4.9
+              </Text>
+            </View>
             <Text style={[styles.metricLabel, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
               Rating
             </Text>
           </View>
         </View>
 
-        {/* Pestañas de Navegación del Perfil */}
-        <View style={styles.profileTabsRow}>
+        {/* Profile Tabs */}
+        <View style={[styles.profileTabsRow, { borderBottomColor: colors.border }]}>
           <TouchableOpacity 
             style={[styles.tabButton, activeTab === 'SAVED' && [styles.activeTabButton, { borderBottomColor: colors.primary }]]}
             onPress={() => setActiveTab('SAVED')}
           >
+            <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={activeTab === 'SAVED' ? colors.primary : colors.textSecondary} strokeWidth={2}>
+              <Path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+            </Svg>
             <Text style={[styles.tabButtonText, { color: activeTab === 'SAVED' ? colors.primary : colors.textSecondary, fontFamily: typography.fonts.bold }]}>
-              💾 Planes Guardados
+              Planes Guardados
             </Text>
           </TouchableOpacity>
 
@@ -147,13 +142,17 @@ export default function ProfileScreen() {
             style={[styles.tabButton, activeTab === 'SETTINGS' && [styles.activeTabButton, { borderBottomColor: colors.primary }]]}
             onPress={() => setActiveTab('SETTINGS')}
           >
+            <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={activeTab === 'SETTINGS' ? colors.primary : colors.textSecondary} strokeWidth={2}>
+              <Circle cx="12" cy="12" r="3" />
+              <Path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </Svg>
             <Text style={[styles.tabButtonText, { color: activeTab === 'SETTINGS' ? colors.primary : colors.textSecondary, fontFamily: typography.fonts.bold }]}>
-              ⚙️ Preferencias
+              Preferencias
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* CONTENIDO DE PESTAÑA: PLANES GUARDADOS */}
+        {/* Tab 1: Saved plans */}
         {activeTab === 'SAVED' ? (
           <View style={styles.savedSection}>
             {MOCK_SAVED_PLANS.map((plan) => (
@@ -162,8 +161,8 @@ export default function ProfileScreen() {
                 
                 <View style={styles.savedCardContent}>
                   <View style={styles.savedBadgeRow}>
-                    <Text style={[styles.savedMatchText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                      ✨ {plan.matchScore}% Compatibilidad
+                    <Text style={[styles.savedMatchText, { color: '#30D158', fontFamily: typography.fonts.bold }]}>
+                      {plan.matchScore}% Compatibilidad
                     </Text>
                     <Text style={[styles.savedDateText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
                       {plan.savedAt}
@@ -183,7 +182,7 @@ export default function ProfileScreen() {
                     onPress={() => router.push('/(tabs)/generator')}
                   >
                     <Text style={[styles.planActionBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                      Ver Itinerario & Planear ✨
+                      Ver Itinerario & Planear
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -192,7 +191,7 @@ export default function ProfileScreen() {
           </View>
         ) : null}
 
-        {/* CONTENIDO DE PESTAÑA: CONFIGURACIÓN & PREFERENCIAS */}
+        {/* Tab 2: Settings */}
         {activeTab === 'SETTINGS' ? (
           <View style={styles.settingsSection}>
             
@@ -210,7 +209,7 @@ export default function ProfileScreen() {
 
               <View style={[styles.settingDivider, { backgroundColor: colors.border }]} />
 
-              <TouchableOpacity style={styles.settingItemRow} onPress={() => router.push('/(onboarding)/setup-profile')}>
+              <TouchableOpacity style={styles.settingItemRow} onPress={() => router.push('/edit-profile?mode=preferences')}>
                 <Text style={[styles.settingLabel, { color: colors.text, fontFamily: typography.fonts.medium }]}>
                   Preferencias Gastronómicas
                 </Text>
@@ -222,7 +221,7 @@ export default function ProfileScreen() {
 
               <View style={[styles.settingDivider, { backgroundColor: colors.border }]} />
 
-              <TouchableOpacity style={styles.settingItemRow} onPress={() => router.push('/(onboarding)/setup-profile')}>
+              <TouchableOpacity style={styles.settingItemRow} onPress={() => router.push('/edit-profile?mode=budget')}>
                 <Text style={[styles.settingLabel, { color: colors.text, fontFamily: typography.fonts.medium }]}>
                   Rango de Presupuesto Habitual
                 </Text>
@@ -233,7 +232,7 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Cerrar Sesión */}
+            {/* Logout */}
             <TouchableOpacity 
               style={[styles.logoutBtn, { borderColor: '#FF3B30', borderRadius: borderRadius.md }]}
               activeOpacity={0.8}
@@ -248,9 +247,6 @@ export default function ProfileScreen() {
         ) : null}
 
       </ScrollView>
-
-      {/* FLOATING PILL BOTTOM BAR REUTILIZABLE */}
-
 
     </SafeAreaView>
   );
@@ -278,35 +274,13 @@ const styles = StyleSheet.create({
     height: 84,
     borderRadius: 42,
   },
-  vipBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justify: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
   userNameText: {
     fontSize: 22,
     marginBottom: 2,
   },
   userHandleText: {
     fontSize: 13,
-    marginBottom: 10,
-  },
-  relationshipPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
     marginBottom: 14,
-  },
-  relationshipText: {
-    fontSize: 12,
   },
   editProfileBtn: {
     paddingHorizontal: 20,
@@ -326,6 +300,7 @@ const styles = StyleSheet.create({
   metricItem: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   metricNumber: {
     fontSize: 18,
@@ -341,12 +316,14 @@ const styles = StyleSheet.create({
   profileTabsRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
     marginBottom: 16,
   },
   tabButton: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     paddingVertical: 10,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
@@ -371,7 +348,7 @@ const styles = StyleSheet.create({
   },
   savedBadgeRow: {
     flexDirection: 'row',
-    justify: 'space-between',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 6,
   },
@@ -394,7 +371,7 @@ const styles = StyleSheet.create({
     height: 44,
     width: '100%',
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
   },
   planActionBtnText: {
     fontSize: 13,
@@ -408,7 +385,7 @@ const styles = StyleSheet.create({
   },
   settingItemRow: {
     flexDirection: 'row',
-    justify: 'space-between',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 14,
   },
@@ -424,7 +401,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderWidth: 1,
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
     marginTop: 10,
   },
   logoutBtnText: {
