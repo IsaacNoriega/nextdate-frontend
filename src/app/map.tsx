@@ -3,10 +3,12 @@ import {
   StyleSheet, 
   View, 
   Text, 
+  TextInput, 
   TouchableOpacity, 
   ScrollView, 
   Image, 
-  Modal
+  Modal,
+  TouchableWithoutFeedback
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -152,14 +154,17 @@ export default function MapScreen() {
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
   const [isNavigating, setIsNavigating] = useState<boolean>(false);
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
-  const [showItinerarySelectorModal, setShowItinerarySelectorModal] = useState<boolean>(false);
+  
+  // Estado del Buscador / Desplegable de Itinerarios
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState<boolean>(false);
   const [stepRating, setStepRating] = useState<number>(0);
   const [stepRatingSubmitted, setStepRatingSubmitted] = useState<boolean>(false);
 
   const currentItinerary = AVAILABLE_ITINERARIES.find((i) => i.id === selectedItineraryId) || AVAILABLE_ITINERARIES[0];
   const activeStep = currentItinerary.steps[activeStepIndex] || currentItinerary.steps[0];
 
-  // Simulación de navegación automática
+  // Simulación de navegación
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isNavigating) {
@@ -177,6 +182,11 @@ export default function MapScreen() {
       setIsNavigating(false);
     }
   };
+
+  const filteredItineraries = AVAILABLE_ITINERARIES.filter((item) => {
+    return item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+           item.tagline.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
@@ -267,10 +277,10 @@ export default function MapScreen() {
 
         </View>
 
-        {/* HEADER FLOTANTE: SELECTOR DE ITINERARIOS Y NAVEGACIÓN */}
+        {/* HEADER FLOTANTE: BUSCADOR / SELECTOR DE ITINERARIOS GUARDADOS */}
         <View style={styles.topHeaderOverlay}>
           {isNavigating ? (
-            /* Banner de Instrucción Giro a Giro */
+            /* Banner Giro a Giro en Vivo */
             <View style={[styles.turnInstructionBanner, { backgroundColor: '#1C1C1E', borderRadius: borderRadius.lg }]}>
               <View style={styles.turnIconBg}>
                 <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.5}>
@@ -295,61 +305,119 @@ export default function MapScreen() {
               </TouchableOpacity>
             </View>
           ) : (
-            /* Banner de Selección de Itinerario */
-            <View style={[styles.routeSummaryHeader, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
+            /* BARRA BUSCADORA TIPO GOOGLE MAPS DE ITINERARIOS GUARDADOS */
+            <View style={{ width: '100%' }}>
               
-              <TouchableOpacity 
-                style={styles.selectItinBtnRow}
-                activeOpacity={0.8}
-                onPress={() => setShowItinerarySelectorModal(true)}
-              >
-                <Text style={{ fontSize: 18, marginRight: 8 }}>🗺️</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.summaryTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                    {currentItinerary.title} ▾
-                  </Text>
-                  <Text style={[styles.summarySub, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                    {currentItinerary.steps.length} Pasos • {currentItinerary.totalDistance} • {currentItinerary.totalTime}
-                  </Text>
-                </View>
-                <View style={[styles.changeItinChip, { backgroundColor: colors.primary + '18' }]}>
-                  <Text style={[styles.changeItinChipText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                    Cambiar Cita
-                  </Text>
-                </View>
-              </TouchableOpacity>
+              <View style={[styles.searchPillBar, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.round }]}>
+                <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2.5}>
+                  <Circle cx="11" cy="11" r="8" />
+                  <Path d="M21 21l-4.35-4.35" />
+                </Svg>
 
-              {/* Selector Rápido de Pasos */}
-              <View style={styles.stepsPillRow}>
-                {currentItinerary.steps.map((st, i) => (
-                  <TouchableOpacity
-                    key={st.stepNumber}
-                    style={[
-                      styles.stepChip,
-                      {
-                        backgroundColor: i === activeStepIndex ? colors.primary : colors.background,
-                        borderColor: i === activeStepIndex ? colors.primary : colors.border,
-                        borderRadius: borderRadius.round
-                      }
-                    ]}
-                    onPress={() => setActiveStepIndex(i)}
-                  >
-                    <Text style={[
-                      styles.stepChipText,
-                      { color: i === activeStepIndex ? colors.primaryContrast : colors.text, fontFamily: typography.fonts.bold }
-                    ]}>
-                      Paso {st.stepNumber} {st.categoryEmoji}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                <TextInput
+                  style={[styles.searchPillInput, { color: colors.text, fontFamily: typography.fonts.medium }]}
+                  placeholder="Selecciona o busca un itinerario guardado..."
+                  placeholderTextColor={colors.textSecondary}
+                  value={isSearchDropdownOpen ? searchQuery : currentItinerary.title}
+                  onFocus={() => {
+                    setIsSearchDropdownOpen(true);
+                    setSearchQuery('');
+                  }}
+                  onChangeText={(txt) => {
+                    setSearchQuery(txt);
+                    setIsSearchDropdownOpen(true);
+                  }}
+                />
+
+                <TouchableOpacity 
+                  onPress={() => setIsSearchDropdownOpen(!isSearchDropdownOpen)}
+                  style={{ padding: 4 }}
+                >
+                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                    {isSearchDropdownOpen ? '▲' : '▼'}
+                  </Text>
+                </TouchableOpacity>
               </View>
+
+              {/* LISTA DESPLEGABLE DE ITINERARIOS GUARDADOS */}
+              {isSearchDropdownOpen ? (
+                <View style={[styles.dropdownPanel, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
+                  <Text style={[styles.dropdownHeaderTitle, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
+                    ITINERARIOS GUARDADOS
+                  </Text>
+
+                  {filteredItineraries.map((itin) => {
+                    const isSelected = itin.id === selectedItineraryId;
+                    return (
+                      <TouchableOpacity
+                        key={itin.id}
+                        style={[
+                          styles.dropdownItemRow,
+                          {
+                            backgroundColor: isSelected ? colors.primary + '12' : 'transparent',
+                            borderColor: isSelected ? colors.primary : colors.border
+                          }
+                        ]}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          setSelectedItineraryId(itin.id);
+                          setActiveStepIndex(0);
+                          setIsNavigating(false);
+                          setIsSearchDropdownOpen(false);
+                          setSearchQuery(itin.title);
+                        }}
+                      >
+                        <Text style={{ fontSize: 18, marginRight: 10 }}>🗺️</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.dropdownItemTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                            {itin.title}
+                          </Text>
+                          <Text style={[styles.dropdownItemSub, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]} numberOfLines={1}>
+                            {itin.steps.length} Pasos • {itin.totalDistance} • {itin.tagline}
+                          </Text>
+                        </View>
+                        {isSelected ? (
+                          <Text style={{ color: colors.primary, fontFamily: typography.fonts.bold, fontSize: 13 }}>✓</Text>
+                        ) : null}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ) : null}
+
+              {/* Selector Rápido de Pasos del Itinerario Actual */}
+              {!isSearchDropdownOpen ? (
+                <View style={styles.stepsPillRow}>
+                  {currentItinerary.steps.map((st, i) => (
+                    <TouchableOpacity
+                      key={st.stepNumber}
+                      style={[
+                        styles.stepChip,
+                        {
+                          backgroundColor: i === activeStepIndex ? colors.primary : colors.card,
+                          borderColor: i === activeStepIndex ? colors.primary : colors.border,
+                          borderRadius: borderRadius.round
+                        }
+                      ]}
+                      onPress={() => setActiveStepIndex(i)}
+                    >
+                      <Text style={[
+                        styles.stepChipText,
+                        { color: i === activeStepIndex ? colors.primaryContrast : colors.text, fontFamily: typography.fonts.bold }
+                      ]}>
+                        Paso {st.stepNumber} {st.categoryEmoji}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : null}
 
             </View>
           )}
         </View>
 
         {/* TARJETA FLOTANTE INFERIOR NAVEGADORA NATIVA IN-APP */}
-        {activeStep ? (
+        {activeStep && !isSearchDropdownOpen ? (
           <View style={styles.bottomCardContainer}>
             <View style={[styles.navCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
               
@@ -419,91 +487,6 @@ export default function MapScreen() {
         ) : null}
 
       </View>
-
-      {/* MODAL PARA ELEGIR EL ITINERARIO DE NAVEGACIÓN */}
-      <Modal
-        visible={showItinerarySelectorModal}
-        animationType="slide"
-        presentationStyle="fullScreen"
-        onRequestClose={() => setShowItinerarySelectorModal(false)}
-      >
-        <SafeAreaView style={[styles.modalArea, { backgroundColor: colors.background }]}>
-          <View style={{ flex: 1 }}>
-            
-            {/* Header con X a top: 36 */}
-            <View style={styles.modalSelectorTopBar}>
-              <Text style={[styles.modalSelectorTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                Elegir Itinerario para Navegar
-              </Text>
-              
-              <TouchableOpacity 
-                style={styles.modalCloseBtn}
-                activeOpacity={0.8}
-                onPress={() => setShowItinerarySelectorModal(false)}
-              >
-                <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.5}>
-                  <Path d="M18 6L6 18M6 6l12 12" />
-                </Svg>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView contentContainerStyle={styles.selectorBody} showsVerticalScrollIndicator={false}>
-              
-              {AVAILABLE_ITINERARIES.map((itin) => {
-                const isCurrent = itin.id === selectedItineraryId;
-                return (
-                  <TouchableOpacity
-                    key={itin.id}
-                    style={[
-                      styles.itinOptionCard,
-                      {
-                        backgroundColor: colors.card,
-                        borderColor: isCurrent ? colors.primary : colors.border,
-                        borderRadius: borderRadius.lg,
-                        borderWidth: isCurrent ? 2 : 1
-                      }
-                    ]}
-                    activeOpacity={0.88}
-                    onPress={() => {
-                      setSelectedItineraryId(itin.id);
-                      setActiveStepIndex(0);
-                      setIsNavigating(false);
-                      setShowItinerarySelectorModal(false);
-                    }}
-                  >
-                    <View style={styles.itinOptionHeader}>
-                      <Text style={[styles.itinOptionTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                        {itin.title}
-                      </Text>
-                      <Text style={[styles.itinOptionMatch, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                        ✨ {itin.matchScore}%
-                      </Text>
-                    </View>
-
-                    <Text style={[styles.itinOptionSub, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                      {itin.tagline}
-                    </Text>
-
-                    <View style={styles.itinOptionFooter}>
-                      <Text style={[styles.itinOptionStats, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
-                        📍 {itin.steps.length} Pasos • 📏 {itin.totalDistance} • 🕒 {itin.totalTime}
-                      </Text>
-
-                      <View style={[styles.selectBtnPill, { backgroundColor: isCurrent ? colors.primary : colors.primary + '18' }]}>
-                        <Text style={[styles.selectBtnPillText, { color: isCurrent ? colors.primaryContrast : colors.primary, fontFamily: typography.fonts.bold }]}>
-                          {isCurrent ? '✓ Seleccionado' : 'Elegir Este Plan'}
-                        </Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-
-            </ScrollView>
-
-          </View>
-        </SafeAreaView>
-      </Modal>
 
       {/* DETALLE COMPLETO MODAL FULL-SCREEN */}
       <Modal
@@ -692,6 +675,44 @@ const styles = StyleSheet.create({
     right: 16,
     zIndex: 20,
   },
+  searchPillBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    height: 48,
+    borderWidth: 1,
+    gap: 10,
+    elevation: 6,
+  },
+  searchPillInput: {
+    flex: 1,
+    fontSize: 13,
+  },
+  dropdownPanel: {
+    marginTop: 8,
+    padding: 12,
+    borderWidth: 1,
+    elevation: 8,
+    gap: 8,
+  },
+  dropdownHeaderTitle: {
+    fontSize: 10,
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  dropdownItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  dropdownItemTitle: {
+    fontSize: 14,
+  },
+  dropdownItemSub: {
+    fontSize: 11,
+  },
   turnInstructionBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -717,33 +738,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  routeSummaryHeader: {
-    padding: 12,
-    borderWidth: 1,
-    elevation: 6,
-  },
-  selectItinBtnRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  summaryTitle: {
-    fontSize: 15,
-  },
-  summarySub: {
-    fontSize: 11,
-  },
-  changeItinChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  changeItinChipText: {
-    fontSize: 11,
-  },
   stepsPillRow: {
     flexDirection: 'row',
     gap: 6,
+    marginTop: 10,
   },
   stepChip: {
     paddingHorizontal: 10,
@@ -822,62 +820,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
 
-  /* MODAL SELECTOR */
+  /* MODAL DETALLE */
   modalArea: {
     flex: 1,
   },
-  modalSelectorTopBar: {
-    flexDirection: 'row',
-    justify: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 14,
-  },
-  modalSelectorTitle: {
-    fontSize: 18,
-  },
-  selectorBody: {
-    padding: 20,
-    gap: 14,
-  },
-  itinOptionCard: {
-    padding: 16,
-  },
-  itinOptionHeader: {
-    flexDirection: 'row',
-    justify: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  itinOptionTitle: {
-    fontSize: 17,
-  },
-  itinOptionMatch: {
-    fontSize: 13,
-  },
-  itinOptionSub: {
-    fontSize: 12,
-    marginBottom: 12,
-  },
-  itinOptionFooter: {
-    flexDirection: 'row',
-    justify: 'space-between',
-    alignItems: 'center',
-  },
-  itinOptionStats: {
-    fontSize: 12,
-  },
-  selectBtnPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-  },
-  selectBtnPillText: {
-    fontSize: 12,
-  },
-
-  /* MODAL DETALLE */
   modalCoverWrapper: {
     position: 'relative',
     width: '100%',
