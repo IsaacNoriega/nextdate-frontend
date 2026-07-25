@@ -6,10 +6,10 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
 
 ## 🔀 Estado de Branches Git
 
-- **Branch actual**: `feature/user-profile`
-- **Branches anteriores**: `feature/community-feed`, `feature/ai-itineraries`, `feature/explore-places`, `feature/onboarding-profile` (Pushed a origin)
+- **Branch actual**: `feature/map-view`
+- **Branches anteriores**: `feature/user-profile`, `feature/community-feed`, `feature/ai-itineraries`, `feature/explore-places`, `feature/onboarding-profile` (Pushed a origin)
 - **Branch base**: `main`
-- **Propósito**: Implementación completa del Módulo 6: Perfil del Usuario, Planes Guardados y Configuración.
+- **Propósito**: Implementación completa del Módulo 7: Mapa Interactivo de Citas, Buscador Estilo Google Maps e Itinerarios In-App.
 
 ---
 
@@ -71,10 +71,19 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
   - [x] Pestaña de Planes Guardados con itinerarios y acceso directo a ejecución.
   - [x] Pestaña de Preferencias y Configuración con botón de Cerrar Sesión.
 
+### 🟢 Módulo 7: Mapa Interactivo de Citas & Navegación (`feature/map-view`)
+- [x] Crear rama de trabajo `feature/map-view`.
+- [x] Implementar pantalla de Mapa de Navegación (`app/map.tsx`):
+  - [x] Buscador superior estilo Google Maps con desplegable para elegir itinerarios guardados.
+  - [x] Estado inicial sin selección con lienzo limpio e indicación de búsqueda.
+  - [x] Trazado de ruta vectorial en el mapa conectando pines de pasos `(1)`, `(2)`, `(3)`.
+  - [x] Motor de Navegación In-App en vivo con banners de giro a giro en tiempo real.
+  - [x] Fondo vectorial realista con avenidas, río, bosque central y punto GPS de usuario.
+
 ---
 
 ## 📝 Registro de Cambios (Log de Ejecución)
 
 ### [2026-07-25]
-- **Perfil de Usuario (`src/app/profile.tsx`)**:
-  - Implementada vista completa de Perfil del Usuario, Planes Guardados y Configuración.
+- **Mapa de Citas In-App (`src/app/map.tsx`)**:
+  - Implementada pantalla completa de Mapa Interactivo con buscador de itinerarios y navegador en vivo.
