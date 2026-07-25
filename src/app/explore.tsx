@@ -599,6 +599,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justify: 'space-between',
     alignItems: 'center',
+    width: '100%',
+    marginTop: 4,
   },
   ratingBadge: {
     flexDirection: 'row',
@@ -614,6 +616,8 @@ const styles = StyleSheet.create({
   planButton: {
     paddingHorizontal: 16,
     paddingVertical: 10,
+    marginLeft: 'auto',
+    alignSelf: 'flex-end',
   },
   planButtonText: {
     fontSize: 13,
