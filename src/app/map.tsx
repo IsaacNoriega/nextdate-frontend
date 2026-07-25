@@ -150,7 +150,8 @@ export default function MapScreen() {
   const { colors, typography, borderRadius } = useTheme();
   const router = useRouter();
 
-  const [selectedItineraryId, setSelectedItineraryId] = useState<string>('itin-1');
+  // Por defecto NO hay ningún itinerario seleccionado
+  const [selectedItineraryId, setSelectedItineraryId] = useState<string | null>(null);
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
   const [isNavigating, setIsNavigating] = useState<boolean>(false);
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
@@ -161,8 +162,11 @@ export default function MapScreen() {
   const [stepRating, setStepRating] = useState<number>(0);
   const [stepRatingSubmitted, setStepRatingSubmitted] = useState<boolean>(false);
 
-  const currentItinerary = AVAILABLE_ITINERARIES.find((i) => i.id === selectedItineraryId) || AVAILABLE_ITINERARIES[0];
-  const activeStep = currentItinerary.steps[activeStepIndex] || currentItinerary.steps[0];
+  const currentItinerary = selectedItineraryId 
+    ? AVAILABLE_ITINERARIES.find((i) => i.id === selectedItineraryId) || null 
+    : null;
+    
+  const activeStep = currentItinerary ? currentItinerary.steps[activeStepIndex] || currentItinerary.steps[0] : null;
 
   // Simulación de navegación
   useEffect(() => {
@@ -197,89 +201,102 @@ export default function MapScreen() {
         {/* Fondo del Mapa */}
         <View style={[styles.mapCanvas, { backgroundColor: colors.card }]}>
           
-          {/* Trazado de Ruta Estilo Google Maps */}
-          <Svg style={StyleSheet.absoluteFill}>
-            {currentItinerary.steps.length > 1 ? (
-              <Line
-                x1={`${currentItinerary.steps[0].leftPct}%`}
-                y1={`${currentItinerary.steps[0].topPct}%`}
-                x2={`${currentItinerary.steps[1].leftPct}%`}
-                y2={`${currentItinerary.steps[1].topPct}%`}
-                stroke={colors.primary}
-                strokeWidth="5"
-                strokeDasharray={isNavigating ? '8, 4' : undefined}
-              />
-            ) : null}
-
-            {currentItinerary.steps.length > 2 ? (
-              <Line
-                x1={`${currentItinerary.steps[1].leftPct}%`}
-                y1={`${currentItinerary.steps[1].topPct}%`}
-                x2={`${currentItinerary.steps[2].leftPct}%`}
-                y2={`${currentItinerary.steps[2].topPct}%`}
-                stroke={colors.primary}
-                strokeWidth="5"
-                strokeDasharray={isNavigating ? '8, 4' : undefined}
-              />
-            ) : null}
-          </Svg>
-
-          {/* Bloques de la Ciudad */}
-          <View style={[styles.cityBlock, { top: '18%', left: '12%', width: 110, height: 75, backgroundColor: colors.border + '25' }]} />
-          <View style={[styles.cityBlock, { top: '38%', left: '64%', width: 95, height: 95, backgroundColor: colors.border + '25' }]} />
-          <View style={[styles.parkZone, { top: '62%', left: '18%', width: 130, height: 80, backgroundColor: '#34C75920' }]}>
-            <Text style={{ fontSize: 16 }}>🌿</Text>
-          </View>
-
-          {/* PINS INTERACTIVOS DE LA RUTA */}
-          {currentItinerary.steps.map((step, idx) => {
-            const isActive = idx === activeStepIndex;
-            return (
-              <TouchableOpacity
-                key={step.stepNumber}
-                style={[
-                  styles.mapPinAnchor,
-                  {
-                    top: `${step.topPct}%`,
-                    left: `${step.leftPct}%`,
-                  }
-                ]}
-                activeOpacity={0.88}
-                onPress={() => setActiveStepIndex(idx)}
-              >
-                <View style={[styles.timeChip, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  <Text style={[styles.timeChipText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                    {step.time}
-                  </Text>
-                </View>
-
-                <View 
-                  style={[
-                    styles.pinNode,
-                    {
-                      backgroundColor: isActive ? colors.primary : colors.card,
-                      borderColor: isActive ? colors.primaryContrast : colors.primary,
-                      transform: [{ scale: isActive ? 1.3 : 1 }]
-                    }
-                  ]}
-                >
-                  <Text style={[styles.pinNodeNum, { color: isActive ? colors.primaryContrast : colors.primary, fontFamily: typography.fonts.bold }]}>
-                    {step.stepNumber}
-                  </Text>
-                </View>
-
-                {isActive && isNavigating ? (
-                  <View style={[styles.pulseRing, { borderColor: colors.primary }]} />
+          {/* Trazado de Ruta y Pines cuando hay un itinerario seleccionado */}
+          {currentItinerary ? (
+            <>
+              <Svg style={StyleSheet.absoluteFill}>
+                {currentItinerary.steps.length > 1 ? (
+                  <Line
+                    x1={`${currentItinerary.steps[0].leftPct}%`}
+                    y1={`${currentItinerary.steps[0].topPct}%`}
+                    x2={`${currentItinerary.steps[1].leftPct}%`}
+                    y2={`${currentItinerary.steps[1].topPct}%`}
+                    stroke={colors.primary}
+                    strokeWidth="5"
+                    strokeDasharray={isNavigating ? '8, 4' : undefined}
+                  />
                 ) : null}
-              </TouchableOpacity>
-            );
-          })}
+
+                {currentItinerary.steps.length > 2 ? (
+                  <Line
+                    x1={`${currentItinerary.steps[1].leftPct}%`}
+                    y1={`${currentItinerary.steps[1].topPct}%`}
+                    x2={`${currentItinerary.steps[2].leftPct}%`}
+                    y2={`${currentItinerary.steps[2].topPct}%`}
+                    stroke={colors.primary}
+                    strokeWidth="5"
+                    strokeDasharray={isNavigating ? '8, 4' : undefined}
+                  />
+                ) : null}
+              </Svg>
+
+              {/* Bloques de la Ciudad */}
+              <View style={[styles.cityBlock, { top: '18%', left: '12%', width: 110, height: 75, backgroundColor: colors.border + '25' }]} />
+              <View style={[styles.cityBlock, { top: '38%', left: '64%', width: 95, height: 95, backgroundColor: colors.border + '25' }]} />
+              <View style={[styles.parkZone, { top: '62%', left: '18%', width: 130, height: 80, backgroundColor: '#34C75920' }]}>
+                <Text style={{ fontSize: 16 }}>🌿</Text>
+              </View>
+
+              {/* PINS INTERACTIVOS DE LA RUTA */}
+              {currentItinerary.steps.map((step, idx) => {
+                const isActive = idx === activeStepIndex;
+                return (
+                  <TouchableOpacity
+                    key={step.stepNumber}
+                    style={[
+                      styles.mapPinAnchor,
+                      {
+                        top: `${step.topPct}%`,
+                        left: `${step.leftPct}%`,
+                      }
+                    ]}
+                    activeOpacity={0.88}
+                    onPress={() => setActiveStepIndex(idx)}
+                  >
+                    <View style={[styles.timeChip, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                      <Text style={[styles.timeChipText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                        {step.time}
+                      </Text>
+                    </View>
+
+                    <View 
+                      style={[
+                        styles.pinNode,
+                        {
+                          backgroundColor: isActive ? colors.primary : colors.card,
+                          borderColor: isActive ? colors.primaryContrast : colors.primary,
+                          transform: [{ scale: isActive ? 1.3 : 1 }]
+                        }
+                      ]}
+                    >
+                      <Text style={[styles.pinNodeNum, { color: isActive ? colors.primaryContrast : colors.primary, fontFamily: typography.fonts.bold }]}>
+                        {step.stepNumber}
+                      </Text>
+                    </View>
+
+                    {isActive && isNavigating ? (
+                      <View style={[styles.pulseRing, { borderColor: colors.primary }]} />
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              })}
+            </>
+          ) : (
+            /* Vista limpia del Mapa cuando no hay itinerario seleccionado */
+            <>
+              <View style={[styles.cityBlock, { top: '18%', left: '12%', width: 110, height: 75, backgroundColor: colors.border + '25' }]} />
+              <View style={[styles.cityBlock, { top: '38%', left: '64%', width: 95, height: 95, backgroundColor: colors.border + '25' }]} />
+              <View style={[styles.parkZone, { top: '62%', left: '18%', width: 130, height: 80, backgroundColor: '#34C75920' }]}>
+                <Text style={{ fontSize: 16 }}>🌿</Text>
+              </View>
+            </>
+          )}
 
         </View>
 
         {/* HEADER FLOTANTE: BUSCADOR / SELECTOR DE ITINERARIOS GUARDADOS */}
         <View style={styles.topHeaderOverlay}>
-          {isNavigating ? (
+          {isNavigating && activeStep ? (
             /* Banner Giro a Giro en Vivo */
             <View style={[styles.turnInstructionBanner, { backgroundColor: '#1C1C1E', borderRadius: borderRadius.lg }]}>
               <View style={styles.turnIconBg}>
@@ -318,7 +335,7 @@ export default function MapScreen() {
                   style={[styles.searchPillInput, { color: colors.text, fontFamily: typography.fonts.medium }]}
                   placeholder="Selecciona o busca un itinerario guardado..."
                   placeholderTextColor={colors.textSecondary}
-                  value={isSearchDropdownOpen ? searchQuery : currentItinerary.title}
+                  value={isSearchDropdownOpen ? searchQuery : (currentItinerary ? currentItinerary.title : '')}
                   onFocus={() => {
                     setIsSearchDropdownOpen(true);
                     setSearchQuery('');
@@ -386,7 +403,7 @@ export default function MapScreen() {
               ) : null}
 
               {/* Selector Rápido de Pasos del Itinerario Actual */}
-              {!isSearchDropdownOpen ? (
+              {!isSearchDropdownOpen && currentItinerary ? (
                 <View style={styles.stepsPillRow}>
                   {currentItinerary.steps.map((st, i) => (
                     <TouchableOpacity
@@ -416,7 +433,7 @@ export default function MapScreen() {
           )}
         </View>
 
-        {/* TARJETA FLOTANTE INFERIOR NAVEGADORA NATIVA IN-APP */}
+        {/* TARJETA FLOTANTE INFERIOR NAVEGADORA O PROMPT DE SELECCIÓN */}
         {activeStep && !isSearchDropdownOpen ? (
           <View style={styles.bottomCardContainer}>
             <View style={[styles.navCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
@@ -428,7 +445,7 @@ export default function MapScreen() {
                 <View style={styles.cardHeaderRow}>
                   <View style={[styles.cardStepBadge, { backgroundColor: colors.primary }]}>
                     <Text style={[styles.cardStepBadgeText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                      Paso {activeStep.stepNumber} de {currentItinerary.steps.length}
+                      Paso {activeStep.stepNumber} de {currentItinerary?.steps.length}
                     </Text>
                   </View>
 
@@ -483,6 +500,22 @@ export default function MapScreen() {
               </View>
 
             </View>
+          </View>
+        ) : !currentItinerary && !isSearchDropdownOpen ? (
+          <View style={styles.bottomCardContainer}>
+            <TouchableOpacity 
+              style={[styles.emptyPromptCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}
+              activeOpacity={0.85}
+              onPress={() => setIsSearchDropdownOpen(true)}
+            >
+              <Text style={{ fontSize: 24, marginBottom: 4 }}>🗺️</Text>
+              <Text style={[styles.emptyPromptTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                Selecciona una Cita para Navegar
+              </Text>
+              <Text style={[styles.emptyPromptSub, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                Toca la barra superior para buscar y elegir un itinerario guardado.
+              </Text>
+            </TouchableOpacity>
           </View>
         ) : null}
 
@@ -818,6 +851,22 @@ const styles = StyleSheet.create({
   },
   navStartBtnText: {
     fontSize: 11,
+  },
+  emptyPromptCard: {
+    padding: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justify: 'center',
+    elevation: 6,
+  },
+  emptyPromptTitle: {
+    fontSize: 15,
+    marginBottom: 2,
+    textAlign: 'center',
+  },
+  emptyPromptSub: {
+    fontSize: 12,
+    textAlign: 'center',
   },
 
   /* MODAL DETALLE */
