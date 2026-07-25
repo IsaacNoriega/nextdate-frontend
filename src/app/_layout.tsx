@@ -27,19 +27,7 @@ export default function RootLayout() {
         barStyle={isDark ? 'light-content' : 'dark-content'} 
         backgroundColor={colors.background} 
       />
-      <Stack screenOptions={{ headerShown: false, animation: 'fade_from_bottom' }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="(auth)/login" />
-        <Stack.Screen name="(auth)/register" />
-        <Stack.Screen name="(auth)/forgot-password" />
-        <Stack.Screen name="(auth)/reset-password" />
-        <Stack.Screen name="(onboarding)/setup-profile" />
-        <Stack.Screen name="explore" />
-        <Stack.Screen name="generator" />
-        <Stack.Screen name="community" />
-        <Stack.Screen name="profile" />
-      </Stack>
+      <Stack screenOptions={{ headerShown: false, animation: 'fade_from_bottom' }} />
     </ThemeProvider>
   );
 }
