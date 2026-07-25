@@ -9,7 +9,8 @@ import {
   Image, 
   useWindowDimensions,
   FlatList,
-  Modal
+  Modal,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -26,6 +27,8 @@ interface Place {
   categoryLabel: string;
   emoji: string;
   address: string;
+  latitude: number;
+  longitude: number;
   priceRange: PriceRange;
   priceSymbol: string;
   rating: number;
@@ -61,6 +64,8 @@ const MOCK_PLACES: Place[] = [
     categoryLabel: 'Gastronomía & Bares',
     emoji: '🍷',
     address: 'Av. Chapultepec Norte 340, Americana',
+    latitude: 20.6741,
+    longitude: -103.3682,
     priceRange: 'MODERATE',
     priceSymbol: '$$',
     rating: 4.8,
@@ -76,13 +81,15 @@ const MOCK_PLACES: Place[] = [
     categoryLabel: 'Cultura & Arte',
     emoji: '🎭',
     address: 'Calle López Cotilla 1420',
+    latitude: 20.6725,
+    longitude: -103.3611,
     priceRange: 'CHEAP',
     priceSymbol: '$',
     rating: 4.9,
     reviewsCount: 89,
     imageUrl: 'https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?w=600&auto=format&fit=crop&q=80',
     distance: '2.5 km',
-    description: 'Exposiciones de arte contempoáneo y un tranquilo jardín botánico ideal para platicar.'
+    description: 'Exposiciones de arte contemporáneo y un tranquilo jardín botánico ideal para platicar.'
   },
   {
     id: '3',
@@ -91,6 +98,8 @@ const MOCK_PLACES: Place[] = [
     categoryLabel: 'Naturaleza',
     emoji: '🌿',
     address: 'Camino al Mirador s/n',
+    latitude: 20.7102,
+    longitude: -103.3745,
     priceRange: 'CHEAP',
     priceSymbol: '$',
     rating: 4.7,
@@ -106,13 +115,15 @@ const MOCK_PLACES: Place[] = [
     categoryLabel: 'Entretenimiento',
     emoji: '🎬',
     address: 'Plaza Andares Nivel 3',
+    latitude: 20.7099,
+    longitude: -103.4121,
     priceRange: 'EXPENSIVE',
     priceSymbol: '$$$',
     rating: 4.9,
     reviewsCount: 312,
     imageUrl: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&auto=format&fit=crop&q=80',
     distance: '3.8 km',
-    description: 'Salas vip exclusivas con sillones reclinables y servicio gourmet a la mesa.'
+    description: 'Salas VIP exclusivas con sillones reclinables y servicio gourmet a la mesa.'
   }
 ];
 
@@ -282,10 +293,10 @@ export default function ExploreScreen() {
               <Path d="M1 6v13l7-4 8 4 7-4V2l-7 4-8-4-7 4zM8 2v13M16 6v13" />
             </Svg>
             <Text style={[styles.mapPlaceholderTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-              Vista de Mapa Interactivo
+              Mapa Interactivo de Guadalajara
             </Text>
             <Text style={[styles.mapPlaceholderSub, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-              Mostrando {filteredPlaces.length} lugares en Guadalajara
+              Mostrando {filteredPlaces.length} lugares en tu zona
             </Text>
           </View>
         ) : (
@@ -320,7 +331,17 @@ export default function ExploreScreen() {
                     📍 {item.address} • {item.distance}
                   </Text>
 
+                  {/* Footer con Botón Planear Cita ABAJO A LA IZQUIERDA */}
                   <View style={styles.cardFooter}>
+                    <TouchableOpacity 
+                      style={[styles.planButton, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
+                      onPress={() => setSelectedPlace(item)}
+                    >
+                      <Text style={[styles.planButtonText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                        Planear Cita
+                      </Text>
+                    </TouchableOpacity>
+
                     <View style={styles.ratingBadge}>
                       <Text style={{ fontSize: 13, marginRight: 4 }}>⭐</Text>
                       <Text style={[styles.ratingText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
@@ -330,15 +351,6 @@ export default function ExploreScreen() {
                         ({item.reviewsCount})
                       </Text>
                     </View>
-
-                    <TouchableOpacity 
-                      style={[styles.planButton, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
-                      onPress={() => setSelectedPlace(item)}
-                    >
-                      <Text style={[styles.planButtonText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                        Planear Cita
-                      </Text>
-                    </TouchableOpacity>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -348,68 +360,108 @@ export default function ExploreScreen() {
 
       </View>
 
-      {/* Modal de Detalle de Lugar */}
+      {/* PANTALLA COMPLETA NATIVA CON BOTÓN "X" Y MAPA DE UBICACIÓN */}
       <Modal
         visible={!!selectedPlace}
-        transparent
         animationType="slide"
+        presentationStyle="fullScreen"
         onRequestClose={() => setSelectedPlace(null)}
       >
-        <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1}
-          onPress={() => setSelectedPlace(null)}
-        >
-          <TouchableOpacity 
-            activeOpacity={1}
-            style={[styles.modalSheet, { backgroundColor: colors.background, borderColor: colors.border, borderRadius: borderRadius.xl }]}
-            onPress={(e) => e.stopPropagation()}
-          >
-            {selectedPlace ? (
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <Image source={{ uri: selectedPlace.imageUrl }} style={styles.modalImage} />
+        <SafeAreaView style={[styles.fullScreenContainer, { backgroundColor: colors.background }]}>
+          {selectedPlace ? (
+            <View style={{ flex: 1 }}>
+              {/* Image & Header Overlays */}
+              <View style={styles.fullScreenImageContainer}>
+                <Image source={{ uri: selectedPlace.imageUrl }} style={styles.fullScreenImage} />
                 
-                <View style={styles.modalBody}>
-                  <View style={styles.modalHeaderRow}>
-                    <Text style={[styles.modalCategory, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                      {selectedPlace.emoji} {selectedPlace.categoryLabel}
-                    </Text>
-                    <TouchableOpacity onPress={() => setSelectedPlace(null)}>
-                      <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
-                        <Path d="M18 6L6 18M6 6l12 12" />
-                      </Svg>
-                    </TouchableOpacity>
-                  </View>
+                {/* Botón X de Cierre Prominente */}
+                <TouchableOpacity 
+                  style={styles.closeIconButton}
+                  activeOpacity={0.8}
+                  onPress={() => setSelectedPlace(null)}
+                >
+                  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.5}>
+                    <Path d="M18 6L6 18M6 6l12 12" />
+                  </Svg>
+                </TouchableOpacity>
+              </View>
 
-                  <Text style={[styles.modalTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                    {selectedPlace.name}
+              {/* Contenido de la Pantalla */}
+              <ScrollView style={styles.fullScreenScroll} contentContainerStyle={styles.fullScreenScrollContent} showsVerticalScrollIndicator={false}>
+                <View style={styles.fullScreenHeaderRow}>
+                  <Text style={[styles.fullScreenCategory, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+                    {selectedPlace.emoji} {selectedPlace.categoryLabel}
                   </Text>
-
-                  <Text style={[styles.modalAddress, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                    📍 {selectedPlace.address} ({selectedPlace.distance})
+                  <Text style={[styles.fullScreenPrice, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
+                    {selectedPlace.priceSymbol}
                   </Text>
-
-                  <Text style={[styles.modalDesc, { color: colors.text, fontFamily: typography.fonts.regular }]}>
-                    {selectedPlace.description}
-                  </Text>
-
-                  {/* Acciones */}
-                  <TouchableOpacity 
-                    style={[styles.modalActionBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
-                    onPress={() => {
-                      setSelectedPlace(null);
-                      router.push('/(auth)/login');
-                    }}
-                  >
-                    <Text style={[styles.modalActionText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                      Agregar este Lugar a una Cita ✨
-                    </Text>
-                  </TouchableOpacity>
                 </View>
+
+                <Text style={[styles.fullScreenTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                  {selectedPlace.name}
+                </Text>
+
+                <View style={styles.fullScreenMetaRow}>
+                  <Text style={{ fontSize: 14, marginRight: 4 }}>⭐</Text>
+                  <Text style={[styles.fullScreenMetaText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                    {selectedPlace.rating} ({selectedPlace.reviewsCount} reseñas)
+                  </Text>
+                  <Text style={[styles.fullScreenDot, { color: colors.textSecondary }]}>•</Text>
+                  <Text style={[styles.fullScreenMetaText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+                    {selectedPlace.distance} de ti
+                  </Text>
+                </View>
+
+                <Text style={[styles.fullScreenSectionHeader, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                  Acerca del Lugar
+                </Text>
+                <Text style={[styles.fullScreenDesc, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                  {selectedPlace.description}
+                </Text>
+
+                {/* SECCIÓN DEL MAPA DE UBICACIÓN INTERACTIVO */}
+                <Text style={[styles.fullScreenSectionHeader, { color: colors.text, fontFamily: typography.fonts.bold, marginTop: 24 }]}>
+                  Ubicación en el Mapa
+                </Text>
+                <Text style={[styles.fullScreenAddressText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                  📍 {selectedPlace.address}
+                </Text>
+
+                <View style={[styles.interactiveMapCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
+                  {/* Visual Pin Overlay Map */}
+                  <View style={[styles.mapGridBackground, { backgroundColor: colors.primary + '08' }]}>
+                    <View style={[styles.locationPinBox, { backgroundColor: colors.primary }]}>
+                      <Svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2}>
+                        <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                      </Svg>
+                    </View>
+                    <Text style={[styles.mapCoordsText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                      {selectedPlace.name}
+                    </Text>
+                    <Text style={[styles.mapSubCoords, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                      Lat: {selectedPlace.latitude} | Long: {selectedPlace.longitude}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Botón de Acción Principal */}
+                <TouchableOpacity 
+                  style={[styles.fullScreenActionBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
+                  activeOpacity={0.9}
+                  onPress={() => {
+                    setSelectedPlace(null);
+                  }}
+                >
+                  <Text style={[styles.fullScreenActionText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                    Planear Cita en {selectedPlace.name} ✨
+                  </Text>
+                </TouchableOpacity>
+
               </ScrollView>
-            ) : null}
-          </TouchableOpacity>
-        </TouchableOpacity>
+            </View>
+          ) : null}
+        </SafeAreaView>
       </Modal>
 
     </SafeAreaView>
@@ -561,7 +613,7 @@ const styles = StyleSheet.create({
   },
   planButton: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
   },
   planButtonText: {
     fontSize: 13,
@@ -581,55 +633,114 @@ const styles = StyleSheet.create({
   mapPlaceholderSub: {
     fontSize: 13,
   },
-  modalOverlay: {
+  fullScreenContainer: {
     flex: 1,
+  },
+  fullScreenImageContainer: {
+    position: 'relative',
+    width: '100%',
+    height: 260,
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '100%',
+  },
+  closeIconButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justify: 'flex-end',
+    alignItems: 'center',
+    justify: 'center',
+    zIndex: 10,
   },
-  modalSheet: {
-    width: '100%',
-    maxHeight: '85%',
-    borderWidth: 1,
-    overflow: 'hidden',
+  fullScreenScroll: {
+    flex: 1,
   },
-  modalImage: {
-    width: '100%',
-    height: 220,
-  },
-  modalBody: {
+  fullScreenScrollContent: {
     padding: 20,
+    paddingBottom: 40,
   },
-  modalHeaderRow: {
+  fullScreenHeaderRow: {
     flexDirection: 'row',
     justify: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  modalCategory: {
-    fontSize: 13,
-  },
-  modalTitle: {
-    fontSize: 22,
-    marginBottom: 6,
-  },
-  modalAddress: {
+  fullScreenCategory: {
     fontSize: 14,
-    marginBottom: 14,
   },
-  modalDesc: {
+  fullScreenPrice: {
+    fontSize: 16,
+  },
+  fullScreenTitle: {
+    fontSize: 26,
+    lineHeight: 32,
+    marginBottom: 8,
+  },
+  fullScreenMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  fullScreenMetaText: {
     fontSize: 14,
-    lineHeight: 22,
-    marginBottom: 24,
   },
-  modalActionBtn: {
+  fullScreenDot: {
+    marginHorizontal: 8,
+  },
+  fullScreenSectionHeader: {
+    fontSize: 18,
+    marginBottom: 8,
+  },
+  fullScreenDesc: {
+    fontSize: 15,
+    lineHeight: 24,
+  },
+  fullScreenAddressText: {
+    fontSize: 14,
+    marginBottom: 12,
+  },
+  interactiveMapCard: {
+    width: '100%',
+    height: 180,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: 28,
+  },
+  mapGridBackground: {
+    flex: 1,
+    alignItems: 'center',
+    justify: 'center',
+    padding: 16,
+  },
+  locationPinBox: {
+    width: 52,
     height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justify: 'center',
+    marginBottom: 8,
+  },
+  mapCoordsText: {
+    fontSize: 15,
+    marginBottom: 2,
+  },
+  mapSubCoords: {
+    fontSize: 12,
+  },
+  fullScreenActionBtn: {
+    height: 54,
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justify: 'center',
   },
-  modalActionText: {
-    fontSize: 15,
+  fullScreenActionText: {
+    fontSize: 16,
     textAlign: 'center',
     width: '100%',
   },
