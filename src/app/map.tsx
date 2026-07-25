@@ -198,99 +198,136 @@ export default function MapScreen() {
       {/* VISTA DE MAPA INTERACTIVO NATIVO IN-APP */}
       <View style={styles.mapViewport}>
         
-        {/* Fondo del Mapa */}
-        <View style={[styles.mapCanvas, { backgroundColor: colors.card }]}>
+        {/* Fondo del Mapa Vectorial Tipo Google Maps */}
+        <View style={[styles.mapCanvas, { backgroundColor: colors.background }]}>
           
-          {/* Trazado de Ruta y Pines cuando hay un itinerario seleccionado */}
-          {currentItinerary ? (
-            <>
-              <Svg style={StyleSheet.absoluteFill}>
-                {currentItinerary.steps.length > 1 ? (
-                  <Line
-                    x1={`${currentItinerary.steps[0].leftPct}%`}
-                    y1={`${currentItinerary.steps[0].topPct}%`}
-                    x2={`${currentItinerary.steps[1].leftPct}%`}
-                    y2={`${currentItinerary.steps[1].topPct}%`}
-                    stroke={colors.primary}
-                    strokeWidth="5"
-                    strokeDasharray={isNavigating ? '8, 4' : undefined}
-                  />
+          {/* Capa Vectorial SVG de la Ciudad: Avenidas, Ríos y Rutas */}
+          <Svg style={StyleSheet.absoluteFill}>
+            {/* Río / Cuerpo de Agua */}
+            <Path
+              d="M-20,140 Q160,200 300,120 T550,240"
+              fill="none"
+              stroke="#0A84FF"
+              strokeWidth="20"
+              strokeOpacity="0.2"
+            />
+
+            {/* Avenidas Principales & Carreteras */}
+            <Path
+              d="M-50,230 Q200,250 550,220"
+              fill="none"
+              stroke={colors.border}
+              strokeWidth="12"
+              strokeOpacity="0.6"
+            />
+            <Path
+              d="M180,-50 L220,650"
+              fill="none"
+              stroke={colors.border}
+              strokeWidth="10"
+              strokeOpacity="0.6"
+            />
+            <Path
+              d="M380,-50 L340,650"
+              fill="none"
+              stroke={colors.border}
+              strokeWidth="8"
+              strokeOpacity="0.4"
+            />
+
+            {/* Red de Calles Secundarias */}
+            <Line x1="10%" y1="15%" x2="90%" y2="15%" stroke={colors.border} strokeWidth="3" strokeOpacity="0.25" />
+            <Line x1="10%" y1="38%" x2="90%" y2="38%" stroke={colors.border} strokeWidth="3" strokeOpacity="0.25" />
+            <Line x1="10%" y1="58%" x2="90%" y2="58%" stroke={colors.border} strokeWidth="3" strokeOpacity="0.25" />
+            <Line x1="10%" y1="78%" x2="90%" y2="78%" stroke={colors.border} strokeWidth="3" strokeOpacity="0.25" />
+
+            <Line x1="32%" y1="5%" x2="32%" y2="95%" stroke={colors.border} strokeWidth="3" strokeOpacity="0.25" />
+            <Line x1="62%" y1="5%" x2="62%" y2="95%" stroke={colors.border} strokeWidth="3" strokeOpacity="0.25" />
+
+            {/* Trazado de Ruta del Itinerario Seleccionado */}
+            {currentItinerary && currentItinerary.steps.length > 1 ? (
+              <Line
+                x1={`${currentItinerary.steps[0].leftPct}%`}
+                y1={`${currentItinerary.steps[0].topPct}%`}
+                x2={`${currentItinerary.steps[1].leftPct}%`}
+                y2={`${currentItinerary.steps[1].topPct}%`}
+                stroke={colors.primary}
+                strokeWidth="6"
+                strokeDasharray={isNavigating ? '8, 4' : undefined}
+              />
+            ) : null}
+
+            {currentItinerary && currentItinerary.steps.length > 2 ? (
+              <Line
+                x1={`${currentItinerary.steps[1].leftPct}%`}
+                y1={`${currentItinerary.steps[1].topPct}%`}
+                x2={`${currentItinerary.steps[2].leftPct}%`}
+                y2={`${currentItinerary.steps[2].topPct}%`}
+                stroke={colors.primary}
+                strokeWidth="6"
+                strokeDasharray={isNavigating ? '8, 4' : undefined}
+              />
+            ) : null}
+          </Svg>
+
+          {/* Bloques de la Ciudad & Zonas Verdes */}
+          <View style={[styles.cityBlock, { top: '12%', left: '8%', width: 100, height: 70, backgroundColor: colors.border + '20', borderRadius: 10 }]} />
+          <View style={[styles.cityBlock, { top: '42%', left: '68%', width: 90, height: 110, backgroundColor: colors.border + '20', borderRadius: 10 }]} />
+          <View style={[styles.parkZone, { top: '64%', left: '14%', width: 140, height: 90, backgroundColor: '#30D15822', borderRadius: 18 }]}>
+            <Text style={[styles.parkZoneText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+              🌿 Bosque Central
+            </Text>
+          </View>
+
+          {/* Indicador de Ubicación GPS Usuario (Punto Azul con Halo) */}
+          <View style={[styles.userGpsLocation, { top: '32%', left: '22%' }]}>
+            <View style={styles.userGpsDot} />
+            <View style={styles.userGpsHalo} />
+          </View>
+
+          {/* PINS INTERACTIVOS DE LA RUTA */}
+          {currentItinerary ? currentItinerary.steps.map((step, idx) => {
+            const isActive = idx === activeStepIndex;
+            return (
+              <TouchableOpacity
+                key={step.stepNumber}
+                style={[
+                  styles.mapPinAnchor,
+                  {
+                    top: `${step.topPct}%`,
+                    left: `${step.leftPct}%`,
+                  }
+                ]}
+                activeOpacity={0.88}
+                onPress={() => setActiveStepIndex(idx)}
+              >
+                <View style={[styles.timeChip, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <Text style={[styles.timeChipText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                    {step.time}
+                  </Text>
+                </View>
+
+                <View 
+                  style={[
+                    styles.pinNode,
+                    {
+                      backgroundColor: isActive ? colors.primary : colors.card,
+                      borderColor: isActive ? colors.primaryContrast : colors.primary,
+                      transform: [{ scale: isActive ? 1.3 : 1 }]
+                    }
+                  ]}
+                >
+                  <Text style={[styles.pinNodeNum, { color: isActive ? colors.primaryContrast : colors.primary, fontFamily: typography.fonts.bold }]}>
+                    {step.stepNumber}
+                  </Text>
+                </View>
+
+                {isActive && isNavigating ? (
+                  <View style={[styles.pulseRing, { borderColor: colors.primary }]} />
                 ) : null}
-
-                {currentItinerary.steps.length > 2 ? (
-                  <Line
-                    x1={`${currentItinerary.steps[1].leftPct}%`}
-                    y1={`${currentItinerary.steps[1].topPct}%`}
-                    x2={`${currentItinerary.steps[2].leftPct}%`}
-                    y2={`${currentItinerary.steps[2].topPct}%`}
-                    stroke={colors.primary}
-                    strokeWidth="5"
-                    strokeDasharray={isNavigating ? '8, 4' : undefined}
-                  />
-                ) : null}
-              </Svg>
-
-              {/* Bloques de la Ciudad */}
-              <View style={[styles.cityBlock, { top: '18%', left: '12%', width: 110, height: 75, backgroundColor: colors.border + '25' }]} />
-              <View style={[styles.cityBlock, { top: '38%', left: '64%', width: 95, height: 95, backgroundColor: colors.border + '25' }]} />
-              <View style={[styles.parkZone, { top: '62%', left: '18%', width: 130, height: 80, backgroundColor: '#34C75920' }]}>
-                <Text style={{ fontSize: 16 }}>🌿</Text>
-              </View>
-
-              {/* PINS INTERACTIVOS DE LA RUTA */}
-              {currentItinerary.steps.map((step, idx) => {
-                const isActive = idx === activeStepIndex;
-                return (
-                  <TouchableOpacity
-                    key={step.stepNumber}
-                    style={[
-                      styles.mapPinAnchor,
-                      {
-                        top: `${step.topPct}%`,
-                        left: `${step.leftPct}%`,
-                      }
-                    ]}
-                    activeOpacity={0.88}
-                    onPress={() => setActiveStepIndex(idx)}
-                  >
-                    <View style={[styles.timeChip, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                      <Text style={[styles.timeChipText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                        {step.time}
-                      </Text>
-                    </View>
-
-                    <View 
-                      style={[
-                        styles.pinNode,
-                        {
-                          backgroundColor: isActive ? colors.primary : colors.card,
-                          borderColor: isActive ? colors.primaryContrast : colors.primary,
-                          transform: [{ scale: isActive ? 1.3 : 1 }]
-                        }
-                      ]}
-                    >
-                      <Text style={[styles.pinNodeNum, { color: isActive ? colors.primaryContrast : colors.primary, fontFamily: typography.fonts.bold }]}>
-                        {step.stepNumber}
-                      </Text>
-                    </View>
-
-                    {isActive && isNavigating ? (
-                      <View style={[styles.pulseRing, { borderColor: colors.primary }]} />
-                    ) : null}
-                  </TouchableOpacity>
-                );
-              })}
-            </>
-          ) : (
-            /* Vista limpia del Mapa cuando no hay itinerario seleccionado */
-            <>
-              <View style={[styles.cityBlock, { top: '18%', left: '12%', width: 110, height: 75, backgroundColor: colors.border + '25' }]} />
-              <View style={[styles.cityBlock, { top: '38%', left: '64%', width: 95, height: 95, backgroundColor: colors.border + '25' }]} />
-              <View style={[styles.parkZone, { top: '62%', left: '18%', width: 130, height: 80, backgroundColor: '#34C75920' }]}>
-                <Text style={{ fontSize: 16 }}>🌿</Text>
-              </View>
-            </>
-          )}
+              </TouchableOpacity>
+            );
+          }) : null}
 
         </View>
 
@@ -660,6 +697,34 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justify: 'center',
+  },
+  parkZoneText: {
+    fontSize: 11,
+  },
+  userGpsLocation: {
+    position: 'absolute',
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justify: 'center',
+  },
+  userGpsDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#007AFF',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    zIndex: 5,
+  },
+  userGpsHalo: {
+    position: 'absolute',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0, 122, 255, 0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 122, 255, 0.5)',
   },
   mapPinAnchor: {
     position: 'absolute',
