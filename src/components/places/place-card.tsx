@@ -1,12 +1,11 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 
 interface PlaceCardProps {
   name: string;
-  emoji: string;
   categoryLabel: string;
   priceSymbol: string;
   address: string;
@@ -19,7 +18,6 @@ interface PlaceCardProps {
 
 export default function PlaceCard({
   name,
-  emoji,
   categoryLabel,
   priceSymbol,
   address,
@@ -29,62 +27,79 @@ export default function PlaceCard({
   imageUrl,
   onPress,
 }: PlaceCardProps) {
-  const { colors, typography, borderRadius } = useTheme();
+  const { colors, typography, borderRadius, isDark } = useTheme();
 
   return (
     <TouchableOpacity
-      style={[styles.card, { borderRadius: borderRadius.lg, borderColor: colors.border }]}
+      style={[
+        styles.card,
+        {
+          borderRadius: borderRadius.lg,
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+          backgroundColor: colors.card,
+        }
+      ]}
       activeOpacity={0.92}
       onPress={onPress}
     >
-      {/* Full image background */}
+      {/* Background Cover Image */}
       <Image source={{ uri: imageUrl }} style={styles.image} />
 
-      {/* Top badges */}
-      <View style={styles.topOverlay}>
-        <View style={styles.categoryBadge}>
-          <Text style={styles.categoryBadgeText}>
-            {emoji} {categoryLabel}
+      {/* Subtle top dark overlay gradient for readability */}
+      <LinearGradient
+        colors={['rgba(0,0,0,0.35)', 'transparent']}
+        style={styles.topGradient}
+      />
+
+      {/* Main Bottom Overlay Container */}
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.65)', 'rgba(0,0,0,0.92)']}
+        style={styles.bottomGradient}
+      >
+        {/* Clean Meta Row: Category Dot + Category + Price Pill */}
+        <View style={styles.metaHeaderRow}>
+          <View style={styles.categorySubtleTag}>
+            <View style={styles.categoryDot} />
+            <Text style={[styles.categorySubtleText, { fontFamily: typography.fonts.medium }]}>
+              {categoryLabel}
+            </Text>
+          </View>
+          <Text style={[styles.priceSubtleText, { fontFamily: typography.fonts.bold }]}>
+            {priceSymbol}
           </Text>
         </View>
-        <View style={styles.priceBadge}>
-          <Text style={styles.priceBadgeText}>{priceSymbol}</Text>
-        </View>
-      </View>
 
-      {/* Bottom gradient overlay with info */}
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.75)', 'rgba(0,0,0,0.92)']}
-        style={styles.gradient}
-      >
+        {/* Place Title */}
         <Text style={[styles.cardName, { fontFamily: typography.fonts.bold }]} numberOfLines={2}>
           {name}
         </Text>
 
-        <View style={styles.metaRow}>
-          <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2}>
+        {/* Address Row */}
+        <View style={styles.addressRow}>
+          <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth={2}>
             <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-            <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+            <Circle cx="12" cy="10" r="3" />
           </Svg>
           <Text style={[styles.addressText, { fontFamily: typography.fonts.regular }]} numberOfLines={1}>
             {address}
           </Text>
         </View>
 
+        {/* Bottom Rating & Distance Bar */}
         <View style={styles.bottomRow}>
-          <View style={styles.ratingChip}>
-            <Svg width={12} height={12} viewBox="0 0 24 24" fill="#FFD700">
+          <View style={styles.ratingGroup}>
+            <Svg width={13} height={13} viewBox="0 0 24 24" fill="#FFD700">
               <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
             </Svg>
-            <Text style={[styles.ratingText, { fontFamily: typography.fonts.bold }]}>
+            <Text style={[styles.ratingValue, { fontFamily: typography.fonts.bold }]}>
               {rating}
             </Text>
-            <Text style={[styles.reviewsText, { fontFamily: typography.fonts.regular }]}>
+            <Text style={[styles.reviewsCount, { fontFamily: typography.fonts.regular }]}>
               ({reviewsCount})
             </Text>
           </View>
 
-          <View style={styles.distanceChip}>
+          <View style={styles.distanceGroup}>
             <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth={2}>
               <Path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z" />
             </Svg>
@@ -104,68 +119,82 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
     borderWidth: 1,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 4,
   },
   image: {
     width: '100%',
     height: '100%',
     position: 'absolute',
   },
-  topOverlay: {
+  topGradient: {
     position: 'absolute',
-    top: 12,
-    left: 12,
-    right: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    zIndex: 2,
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 60,
   },
-  categoryBadge: {
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-    backdropFilter: 'blur(10)',
-  },
-  categoryBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  priceBadge: {
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-  },
-  priceBadgeText: {
-    color: '#FFD700',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  gradient: {
+  bottomGradient: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 14,
-    paddingBottom: 14,
-    paddingTop: 50,
-    justifyContent: 'flex-end',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    paddingTop: 40,
+  },
+  metaHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  categorySubtleTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 9,
+    paddingVertical: 3.5,
+    borderRadius: 12,
+  },
+  categoryDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#FFD700',
+    marginRight: 6,
+  },
+  categorySubtleText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    letterSpacing: 0.3,
+  },
+  priceSubtleText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    borderRadius: 10,
+    overflow: 'hidden',
   },
   cardName: {
     color: '#FFFFFF',
     fontSize: 18,
     lineHeight: 23,
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  metaRow: {
+  addressRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     marginBottom: 10,
   },
   addressText: {
-    color: 'rgba(255,255,255,0.75)',
+    color: 'rgba(255, 255, 255, 0.8)',
     fontSize: 12,
     flex: 1,
   },
@@ -174,30 +203,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  ratingChip: {
+  ratingGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
   },
-  ratingText: {
+  ratingValue: {
     color: '#FFFFFF',
     fontSize: 13,
   },
-  reviewsText: {
-    color: 'rgba(255,255,255,0.65)',
+  reviewsCount: {
+    color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 11,
   },
-  distanceChip: {
+  distanceGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
   },
   distanceText: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 12,
+    color: '#FFFFFF',
+    fontSize: 11,
   },
 });
