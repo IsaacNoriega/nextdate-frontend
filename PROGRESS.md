@@ -87,3 +87,17 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
 ### [2026-07-25]
 - **Mapa de Citas In-App (`src/app/map.tsx`)**:
   - Implementada pantalla completa de Mapa Interactivo con buscador de itinerarios y navegador en vivo.
+
+### [2026-08-14]
+- **Backend Refactoring & Code Cleanup (`feature/backend-code-cleanup`)**:
+  - **Manejo Centralizado de Excepciones**: Creado `GlobalGraphQLControllerAdvice.java` para unificar el tratamiento de `IllegalArgumentException` y `RuntimeException` en todas las consultas GraphQL.
+  - **Refactorización de DTOs**: Eliminada la conversión manual redundante de cadenas `String` a Enums en `ProfileGraphQLController`, utilizando los tipos Enum nativos de Java (`Gender`, `DietaryPreference`, `PriceRange`, `PlaceCategory`).
+  - **Configuración de CORS**: Añadidos los orígenes locales del frontend móvil (`http://localhost:8081`, `http://localhost:19006`, `http://localhost:3000`) en `application.yaml`.
+
+- **Frontend Code Cleanup & UI Fixes (`feature/frontend-code-cleanup`)**:
+  - **Limpieza de Código Muerto**: Eliminados componentes y hooks obsoletos heredados de la plantilla por defecto de Expo (`animated-icon`, `web-badge`, `hint-row`, `app-tabs`, `collapsible`, `themed-text`, `themed-view`, `use-theme.ts`).
+  - **Fixes de TypeScript**: Resueltos errores de compilación en `explore.tsx`, `generator.tsx` (import `ActivityIndicator`), `map.tsx` (`setInterval` type) y `community-card.tsx`.
+  - **Ajustes de Layout en Modales**:
+    - **Modal Publicar Cita (`community.tsx`)**: Incrementado el margen y padding superior de la barra de encabezado (`modalTopBar`) mediante `Platform.select` para evitar colisiones con el Notch/Status Bar.
+    - **Modal Detalle de Lugar (`explore.tsx`)**: Ajustada la posición del botón flotante de cierre `X` (`top: Platform.select({ android: 36, default: 20 })`) para asegurar una zona segura de toque en la parte superior del celular.
+
