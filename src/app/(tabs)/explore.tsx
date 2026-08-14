@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -13,6 +13,7 @@ import {
   Platform,
   Animated,
   PanResponder,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -21,6 +22,8 @@ import { useTheme } from '../../hooks/useTheme';
 import PlaceCard from '../../components/places/place-card';
 import MapPreview from '../../components/ui/map-preview';
 import StarRating from '../../components/ui/star-rating';
+import { getNearbyPlacesApi } from '../../services/placeService';
+import { PlaceCategory as ApiCategory } from '../../services/profileService';
 
 type PlaceCategory = 'ALL' | 'FOOD_DRINK' | 'CULTURE' | 'NATURE' | 'ENTERTAINMENT' | 'SHOPPING' | 'SPORTS';
 type PriceRange = 'ALL' | 'CHEAP' | 'MODERATE' | 'EXPENSIVE' | 'LUXURY';
@@ -64,47 +67,47 @@ const PRICE_FILTERS: { id: PriceRange; label: string }[] = [
 const MOCK_PLACES: Place[] = [
   {
     id: '1',
-    name: 'Terraza Luna & Bar Gastro',
+    name: 'Terraza Luna Gastro Bar',
     category: 'FOOD_DRINK',
     categoryLabel: 'Gastronomía',
     emoji: '🍷',
-    address: 'Av. Chapultepec Norte 340, Americana',
-    latitude: 20.6741,
-    longitude: -103.3682,
+    address: 'Av. Chapultepec Sur 340, Colonia Americana',
+    latitude: 20.6745,
+    longitude: -103.3702,
     priceRange: 'MODERATE',
     priceSymbol: '$$',
     rating: 4.8,
-    reviewsCount: 124,
+    reviewsCount: 142,
     imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
     distance: '1.2 km',
-    description: 'Vista panorámica de la ciudad con coctelería de autor y bocadillos artesanales para veladas románticas.'
+    description: 'Ambiente íntimo con vista panorámica, especialidad en coctelería de autor y platillos para compartir.'
   },
   {
     id: '2',
-    name: 'Museo de Arte Moderno & Jardín',
+    name: 'Teatro Diana & Galería',
     category: 'CULTURE',
-    categoryLabel: 'Cultura & Arte',
+    categoryLabel: 'Cultura',
     emoji: '🎭',
-    address: 'Calle López Cotilla 1420',
-    latitude: 20.6725,
-    longitude: -103.3611,
-    priceRange: 'CHEAP',
-    priceSymbol: '$',
-    rating: 4.9,
+    address: 'Av. 16 de Septiembre 710, Centro',
+    latitude: 20.6689,
+    longitude: -103.3508,
+    priceRange: 'EXPENSIVE',
+    priceSymbol: '$$$',
+    rating: 4.6,
     reviewsCount: 89,
-    imageUrl: 'https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?w=600&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?w=600&auto=format&fit=crop&q=80',
     distance: '2.5 km',
-    description: 'Exposiciones de arte contemporáneo y un tranquilo jardín botánico ideal para platicar.'
+    description: 'Espacio cultural icónico con cartelera de obras de teatro, conciertos acústicos y exposición de arte local.'
   },
   {
     id: '3',
-    name: 'Bosque Mirador & Picnic Spot',
+    name: 'Bosque Colomos - Jardín Japonés',
     category: 'NATURE',
     categoryLabel: 'Naturaleza',
     emoji: '🌿',
-    address: 'Camino al Mirador s/n',
-    latitude: 20.7102,
-    longitude: -103.3745,
+    address: 'El Chaco 3200, Providencia',
+    latitude: 20.7042,
+    longitude: -103.3951,
     priceRange: 'CHEAP',
     priceSymbol: '$',
     rating: 4.7,
@@ -143,6 +146,45 @@ export default function ExploreScreen() {
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [placesList, setPlacesList] = useState<Place[]>(MOCK_PLACES);
+  const [loadingPlaces, setLoadingPlaces] = useState<boolean>(false);
+
+  useEffect(() => {
+    async function loadPlaces() {
+      setLoadingPlaces(true);
+      try {
+        const catFilter = selectedCategory !== 'ALL' ? (selectedCategory as ApiCategory) : undefined;
+        const apiPlaces = await getNearbyPlacesApi(-103.3702, 20.6745, 50.0, catFilter);
+        if (apiPlaces && apiPlaces.length > 0) {
+          const mappedPlaces: Place[] = apiPlaces.map((p) => ({
+            id: p.id,
+            name: p.name,
+            category: p.category as PlaceCategory,
+            categoryLabel: p.category,
+            emoji: '✨',
+            address: p.address || 'Ubicación seleccionada',
+            latitude: p.latitude,
+            longitude: p.longitude,
+            priceRange: p.priceRange as PriceRange,
+            priceSymbol: p.priceRange === 'CHEAP' ? '$' : p.priceRange === 'MODERATE' ? '$$' : '$$$',
+            rating: 4.8,
+            reviewsCount: 120,
+            imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
+            distance: '1.5 km',
+            description: p.description || 'Lugar recomendado en NextDate.'
+          }));
+          setPlacesList(mappedPlaces);
+        } else {
+          setPlacesList(MOCK_PLACES);
+        }
+      } catch (err) {
+        setPlacesList(MOCK_PLACES);
+      } finally {
+        setLoadingPlaces(false);
+      }
+    }
+    loadPlaces();
+  }, [selectedCategory]);
 
   // Swipe gesture right-to-left to close modal
   const panResponder = useRef(
@@ -169,7 +211,7 @@ export default function ExploreScreen() {
   };
 
   // Filtrado dinámico
-  const filteredPlaces = MOCK_PLACES.filter((place) => {
+  const filteredPlaces = placesList.filter((place) => {
     const matchesSearch = place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           place.address.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'ALL' || place.category === selectedCategory;

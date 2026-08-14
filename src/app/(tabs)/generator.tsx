@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 import StarRating from '../../components/ui/star-rating';
+import { recommendItineraryApi } from '../../services/itineraryService';
 
 interface ItineraryStep {
   stepNumber: number;
@@ -27,16 +28,21 @@ interface ItineraryStep {
   address: string;
   latitude: number;
   longitude: number;
-  description: string;
+  description?: string;
+  duration: string;
+  notes: string;
+  transportMode: string;
+  transitTime: string;
+  cost: string;
+  estimatedCost?: string;
   imageUrl: string;
-  estimatedCost: string;
 }
 
 interface GeneratedItinerary {
   id: string;
   title: string;
   tagline: string;
-  totalDuration: string;
+  totalDuration?: string;
   totalCost: string;
   matchScore: number;
   steps: ItineraryStep[];
@@ -44,70 +50,11 @@ interface GeneratedItinerary {
 
 interface ChatMessage {
   id: string;
-  sender: 'ai' | 'user';
-  text?: string;
+  sender: 'user' | 'ai';
+  text: string;
   itinerary?: GeneratedItinerary;
   timestamp: string;
 }
-
-const MOCK_GENERATED_ITINERARY: GeneratedItinerary = {
-  id: 'itin-101',
-  title: 'Noche Mágica en la Americana',
-  tagline: 'Coctelería de autor, cena gourmet y caminata bajo las estrellas.',
-  totalDuration: '3.5 Horas',
-  totalCost: '$850 MXN aprox.',
-  matchScore: 98,
-  steps: [
-    {
-      stepNumber: 1,
-      time: '18:30',
-      title: 'Cócteles de Autor al Atardecer',
-      placeName: 'Terraza Luna Gastro Bar',
-      categoryEmoji: '🍸',
-      address: 'Av. Chapultepec Norte 340, Americana',
-      latitude: 20.6741,
-      longitude: -103.3682,
-      description: 'Coctelería artesanal y bocadillos con vista panorámica de la ciudad.',
-      imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
-      estimatedCost: '$250 MXN'
-    },
-    {
-      stepNumber: 2,
-      time: '19:45',
-      title: 'Cena a la Luz de las Velas',
-      placeName: 'Trattoria Barrio',
-      categoryEmoji: '🍝',
-      address: 'Calle López Cotilla 1420, Americana',
-      latitude: 20.6725,
-      longitude: -103.3611,
-      description: 'Pasta artesanal italiana, vino tinto de la casa y ambiente romántico.',
-      imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80',
-      estimatedCost: '$480 MXN'
-    },
-    {
-      stepNumber: 3,
-      time: '21:15',
-      title: 'Postre & Paseo Nocturno',
-      placeName: 'Jardín Botánico & Gelato',
-      categoryEmoji: '🍦',
-      address: 'Camino del Jardín s/n',
-      latitude: 20.7102,
-      longitude: -103.3745,
-      description: 'Paseo tranquilo degustando helado italiano artesanal.',
-      imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80',
-      estimatedCost: '$120 MXN'
-    }
-  ]
-};
-
-const INITIAL_MESSAGES: ChatMessage[] = [
-  {
-    id: 'msg-1',
-    sender: 'ai',
-    text: 'Hola, soy tu asistente NextDate. Describe cómo imaginas tu cita ideal y diseñaré un plan perfecto paso a paso.',
-    timestamp: 'Ahora'
-  }
-];
 
 const QUICK_PROMPTS = [
   'Cita romántica de aniversario',
@@ -115,20 +62,100 @@ const QUICK_PROMPTS = [
   'Noche de gastronomía',
 ];
 
+const INITIAL_MESSAGES: ChatMessage[] = [
+  {
+    id: 'msg-1',
+    sender: 'ai',
+    text: '¡Hola! 💫 Soy el Concierge de IA de NextDate. ¿Qué tipo de cita o plan tienen en mente para hoy? (Ej: "Cita tranquila con café y parque", "Cena romántica con coctelería")',
+    timestamp: 'Ahora'
+  }
+];
+
+const MOCK_GENERATED_ITINERARY: GeneratedItinerary = {
+  id: 'rec-itinerary-1',
+  title: 'Noche Mágica en la Americana',
+  tagline: 'Basado en tus preferencias de ambiente romántico y alta gastronomía',
+  totalDuration: '3.5 Horas',
+  totalCost: '$120.00 USD',
+  matchScore: 98,
+  steps: [
+    {
+      stepNumber: 1,
+      time: '19:00 hrs',
+      title: 'Coctelería de Autor',
+      placeName: 'Terraza Luna Gastro Bar',
+      categoryEmoji: '🍷',
+      address: 'Av. Chapultepec Sur 340, Americana',
+      latitude: 20.6745,
+      longitude: -103.3702,
+      duration: '60 min',
+      notes: 'Reservar mesa en el área exterior para disfrutar la iluminación de la terraza.',
+      transportMode: 'WALKING',
+      transitTime: '15 min a pie',
+      cost: '$40.00',
+      estimatedCost: '$40.00 USD',
+      description: 'Coctelería artesanal y bocadillos con vista panorámica de la ciudad.',
+      imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80'
+    },
+    {
+      stepNumber: 2,
+      time: '20:15 hrs',
+      title: 'Cena Gastro',
+      placeName: 'Restaurante Fuego & Leña',
+      categoryEmoji: '🍽️',
+      address: 'Calle López Cotilla 1520',
+      latitude: 20.6725,
+      longitude: -103.3611,
+      duration: '90 min',
+      notes: 'Probar el menú degustación y pedir maridaje con vino tinto local.',
+      transportMode: 'WALKING',
+      transitTime: '10 min a pie',
+      cost: '$65.00',
+      estimatedCost: '$65.00 USD',
+      description: 'Pasta artesanal italiana, vino tinto de la casa y ambiente romántico.',
+      imageUrl: 'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=600&auto=format&fit=crop&q=80'
+    },
+    {
+      stepNumber: 3,
+      time: '22:00 hrs',
+      title: 'Caminata Nocturna & Helado',
+      placeName: 'Paseo Chapultepec',
+      categoryEmoji: '🍦',
+      address: 'Camellón Chapultepec Sur',
+      latitude: 20.6710,
+      longitude: -103.3690,
+      duration: '45 min',
+      notes: 'Cierre perfecto disfrutando del clima nocturno y los helados artesanales.',
+      transportMode: 'NONE',
+      transitTime: 'Lugar final',
+      cost: '$15.00',
+      estimatedCost: '$15.00 USD',
+      description: 'Paseo tranquilo degustando helado italiano artesanal.',
+      imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80'
+    }
+  ]
+};
+
 export default function GeneratorScreen() {
   const { colors, typography, borderRadius, isDark } = useTheme();
   const scrollViewRef = useRef<ScrollView>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
+  const [inputText, setInputText] = useState('');
   const [inputPrompt, setInputPrompt] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
-  const [selectedStep, setSelectedStep] = useState<ItineraryStep | null>(null);
-  const [savedItineraryIds, setSavedItineraryIds] = useState<Record<string, boolean>>({});
-  const [stepRating, setStepRating] = useState<number>(0);
-  const [stepRatingSubmitted, setStepRatingSubmitted] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
+  const [savedItineraryIds, setSavedItineraryIds] = useState<Record<string, boolean>>({});
 
-  // Swipe right-to-left to close step detail modal
+  const toggleSaveItinerary = (id: string) => {
+    setSavedItineraryIds((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // Modal Step Detail
+  const [selectedStep, setSelectedStep] = useState<ItineraryStep | null>(null);
+
+  // Swipe gesture right-to-left to close modal
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) => {
@@ -142,29 +169,63 @@ export default function GeneratorScreen() {
     })
   ).current;
 
-  const toggleSaveItinerary = (id: string) => {
-    setSavedItineraryIds((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
+  // Rating del paso
+  const [stepRating, setStepRating] = useState<number>(0);
+  const [stepRatingSubmitted, setStepRatingSubmitted] = useState<boolean>(false);
 
-  const handleSendMessage = (text?: string) => {
-    const messageText = (text || inputPrompt).trim();
-    if (!messageText || isThinking) return;
+  const handleSendMessage = async (customPrompt?: string) => {
+    const textToSend = customPrompt || inputText;
+    if (!textToSend.trim()) return;
 
     const userMsg: ChatMessage = {
       id: `user-${Date.now()}`,
       sender: 'user',
-      text: messageText,
+      text: textToSend.trim(),
       timestamp: 'Ahora'
     };
 
     setMessages((prev) => [...prev, userMsg]);
-    setInputPrompt('');
-    setIsThinking(true);
-
+    if (!customPrompt) setInputText('');
+    setIsTyping(true);
     setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
 
-    setTimeout(() => {
-      setIsThinking(false);
+    const messageText = textToSend.trim();
+
+    try {
+      const result = await recommendItineraryApi('00000000-0000-0000-0000-000000000001', messageText);
+      const generatedItinerary: GeneratedItinerary = {
+        id: result.id,
+        title: result.title,
+        tagline: result.description || 'Itinerario personalizado con NextDate AI',
+        totalCost: `$${result.totalCost.toFixed(2)} USD`,
+        matchScore: 98,
+        steps: result.items.map((item, idx) => ({
+          stepNumber: item.sequenceOrder || idx + 1,
+          time: `${19 + idx}:00 hrs`,
+          title: item.notes || `Paso ${item.sequenceOrder}`,
+          placeName: item.place ? item.place.name : 'Lugar Recomendado',
+          categoryEmoji: item.place?.category === 'FOOD_DRINK' ? '🍷' : item.place?.category === 'CULTURE' ? '🎭' : '✨',
+          address: item.place?.address || 'Guadalajara, Jal.',
+          latitude: item.place?.latitude || 20.6745,
+          longitude: item.place?.longitude || -103.3702,
+          duration: `${item.durationInMinutes} min`,
+          notes: item.notes || 'Recomendado por la IA.',
+          transportMode: item.transportToNext || 'WALKING',
+          transitTime: item.transitTimeToNext ? `${item.transitTimeToNext} min` : '5 min',
+          cost: '$30.00',
+          imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
+        })),
+      };
+
+      const aiResponse: ChatMessage = {
+        id: `ai-${Date.now()}`,
+        sender: 'ai',
+        text: `He diseñado este plan basado en "${messageText}":`,
+        itinerary: generatedItinerary,
+        timestamp: 'Ahora'
+      };
+      setMessages((prev) => [...prev, aiResponse]);
+    } catch (err) {
       const aiResponse: ChatMessage = {
         id: `ai-${Date.now()}`,
         sender: 'ai',
@@ -173,8 +234,10 @@ export default function GeneratorScreen() {
         timestamp: 'Ahora'
       };
       setMessages((prev) => [...prev, aiResponse]);
+    } finally {
+      setIsTyping(false);
       setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 150);
-    }, 1800);
+    }
   };
 
   const openStepDetail = (step: ItineraryStep) => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -9,12 +9,14 @@ import {
   FlatList,
   Modal,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 import CommunityCard from '../../components/community/community-card';
 import StarRating from '../../components/ui/star-rating';
+import { getSharedExperiencesApi, shareExperienceApi } from '../../services/communityService';
 
 type FeedCategory = 'ALL' | 'ROMANTIC' | 'OUTDOOR' | 'GASTRO' | 'CULTURE';
 
@@ -34,28 +36,28 @@ interface SharedExperience {
   category: FeedCategory;
 }
 
-const FEED_CATEGORIES: { id: FeedCategory; label: string; icon: string }[] = [
-  { id: 'ALL', label: 'Todas', icon: '✨' },
-  { id: 'ROMANTIC', label: 'Románticas', icon: '🍷' },
-  { id: 'OUTDOOR', label: 'Naturaleza', icon: '🌿' },
-  { id: 'GASTRO', label: 'Gastronomía', icon: '🍝' },
-  { id: 'CULTURE', label: 'Cultura', icon: '🎭' },
+const FEED_CATEGORIES: { id: FeedCategory; label: string }[] = [
+  { id: 'ALL', label: 'Todas' },
+  { id: 'ROMANTIC', label: 'Románticas' },
+  { id: 'OUTDOOR', label: 'Naturaleza' },
+  { id: 'GASTRO', label: 'Gastronomía' },
+  { id: 'CULTURE', label: 'Cultura' },
 ];
 
 const MOCK_EXPERIENCES: SharedExperience[] = [
   {
     id: 'exp-1',
-    authorName: 'Isaac',
-    partnerName: 'Valeria',
-    authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    authorName: 'Sofia',
+    partnerName: 'Mateo',
+    authorAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
     timeAgo: 'Hace 2 horas',
-    planTitle: 'Atardecer inolvidable & Cócteles',
+    planTitle: 'Noche Mágica de Cocteles en la Americana',
     placeName: 'Terraza Luna Gastro Bar',
     rating: 5.0,
     likesCount: 42,
     commentsCount: 8,
     imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
-    reviewText: 'Celebramos nuestro aniversario aquí. Los cócteles de autor de la casa son 10/10 y la vista del atardecer con velitas en la mesa es insuperable. ¡Totalmente recomendado!',
+    reviewText: '¡Una noche inolvidable! Reservamos la mesa de la terraza al atardecer. La atención fue 10/10 y los cócteles de autor valen cada centavo.',
     category: 'ROMANTIC'
   },
   {
@@ -97,12 +99,46 @@ export default function CommunityScreen() {
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const [savedPosts, setSavedPosts] = useState<Record<string, boolean>>({});
   const [showShareModal, setShowShareModal] = useState(false);
+  const [experiencesList, setExperiencesList] = useState<SharedExperience[]>(MOCK_EXPERIENCES);
+  const [loading, setLoading] = useState(false);
 
-  // Form states
   const [newTitle, setNewTitle] = useState('');
   const [newPlace, setNewPlace] = useState('');
   const [newReview, setNewReview] = useState('');
   const [newRating, setNewRating] = useState(5);
+  const [publishing, setPublishing] = useState(false);
+
+  useEffect(() => {
+    async function loadExperiences() {
+      setLoading(true);
+      try {
+        const apiData = await getSharedExperiencesApi();
+        if (apiData && apiData.length > 0) {
+          const mapped: SharedExperience[] = apiData.map((exp: any) => ({
+            id: exp.id,
+            authorName: 'Pareja NextDate',
+            partnerName: 'Pareja',
+            authorAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+            timeAgo: 'Hace un momento',
+            planTitle: exp.title,
+            placeName: exp.itinerary ? exp.itinerary.title : 'Cita Romántica',
+            rating: exp.rating || 5,
+            likesCount: 12,
+            commentsCount: 2,
+            imageUrl: (exp.imageUrls && exp.imageUrls.length > 0) ? exp.imageUrls[0] : 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
+            reviewText: exp.description || exp.tips || 'Una gran experiencia en pareja.',
+            category: 'ROMANTIC'
+          }));
+          setExperiencesList(mapped);
+        }
+      } catch (err) {
+        setExperiencesList(MOCK_EXPERIENCES);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadExperiences();
+  }, []);
 
   const toggleLike = (id: string) => {
     setLikedPosts((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -112,7 +148,66 @@ export default function CommunityScreen() {
     setSavedPosts((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const filteredExperiences = MOCK_EXPERIENCES.filter((exp) => {
+  const handlePublishExperience = async () => {
+    if (!newTitle.trim()) return;
+
+    setPublishing(true);
+    try {
+      await shareExperienceApi({
+        userId: '00000000-0000-0000-0000-000000000001',
+        itineraryId: '00000000-0000-0000-0000-000000000001',
+        title: newTitle.trim(),
+        description: newReview.trim() || undefined,
+        tips: newPlace.trim() || undefined,
+        actualCost: 50.0,
+        rating: newRating,
+        imageUrls: ['https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80'],
+      });
+
+      const newExp: SharedExperience = {
+        id: `exp-${Date.now()}`,
+        authorName: 'Tú',
+        partnerName: 'Pareja',
+        authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+        timeAgo: 'Ahora mismo',
+        planTitle: newTitle.trim(),
+        placeName: newPlace.trim() || 'Lugar recomendado',
+        rating: newRating,
+        likesCount: 1,
+        commentsCount: 0,
+        imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
+        reviewText: newReview.trim() || 'Excelente experiencia.',
+        category: 'ROMANTIC',
+      };
+
+      setExperiencesList((prev) => [newExp, ...prev]);
+    } catch (err) {
+      const newExp: SharedExperience = {
+        id: `exp-${Date.now()}`,
+        authorName: 'Tú',
+        partnerName: 'Pareja',
+        authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+        timeAgo: 'Ahora mismo',
+        planTitle: newTitle.trim(),
+        placeName: newPlace.trim() || 'Lugar recomendado',
+        rating: newRating,
+        likesCount: 1,
+        commentsCount: 0,
+        imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
+        reviewText: newReview.trim() || 'Excelente experiencia.',
+        category: 'ROMANTIC',
+      };
+      setExperiencesList((prev) => [newExp, ...prev]);
+    } finally {
+      setPublishing(false);
+      setShowShareModal(false);
+      setNewTitle('');
+      setNewPlace('');
+      setNewReview('');
+    }
+  };
+
+  const filteredExperiences = experiencesList.filter((exp) => {
     return selectedCategory === 'ALL' || exp.category === selectedCategory;
   });
 
@@ -317,16 +412,15 @@ export default function CommunityScreen() {
               <TouchableOpacity 
                 style={[styles.publishBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
                 activeOpacity={0.9}
-                onPress={() => {
-                  setShowShareModal(false);
-                  setNewTitle('');
-                  setNewPlace('');
-                  setNewReview('');
-                }}
+                onPress={handlePublishExperience}
               >
-                <Text style={[styles.publishBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                  Publicar experiencia
-                </Text>
+                {publishing ? (
+                  <ActivityIndicator color={colors.primaryContrast} />
+                ) : (
+                  <Text style={[styles.publishBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                    Publicar experiencia
+                  </Text>
+                )}
               </TouchableOpacity>
 
             </ScrollView>
