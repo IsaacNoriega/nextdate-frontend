@@ -13,10 +13,11 @@ import {
   Modal
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../hooks/useTheme';
+import { createProfileApi } from '../../services/profileService';
 
 type Gender = 'MALE' | 'FEMALE' | 'OTHER';
 type PlaceCategory = 'FOOD_DRINK' | 'CULTURE' | 'NATURE' | 'ENTERTAINMENT' | 'SHOPPING' | 'SPORTS' | 'OTHER';
@@ -53,6 +54,7 @@ const DIETARY_OPTIONS: { id: DietaryPreference; label: string }[] = [
 export default function SetupProfileScreen() {
   const { colors, typography, borderRadius, isDark } = useTheme();
   const router = useRouter();
+  const params = useLocalSearchParams<{ userId?: string }>();
   const { width } = useWindowDimensions();
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -121,10 +123,23 @@ export default function SetupProfileScreen() {
     setLoading(true);
     setErrorMessage(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      const targetUserId = params.userId || '00000000-0000-0000-0000-000000000001';
+      await createProfileApi({
+        userId: targetUserId,
+        username: username.trim(),
+        birthdate: birthdateFormatted,
+        gender,
+        bio: bio.trim() || undefined,
+        latitude: 20.6745,
+        longitude: -103.3702,
+        dietaryPreference,
+        preferredPriceRange,
+        interests,
+      });
+
       router.replace('/(tabs)/explore');
     } catch (err: any) {
-      setErrorMessage('Ocurrió un error al guardar el perfil.');
+      setErrorMessage(err.message || 'Ocurrió un error al guardar el perfil.');
     } finally {
       setLoading(false);
     }

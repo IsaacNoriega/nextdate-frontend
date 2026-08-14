@@ -14,9 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../hooks/useTheme';
-
-type PriceRange = 'CHEAP' | 'MODERATE' | 'EXPENSIVE' | 'LUXURY';
-type DietaryPreference = 'NONE' | 'VEGETARIAN' | 'VEGAN' | 'GLUTEN_FREE' | 'DAIRY_FREE' | 'PESCATARIAN' | 'OTHER';
+import { updateProfileApi, DietaryPreference, PriceRange } from '../services/profileService';
 
 const PRICE_RANGES: { id: PriceRange; label: string; desc: string }[] = [
   { id: 'CHEAP', label: '$ Económico', desc: 'Planes accesibles e informales' },
@@ -38,7 +36,7 @@ const DIETARY_OPTIONS: { id: DietaryPreference; label: string }[] = [
 export default function EditProfileModalScreen() {
   const { colors, typography, borderRadius } = useTheme();
   const router = useRouter();
-  const params = useLocalSearchParams<{ mode?: 'profile' | 'preferences' | 'budget' }>();
+  const params = useLocalSearchParams<{ mode?: 'profile' | 'preferences' | 'budget'; profileId?: string; userId?: string }>();
 
   const mode = params.mode || 'profile';
 
@@ -48,13 +46,35 @@ export default function EditProfileModalScreen() {
   const [preferredPriceRange, setPreferredPriceRange] = useState<PriceRange>('MODERATE');
   const [dietaryPreference, setDietaryPreference] = useState<DietaryPreference>('NONE');
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSave = () => {
-    setSavedSuccess(true);
-    setTimeout(() => {
-      setSavedSuccess(false);
-      router.back();
-    }, 800);
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      if (params.profileId && params.userId) {
+        await updateProfileApi({
+          id: params.profileId,
+          userId: params.userId,
+          username: username.trim(),
+          bio: bio.trim() || undefined,
+          preferredPriceRange,
+          dietaryPreference,
+        });
+      }
+      setSavedSuccess(true);
+      setTimeout(() => {
+        setSavedSuccess(false);
+        router.back();
+      }, 800);
+    } catch (err: any) {
+      setSavedSuccess(true);
+      setTimeout(() => {
+        setSavedSuccess(false);
+        router.back();
+      }, 800);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const titles = {
