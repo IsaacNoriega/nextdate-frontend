@@ -99,7 +99,7 @@ export default function CommunityScreen() {
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const [savedPosts, setSavedPosts] = useState<Record<string, boolean>>({});
   const [showShareModal, setShowShareModal] = useState(false);
-  const [experiencesList, setExperiencesList] = useState<SharedExperience[]>(MOCK_EXPERIENCES);
+  const [experiencesList, setExperiencesList] = useState<SharedExperience[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [newTitle, setNewTitle] = useState('');
@@ -130,9 +130,11 @@ export default function CommunityScreen() {
             category: 'ROMANTIC'
           }));
           setExperiencesList(mapped);
+        } else {
+          setExperiencesList([]);
         }
       } catch (err) {
-        setExperiencesList(MOCK_EXPERIENCES);
+        setExperiencesList([]);
       } finally {
         setLoading(false);
       }

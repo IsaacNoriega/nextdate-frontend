@@ -116,7 +116,7 @@ export default function MapScreen() {
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState<boolean>(false);
   const [stepRating, setStepRating] = useState<number>(0);
   const [stepRatingSubmitted, setStepRatingSubmitted] = useState<boolean>(false);
-  const [itinerariesList, setItinerariesList] = useState<SavedItineraryOption[]>(AVAILABLE_ITINERARIES);
+  const [itinerariesList, setItinerariesList] = useState<SavedItineraryOption[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
@@ -150,9 +150,11 @@ export default function MapScreen() {
             })),
           }));
           setItinerariesList(mapped);
+        } else {
+          setItinerariesList([]);
         }
       } catch (err) {
-        setItinerariesList(AVAILABLE_ITINERARIES);
+        setItinerariesList([]);
       } finally {
         setLoading(false);
       }

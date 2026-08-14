@@ -146,7 +146,7 @@ export default function ExploreScreen() {
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [placesList, setPlacesList] = useState<Place[]>(MOCK_PLACES);
+  const [placesList, setPlacesList] = useState<Place[]>([]);
   const [loadingPlaces, setLoadingPlaces] = useState<boolean>(false);
 
   useEffect(() => {
@@ -175,10 +175,10 @@ export default function ExploreScreen() {
           }));
           setPlacesList(mappedPlaces);
         } else {
-          setPlacesList(MOCK_PLACES);
+          setPlacesList([]);
         }
       } catch (err) {
-        setPlacesList(MOCK_PLACES);
+        setPlacesList([]);
       } finally {
         setLoadingPlaces(false);
       }
