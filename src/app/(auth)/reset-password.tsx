@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
+import { resetPasswordApi } from '../../services/authService';
 
 export default function ResetPasswordScreen() {
   const { colors, typography, spacing, borderRadius } = useTheme();
@@ -62,10 +63,10 @@ export default function ResetPasswordScreen() {
 
     setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1400));
+      await resetPasswordApi(token.trim(), newPassword);
       setSuccess(true);
     } catch (err: any) {
-      setErrorMessage('Token inválido o expirado. Solicita uno nuevo.');
+      setErrorMessage(err.message || 'Token inválido o expirado. Solicita uno nuevo.');
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -7,11 +7,13 @@ import {
   ScrollView,
   Image,
   Switch,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
+import { getProfileByUserIdApi, Profile } from '../../services/profileService';
 
 type ProfileTab = 'SAVED' | 'SETTINGS';
 
@@ -52,6 +54,25 @@ export default function ProfileScreen() {
 
   const [activeTab, setActiveTab] = useState<ProfileTab>('SAVED');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function loadProfile() {
+      setLoading(true);
+      try {
+        const data = await getProfileByUserIdApi('00000000-0000-0000-0000-000000000001');
+        if (data) {
+          setProfile(data);
+        }
+      } catch (err) {
+        // Fallback silencioso si no se encuentra
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadProfile();
+  }, []);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
@@ -68,10 +89,10 @@ export default function ProfileScreen() {
           </View>
 
           <Text style={[styles.userNameText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-            Isaac Noriega
+            {profile ? profile.username : 'Isaac Noriega'}
           </Text>
           <Text style={[styles.userHandleText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
-            @isaac_noriega
+            @{profile ? profile.username.toLowerCase().replace(/\s+/g, '_') : 'isaac_noriega'}
           </Text>
 
           <TouchableOpacity 
