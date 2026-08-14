@@ -9,11 +9,13 @@ import {
   Image,
   Modal,
   PanResponder,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Line } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 import StarRating from '../../components/ui/star-rating';
+import { getItinerariesByUserIdApi } from '../../services/itineraryService';
 
 interface RouteStep {
   stepNumber: number;
@@ -100,48 +102,6 @@ const AVAILABLE_ITINERARIES: SavedItineraryOption[] = [
         leftPct: 78
       }
     ]
-  },
-  {
-    id: 'itin-2',
-    title: 'Tarde Romántica & Picnic',
-    tagline: 'Helado artesanal, caminata por el bosque y vista panorámica.',
-    totalDistance: '3.1 km',
-    totalTime: '15 min',
-    matchScore: 95,
-    steps: [
-      {
-        stepNumber: 1,
-        time: '16:00',
-        title: 'Helado Artesanal & Café',
-        placeName: 'Gelateria Italiana',
-        categoryEmoji: '🍦',
-        address: 'Av. Vallarta 2100',
-        description: 'Café expreso italiano y helado artesanal de pistacho.',
-        imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80',
-        estimatedCost: '$140 MXN',
-        turnInstruction: 'En 300m mantente a la derecha por Av. Vallarta.',
-        distanceRemaining: '500m',
-        eta: '3 min',
-        topPct: 22,
-        leftPct: 68
-      },
-      {
-        stepNumber: 2,
-        time: '17:30',
-        title: 'Picnic al Atardecer',
-        placeName: 'Mirador del Bosque',
-        categoryEmoji: '🌿',
-        address: 'Camino Mirador s/n',
-        description: 'Vista de toda la ciudad al atardecer sobre césped natural.',
-        imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
-        estimatedCost: '$200 MXN',
-        turnInstruction: 'Sigue el camino hacia el mirador principal.',
-        distanceRemaining: '1.4 km',
-        eta: '7 min',
-        topPct: 65,
-        leftPct: 25
-      }
-    ]
   }
 ];
 
@@ -156,6 +116,49 @@ export default function MapScreen() {
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState<boolean>(false);
   const [stepRating, setStepRating] = useState<number>(0);
   const [stepRatingSubmitted, setStepRatingSubmitted] = useState<boolean>(false);
+  const [itinerariesList, setItinerariesList] = useState<SavedItineraryOption[]>(AVAILABLE_ITINERARIES);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    async function loadUserItineraries() {
+      setLoading(true);
+      try {
+        const apiData = await getItinerariesByUserIdApi('00000000-0000-0000-0000-000000000001');
+        if (apiData && apiData.length > 0) {
+          const mapped: SavedItineraryOption[] = apiData.map((itin) => ({
+            id: itin.id,
+            title: itin.title,
+            tagline: itin.description || 'Itinerario de cita de NextDate',
+            totalDistance: '2.5 km',
+            totalTime: '15 min',
+            matchScore: 98,
+            steps: itin.items.map((item, idx) => ({
+              stepNumber: item.sequenceOrder || idx + 1,
+              time: `${19 + idx}:00`,
+              title: item.notes || `Paso ${item.sequenceOrder}`,
+              placeName: item.place ? item.place.name : 'Lugar Recomendado',
+              categoryEmoji: item.place?.category === 'FOOD_DRINK' ? '🍷' : '✨',
+              address: item.place?.address || 'Guadalajara, Jal.',
+              description: item.notes || 'Disfruta tu lugar de cita con NextDate.',
+              imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
+              estimatedCost: '$30.00 USD',
+              turnInstruction: `Avanza al paso ${idx + 1}`,
+              distanceRemaining: '400m',
+              eta: `${item.durationInMinutes} min`,
+              topPct: 25 + idx * 25,
+              leftPct: 30 + idx * 20,
+            })),
+          }));
+          setItinerariesList(mapped);
+        }
+      } catch (err) {
+        setItinerariesList(AVAILABLE_ITINERARIES);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadUserItineraries();
+  }, []);
 
   // Swipe right-to-left gesture to close detail modal
   const panResponder = useRef(
@@ -172,7 +175,7 @@ export default function MapScreen() {
   ).current;
 
   const currentItinerary = selectedItineraryId
-    ? AVAILABLE_ITINERARIES.find((i) => i.id === selectedItineraryId) || null
+    ? itinerariesList.find((i) => i.id === selectedItineraryId) || null
     : null;
 
   const activeStep = currentItinerary ? currentItinerary.steps[activeStepIndex] || currentItinerary.steps[0] : null;
@@ -195,7 +198,7 @@ export default function MapScreen() {
     }
   };
 
-  const filteredItineraries = AVAILABLE_ITINERARIES.filter((item) => {
+  const filteredItineraries = itinerariesList.filter((item) => {
     return item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
            item.tagline.toLowerCase().includes(searchQuery.toLowerCase());
   });
