@@ -178,7 +178,7 @@ export default function MapScreen() {
   const activeStep = currentItinerary ? currentItinerary.steps[activeStepIndex] || currentItinerary.steps[0] : null;
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (isNavigating && currentItinerary) {
       interval = setInterval(() => {
         setActiveStepIndex((prev) => (prev < currentItinerary.steps.length - 1 ? prev + 1 : prev));

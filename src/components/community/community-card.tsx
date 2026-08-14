@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Image } from 'react-native';
-import Svg, { Path, Star } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 
 interface CommunityCardProps {

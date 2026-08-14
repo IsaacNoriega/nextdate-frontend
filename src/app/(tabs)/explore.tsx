@@ -1007,7 +1007,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   // Filter Trigger Button & Summary Bar
-  searchContainer: {
+  drawerSearchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
