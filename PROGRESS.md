@@ -94,10 +94,11 @@ Este archivo sirve como registro vivo de las actividades realizadas, decisiones 
   - **Refactorización de DTOs**: Eliminada la conversión manual redundante de cadenas `String` a Enums en `ProfileGraphQLController`, utilizando los tipos Enum nativos de Java (`Gender`, `DietaryPreference`, `PriceRange`, `PlaceCategory`).
   - **Configuración de CORS**: Añadidos los orígenes locales del frontend móvil (`http://localhost:8081`, `http://localhost:19006`, `http://localhost:3000`) en `application.yaml`.
 
-- **Frontend Code Cleanup & UI Fixes (`feature/frontend-code-cleanup`)**:
-  - **Limpieza de Código Muerto**: Eliminados componentes y hooks obsoletos heredados de la plantilla por defecto de Expo (`animated-icon`, `web-badge`, `hint-row`, `app-tabs`, `collapsible`, `themed-text`, `themed-view`, `use-theme.ts`).
-  - **Fixes de TypeScript**: Resueltos errores de compilación en `explore.tsx`, `generator.tsx` (import `ActivityIndicator`), `map.tsx` (`setInterval` type) y `community-card.tsx`.
-  - **Ajustes de Layout en Modales**:
-    - **Modal Publicar Cita (`community.tsx`)**: Incrementado el margen y padding superior de la barra de encabezado (`modalTopBar`) mediante `Platform.select` para evitar colisiones con el Notch/Status Bar.
-    - **Modal Detalle de Lugar (`explore.tsx`)**: Ajustada la posición del botón flotante de cierre `X` (`top: Platform.select({ android: 36, default: 20 })`) para asegurar una zona segura de toque en la parte superior del celular.
+- **Integración de APIs Frontend <-> Backend (`feature/api-integration`)**:
+  - **Cliente API Centralizado**: Creado `src/services/api.ts` con cliente `fetchGraphQL` para ejecutar queries y mutaciones hacia Spring Boot (`http://localhost:8080/graphql`).
+  - **Módulo de Autenticación (`authService.ts`)**: Conectadas pantallas de Login, Registro, Solicitud de Recuperación y Restablecimiento de Contraseña con mutaciones `login`, `registerUser`, `requestPasswordReset`, `resetPassword`.
+  - **Módulo de Perfil & Onboarding (`profileService.ts`)**: Conectadas pantallas de Onboarding (`setup-profile.tsx`), Perfil (`profile.tsx`) y Edición de Perfil (`edit-profile.tsx`) con `createProfile`, `getProfileByUserId` y `updateProfile`.
+  - **Módulo de Lugares & Exploración (`placeService.ts`)**: Conectada la pantalla `explore.tsx` para cargar y filtrar lugares geolocalizados en tiempo real mediante `nearbyPlaces`.
+  - **Módulo NextDate AI (`itineraryService.ts`)**: Conectado el asistente conversacional `generator.tsx` con el motor de recomendaciones IA `recommendItinerary`.
+  - **Módulo Comunidad (`communityService.ts`)**: Conectado el feed `community.tsx` para obtener e interactuar con experiencias de la comunidad usando `sharedExperiences` y `shareExperience`.
 
