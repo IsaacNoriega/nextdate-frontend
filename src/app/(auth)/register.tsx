@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
+import { registerUserApi } from '../../services/authService';
 
 export default function RegisterScreen() {
   const { colors, typography, spacing, borderRadius } = useTheme();
@@ -82,10 +83,14 @@ export default function RegisterScreen() {
 
     setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1400));
-      router.replace('/(onboarding)/setup-profile');
+      const user = await registerUserApi(email.trim(), password);
+      // Redirige al Onboarding con el ID del usuario creado
+      router.replace({
+        pathname: '/(onboarding)/setup-profile',
+        params: { userId: user.id },
+      });
     } catch (err: any) {
-      setErrorMessage('Error al crear la cuenta. Intenta nuevamente.');
+      setErrorMessage(err.message || 'Error al crear la cuenta. Intenta nuevamente.');
     } finally {
       setLoading(false);
     }

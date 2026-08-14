@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
+import { loginApi } from '../../services/authService';
 
 export default function LoginScreen() {
   const { colors, typography, spacing, borderRadius } = useTheme();
@@ -53,10 +54,11 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      const result = await loginApi(email.trim(), password);
+      // Éxito: Se redirige al módulo principal de la app
       router.replace('/(tabs)/explore');
     } catch (err: any) {
-      setErrorMessage('Credenciales inválidas. Por favor intenta de nuevo.');
+      setErrorMessage(err.message || 'Credenciales inválidas. Por favor intenta de nuevo.');
     } finally {
       setLoading(false);
     }

@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
+import { requestPasswordResetApi } from '../../services/authService';
 
 export default function ForgotPasswordScreen() {
   const { colors, typography, spacing, borderRadius } = useTheme();
@@ -41,10 +42,10 @@ export default function ForgotPasswordScreen() {
 
     setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      await requestPasswordResetApi(email.trim());
       setSuccess(true);
     } catch (err: any) {
-      setErrorMessage('Ocurrió un error al solicitar la recuperación. Intenta nuevamente.');
+      setErrorMessage(err.message || 'Ocurrió un error al solicitar la recuperación. Intenta nuevamente.');
     } finally {
       setLoading(false);
     }
