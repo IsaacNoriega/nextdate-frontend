@@ -8,6 +8,7 @@ import {
   ScrollView,
   FlatList,
   Modal,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -406,8 +407,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: Platform.OS === 'android' ? 24 : 16,
     paddingBottom: 14,
+    marginTop: 8,
   },
   modalTitleText: {
     fontSize: 20,
