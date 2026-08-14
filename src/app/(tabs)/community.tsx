@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? 24 : 16,
+    paddingTop: Platform.select({ android: 24, default: 16 }),
     paddingBottom: 14,
     marginTop: 8,
   },
