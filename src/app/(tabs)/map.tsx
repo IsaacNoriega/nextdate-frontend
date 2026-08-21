@@ -12,10 +12,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path, Circle, Line } from 'react-native-svg';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 import StarRating from '../../components/ui/star-rating';
 import { getItinerariesByUserIdApi } from '../../services/itineraryService';
+import LeafletMap, { MapWaypoint } from '../../components/map/leaflet-map';
+import { useUserLocation } from '../../hooks/useUserLocation';
 
 interface RouteStep {
   stepNumber: number;
@@ -32,6 +34,8 @@ interface RouteStep {
   eta: string;
   topPct: number;
   leftPct: number;
+  lat: number;
+  lng: number;
 }
 
 interface SavedItineraryOption {
@@ -67,7 +71,9 @@ const AVAILABLE_ITINERARIES: SavedItineraryOption[] = [
         distanceRemaining: '350m',
         eta: '2 min',
         topPct: 28,
-        leftPct: 32
+        leftPct: 32,
+        lat: 20.6752,
+        lng: -103.3698,
       },
       {
         stepNumber: 2,
@@ -83,7 +89,9 @@ const AVAILABLE_ITINERARIES: SavedItineraryOption[] = [
         distanceRemaining: '1.1 km',
         eta: '5 min',
         topPct: 50,
-        leftPct: 60
+        leftPct: 60,
+        lat: 20.6725,
+        lng: -103.3654,
       },
       {
         stepNumber: 3,
@@ -99,7 +107,9 @@ const AVAILABLE_ITINERARIES: SavedItineraryOption[] = [
         distanceRemaining: '950m',
         eta: '4 min',
         topPct: 72,
-        leftPct: 78
+        leftPct: 78,
+        lat: 20.6708,
+        lng: -103.3612,
       }
     ]
   }
@@ -107,8 +117,9 @@ const AVAILABLE_ITINERARIES: SavedItineraryOption[] = [
 
 export default function MapScreen() {
   const { colors, typography, borderRadius, isDark } = useTheme();
+  const userLoc = useUserLocation();
 
-  const [selectedItineraryId, setSelectedItineraryId] = useState<string | null>(null);
+  const [selectedItineraryId, setSelectedItineraryId] = useState<string | null>('itin-1');
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
   const [isNavigating, setIsNavigating] = useState<boolean>(false);
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
@@ -122,6 +133,77 @@ export default function MapScreen() {
   useEffect(() => {
     async function loadUserItineraries() {
       setLoading(true);
+      const baseLat = userLoc.lat || 20.6736;
+      const baseLng = userLoc.lng || -103.3698;
+      const userCity = userLoc.formattedAddress || 'Tu Ciudad';
+
+      const dynamicItineraries: SavedItineraryOption[] = [
+        {
+          id: 'itin-1',
+          title: `Noche Mágica en ${userLoc.city || 'la Ciudad'}`,
+          tagline: 'Coctelería de autor, cena gourmet y caminata bajo las estrellas.',
+          totalDistance: '2.4 km',
+          totalTime: '12 min',
+          matchScore: 98,
+          steps: [
+            {
+              stepNumber: 1,
+              time: '18:30',
+              title: 'Cócteles de Autor al Atardecer',
+              placeName: 'Terraza Gastro Bar',
+              categoryEmoji: '🍸',
+              address: `${userCity}`,
+              description: 'Coctelería artesanal y bocadillos con vista panorámica.',
+              imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
+              estimatedCost: '$250 MXN',
+              turnInstruction: 'Camina 150m en dirección al gastrobar.',
+              distanceRemaining: '350m',
+              eta: '2 min',
+              topPct: 28,
+              leftPct: 32,
+              lat: baseLat + 0.0015,
+              lng: baseLng - 0.002,
+            },
+            {
+              stepNumber: 2,
+              time: '19:45',
+              title: 'Cena a la Luz de las Velas',
+              placeName: 'Trattoria Romántica',
+              categoryEmoji: '🍝',
+              address: `${userCity}`,
+              description: 'Pasta artesanal italiana, vino tinto de la casa y ambiente romántico.',
+              imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80',
+              estimatedCost: '$480 MXN',
+              turnInstruction: 'Continúa recto durante 600m por la avenida principal.',
+              distanceRemaining: '1.1 km',
+              eta: '5 min',
+              topPct: 50,
+              leftPct: 60,
+              lat: baseLat - 0.001,
+              lng: baseLng + 0.0025,
+            },
+            {
+              stepNumber: 3,
+              time: '21:15',
+              title: 'Postre & Paseo Nocturno',
+              placeName: 'Jardín Botánico & Gelato',
+              categoryEmoji: '🍦',
+              address: `${userCity}`,
+              description: 'Gelato artesanal italiano y paseo tranquilo bajo las estrellas.',
+              imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80',
+              estimatedCost: '$120 MXN',
+              turnInstruction: 'Gira a la izquierda al final de la calle.',
+              distanceRemaining: '950m',
+              eta: '4 min',
+              topPct: 72,
+              leftPct: 78,
+              lat: baseLat - 0.003,
+              lng: baseLng + 0.006,
+            },
+          ],
+        },
+      ];
+
       try {
         const apiData = await getItinerariesByUserIdApi('00000000-0000-0000-0000-000000000001');
         if (apiData && apiData.length > 0) {
@@ -138,7 +220,7 @@ export default function MapScreen() {
               title: item.notes || `Paso ${item.sequenceOrder}`,
               placeName: item.place ? item.place.name : 'Lugar Recomendado',
               categoryEmoji: item.place?.category === 'FOOD_DRINK' ? '🍷' : '✨',
-              address: item.place?.address || 'Guadalajara, Jal.',
+              address: item.place?.address || userCity,
               description: item.notes || 'Disfruta tu lugar de cita con NextDate.',
               imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
               estimatedCost: '$30.00 USD',
@@ -147,20 +229,22 @@ export default function MapScreen() {
               eta: `${item.durationInMinutes} min`,
               topPct: 25 + idx * 25,
               leftPct: 30 + idx * 20,
+              lat: baseLat + idx * 0.003,
+              lng: baseLng + idx * 0.004,
             })),
           }));
           setItinerariesList(mapped);
         } else {
-          setItinerariesList([]);
+          setItinerariesList(dynamicItineraries);
         }
       } catch (err) {
-        setItinerariesList([]);
+        setItinerariesList(dynamicItineraries);
       } finally {
         setLoading(false);
       }
     }
     loadUserItineraries();
-  }, []);
+  }, [userLoc.lat, userLoc.lng, userLoc.city, userLoc.formattedAddress]);
 
   // Swipe right-to-left gesture to close detail modal
   const panResponder = useRef(
@@ -212,120 +296,27 @@ export default function MapScreen() {
 
       <View style={styles.mapViewport}>
 
-        {/* Map Canvas */}
+        {/* Real Leaflet Map Canvas with Routing & Geocoder */}
         <View style={[styles.mapCanvas, { backgroundColor: isDark ? '#0D0D0D' : '#F8F8FA' }]}>
-
-          {/* SVG Map Layer */}
-          <Svg style={StyleSheet.absoluteFill}>
-            {/* Water */}
-            <Path
-              d="M-20,140 Q160,200 300,120 T550,240"
-              fill="none"
-              stroke={accentBlue}
-              strokeWidth="22"
-              strokeOpacity="0.12"
-            />
-
-            {/* Major roads */}
-            <Path
-              d="M-50,230 Q200,250 550,220"
-              fill="none"
-              stroke={isDark ? '#2C2C2E' : '#E5E5EA'}
-              strokeWidth="14"
-              strokeOpacity="0.8"
-            />
-            <Path
-              d="M180,-50 L220,650"
-              fill="none"
-              stroke={isDark ? '#2C2C2E' : '#E5E5EA'}
-              strokeWidth="12"
-              strokeOpacity="0.8"
-            />
-            <Path
-              d="M380,-50 L340,650"
-              fill="none"
-              stroke={isDark ? '#2C2C2E' : '#E5E5EA'}
-              strokeWidth="10"
-              strokeOpacity="0.5"
-            />
-
-            {/* Grid streets */}
-            <Line x1="10%" y1="15%" x2="90%" y2="15%" stroke={isDark ? '#1C1C1E' : '#EBEBED'} strokeWidth="2" />
-            <Line x1="10%" y1="38%" x2="90%" y2="38%" stroke={isDark ? '#1C1C1E' : '#EBEBED'} strokeWidth="2" />
-            <Line x1="10%" y1="58%" x2="90%" y2="58%" stroke={isDark ? '#1C1C1E' : '#EBEBED'} strokeWidth="2" />
-            <Line x1="10%" y1="78%" x2="90%" y2="78%" stroke={isDark ? '#1C1C1E' : '#EBEBED'} strokeWidth="2" />
-            <Line x1="32%" y1="5%" x2="32%" y2="95%" stroke={isDark ? '#1C1C1E' : '#EBEBED'} strokeWidth="2" />
-            <Line x1="62%" y1="5%" x2="62%" y2="95%" stroke={isDark ? '#1C1C1E' : '#EBEBED'} strokeWidth="2" />
-
-            {/* Route lines */}
-            {currentItinerary && currentItinerary.steps.length > 1 ? (
-              <>
-                {currentItinerary.steps.slice(0, -1).map((step, idx) => (
-                  <Line
-                    key={`route-${idx}`}
-                    x1={`${step.leftPct}%`}
-                    y1={`${step.topPct}%`}
-                    x2={`${currentItinerary.steps[idx + 1].leftPct}%`}
-                    y2={`${currentItinerary.steps[idx + 1].topPct}%`}
-                    stroke={accentBlue}
-                    strokeWidth="4"
-                    strokeDasharray={isNavigating ? '8,6' : undefined}
-                    strokeLinecap="round"
-                  />
-                ))}
-              </>
-            ) : null}
-          </Svg>
-
-          {/* City blocks */}
-          <View style={[styles.cityBlock, { top: '12%', left: '8%', width: 100, height: 70, backgroundColor: isDark ? '#1A1A1C' : '#EEEEEF', borderRadius: 12 }]} />
-          <View style={[styles.cityBlock, { top: '42%', left: '68%', width: 90, height: 110, backgroundColor: isDark ? '#1A1A1C' : '#EEEEEF', borderRadius: 12 }]} />
-
-          {/* Park zone */}
-          <View style={[styles.parkZone, { top: '64%', left: '14%', width: 140, height: 90, backgroundColor: isDark ? 'rgba(48,209,88,0.08)' : 'rgba(48,209,88,0.12)', borderRadius: 18 }]}>
-            <Text style={[styles.parkLabel, { color: isDark ? '#30D158' : '#248A3D', fontFamily: typography.fonts.medium }]}>
-              Bosque Central
-            </Text>
-          </View>
-
-          {/* User GPS dot */}
-          <View style={[styles.userGps, { top: '32%', left: '22%' }]}>
-            <View style={styles.gpsHalo} />
-            <View style={styles.gpsDot} />
-          </View>
-
-          {/* Route pins */}
-          {currentItinerary ? currentItinerary.steps.map((step, idx) => {
-            const isActive = idx === activeStepIndex;
-            return (
-              <TouchableOpacity
-                key={step.stepNumber}
-                style={[styles.pinAnchor, { top: `${step.topPct}%`, left: `${step.leftPct}%` }]}
-                activeOpacity={0.88}
-                onPress={() => setActiveStepIndex(idx)}
-              >
-                <View style={[
-                  styles.pin,
-                  {
-                    backgroundColor: isActive ? accentBlue : colors.card,
-                    borderColor: isActive ? '#FFFFFF' : accentBlue,
-                    transform: [{ scale: isActive ? 1.2 : 1 }]
-                  }
-                ]}>
-                  <Text style={[styles.pinText, { color: isActive ? '#FFFFFF' : accentBlue, fontFamily: typography.fonts.bold }]}>
-                    {step.stepNumber}
-                  </Text>
-                </View>
-                {isActive && (
-                  <View style={[styles.pinLabel, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                    <Text style={[styles.pinLabelText, { color: colors.text, fontFamily: typography.fonts.medium }]} numberOfLines={1}>
-                      {step.placeName}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            );
-          }) : null}
+          <LeafletMap
+            waypoints={
+              currentItinerary
+                ? currentItinerary.steps.map((st) => ({
+                    lat: st.lat,
+                    lng: st.lng,
+                    title: st.title,
+                    placeName: st.placeName,
+                    stepNumber: st.stepNumber,
+                  }))
+                : []
+            }
+            activeStepIndex={activeStepIndex}
+            onSelectWaypoint={(index) => setActiveStepIndex(index)}
+            showRoutingMachine={true}
+            showGeocoder={true}
+            userLocation={{ lat: userLoc.lat, lng: userLoc.lng }}
+            isDark={isDark}
+          />
         </View>
 
         {/* Top overlay: search or navigation banner */}
