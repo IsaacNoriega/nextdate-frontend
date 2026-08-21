@@ -504,38 +504,40 @@ export default function CommunityScreen() {
               </Text>
 
               <View style={[styles.mapPickerCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
-                {/* Mini Mapa Interactivo Real */}
-                <View style={styles.miniMapCanvas}>
-                  <LeafletMap
-                    waypoints={[
-                      {
-                        lat: pickedCoords?.lat ?? userLoc.lat,
-                        lng: pickedCoords?.lng ?? userLoc.lng,
-                        title: newTitle || 'Tu Cita',
-                        placeName: newLocation || userLoc.formattedAddress || 'Ubicación actual',
-                        stepNumber: 1,
-                      },
-                    ]}
-                    showRoutingMachine={false}
-                    showGeocoder={false}
-                    userLocation={{ lat: userLoc.lat, lng: userLoc.lng }}
-                    isDark={isDark}
-                  />
+                {/* Mini Mapa Vista Previa Real (al tocar abre el mapa interactivo completo) */}
+                <TouchableOpacity 
+                  style={styles.miniMapCanvas} 
+                  activeOpacity={0.9}
+                  onPress={() => setShowMapPickerModal(true)}
+                >
+                  <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+                    <LeafletMap
+                      waypoints={[
+                        {
+                          lat: pickedCoords?.lat ?? userLoc.lat,
+                          lng: pickedCoords?.lng ?? userLoc.lng,
+                          title: newTitle || 'Tu Cita',
+                          placeName: newLocation || userLoc.formattedAddress || 'Ubicación actual',
+                          stepNumber: 1,
+                        },
+                      ]}
+                      showRoutingMachine={false}
+                      showGeocoder={false}
+                      userLocation={{ lat: userLoc.lat, lng: userLoc.lng }}
+                      isDark={isDark}
+                    />
+                  </View>
 
-                  <TouchableOpacity 
-                    style={styles.miniMapOverlayBtn}
-                    activeOpacity={0.88}
-                    onPress={() => setShowMapPickerModal(true)}
-                  >
+                  <View style={styles.miniMapOverlayBtn}>
                     <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2}>
                       <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                       <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
                     </Svg>
                     <Text style={[styles.miniMapOverlayText, { fontFamily: typography.fonts.bold }]}>
-                      Tocar para abrir mapa
+                      Tocar para abrir mapa interactivo 🗺️
                     </Text>
-                  </TouchableOpacity>
-                </View>
+                  </View>
+                </TouchableOpacity>
 
                 {/* Ubicación Seleccionada Info */}
                 <View style={styles.selectedLocationRow}>
