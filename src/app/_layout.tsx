@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { ThemeProvider, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { StatusBar } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
+import { AuthProvider } from '../context/AuthContext';
 
 export default function RootLayout() {
   const { colors, isDark } = useTheme();
@@ -22,17 +23,20 @@ export default function RootLayout() {
   };
 
   return (
-    <ThemeProvider value={navigationTheme}>
-      <StatusBar 
-        barStyle={isDark ? 'light-content' : 'dark-content'} 
-        backgroundColor={colors.background} 
-      />
-      <Stack 
-        screenOptions={{ 
-          headerShown: false, 
-          animation: 'slide_from_right',
-        }} 
-      />
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider value={navigationTheme}>
+        <StatusBar 
+          barStyle={isDark ? 'light-content' : 'dark-content'} 
+          backgroundColor={colors.background} 
+        />
+        <Stack 
+          screenOptions={{ 
+            headerShown: false, 
+            animation: 'slide_from_right',
+          }} 
+        />
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
+
