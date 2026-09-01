@@ -1,4 +1,13 @@
 import { Platform } from 'react-native';
+import { storageService } from './storage';
+
+let currentAuthToken: string | null = null;
+
+export const setAuthToken = (token: string | null) => {
+  currentAuthToken = token;
+};
+
+export const getAuthToken = () => currentAuthToken;
 
 // URL del backend GraphQL
 // Para Android Emulator se usa 10.0.2.2 o la IP local de tu máquina; para iOS/Web se usa localhost
@@ -18,12 +27,23 @@ export interface GraphQLResponse<T> {
 
 export async function fetchGraphQL<T>(queryOrMutation: string, variables?: Record<string, any>): Promise<T> {
   try {
+    // Si no tenemos token en memoria, intentar leerlo de storage
+    if (!currentAuthToken) {
+      currentAuthToken = await storageService.getToken();
+    }
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    };
+
+    if (currentAuthToken) {
+      headers['Authorization'] = `Bearer ${currentAuthToken}`;
+    }
+
     const response = await fetch(API_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
+      headers,
       body: JSON.stringify({
         query: queryOrMutation,
         variables,
@@ -48,3 +68,4 @@ export async function fetchGraphQL<T>(queryOrMutation: string, variables?: Recor
     throw error;
   }
 }
+

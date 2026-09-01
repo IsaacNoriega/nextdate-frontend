@@ -15,10 +15,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
-import { registerUserApi } from '../../services/authService';
+import { useAuth } from '../../context/AuthContext';
 
 export default function RegisterScreen() {
   const { colors, typography, spacing, borderRadius } = useTheme();
+  const { register } = useAuth();
   const router = useRouter();
   const { width } = useWindowDimensions();
   
@@ -83,7 +84,7 @@ export default function RegisterScreen() {
 
     setLoading(true);
     try {
-      const user = await registerUserApi(email.trim(), password);
+      const user = await register(email.trim(), password);
       // Redirige al Onboarding con el ID del usuario creado
       router.replace({
         pathname: '/(onboarding)/setup-profile',
@@ -95,6 +96,7 @@ export default function RegisterScreen() {
       setLoading(false);
     }
   };
+
 
   const handleBack = () => {
     router.replace('/');

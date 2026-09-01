@@ -15,10 +15,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
-import { loginApi } from '../../services/authService';
+import { useAuth } from '../../context/AuthContext';
 
 export default function LoginScreen() {
   const { colors, typography, spacing, borderRadius } = useTheme();
+  const { login } = useAuth();
   const router = useRouter();
   const { width } = useWindowDimensions();
   
@@ -54,7 +55,7 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      const result = await loginApi(email.trim(), password);
+      await login(email.trim(), password);
       // Éxito: Se redirige al módulo principal de la app
       router.replace('/(tabs)/explore');
     } catch (err: any) {
@@ -63,6 +64,7 @@ export default function LoginScreen() {
       setLoading(false);
     }
   };
+
 
   const handleBack = () => {
     router.replace('/');

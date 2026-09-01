@@ -10,6 +10,8 @@ interface CommunityCardProps {
   timeAgo: string;
   planTitle: string;
   placeName: string;
+  budget?: string;
+  gastroTags?: string[];
   rating: number;
   likesCount: number;
   commentsCount: number;
@@ -28,6 +30,8 @@ export default function CommunityCard({
   timeAgo,
   planTitle,
   placeName,
+  budget,
+  gastroTags,
   rating,
   likesCount,
   commentsCount,
@@ -70,16 +74,38 @@ export default function CommunityCard({
         {planTitle}
       </Text>
 
-      {/* Location tag */}
-      <TouchableOpacity activeOpacity={0.8} style={styles.placeTag}>
-        <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2}>
-          <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-          <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-        </Svg>
-        <Text style={[styles.placeTagText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-          {placeName}
-        </Text>
-      </TouchableOpacity>
+      {/* Location & Tags Row */}
+      <View style={styles.placeTagsRow}>
+        <TouchableOpacity activeOpacity={0.8} style={styles.placeTag}>
+          <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2}>
+            <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+            <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+          </Svg>
+          <Text style={[styles.placeTagText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+            {placeName}
+          </Text>
+        </TouchableOpacity>
+
+        {budget && (
+          <View style={[styles.budgetBadge, { backgroundColor: colors.primary + '18' }]}>
+            <Text style={[styles.budgetText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+              {budget}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {gastroTags && gastroTags.length > 0 && (
+        <View style={styles.cardGastroTagsRow}>
+          {gastroTags.map((tag, idx) => (
+            <View key={idx} style={[styles.cardGastroTag, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
+              <Text style={[styles.cardGastroTagText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+                {tag}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       {/* Main Image */}
       <Image source={{ uri: imageUrl }} style={[styles.postImage, { borderRadius: borderRadius.md }]} />
@@ -182,14 +208,41 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 4,
   },
+  placeTagsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
   placeTag: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginBottom: 12,
   },
   placeTagText: {
     fontSize: 12,
+  },
+  budgetBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  budgetText: {
+    fontSize: 11,
+  },
+  cardGastroTagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 10,
+  },
+  cardGastroTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  cardGastroTagText: {
+    fontSize: 11,
   },
   postImage: {
     width: '100%',

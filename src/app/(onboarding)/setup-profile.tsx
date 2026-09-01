@@ -17,7 +17,9 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../hooks/useTheme';
+import { useAuth } from '../../context/AuthContext';
 import { createProfileApi } from '../../services/profileService';
+
 
 type Gender = 'MALE' | 'FEMALE' | 'OTHER';
 type PlaceCategory = 'FOOD_DRINK' | 'CULTURE' | 'NATURE' | 'ENTERTAINMENT' | 'SHOPPING' | 'SPORTS' | 'OTHER';
@@ -53,9 +55,11 @@ const DIETARY_OPTIONS: { id: DietaryPreference; label: string }[] = [
 
 export default function SetupProfileScreen() {
   const { colors, typography, borderRadius, isDark } = useTheme();
+  const { user } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{ userId?: string }>();
   const { width } = useWindowDimensions();
+
 
   const [currentStep, setCurrentStep] = useState(1);
 
@@ -123,7 +127,8 @@ export default function SetupProfileScreen() {
     setLoading(true);
     setErrorMessage(null);
     try {
-      const targetUserId = params.userId || '00000000-0000-0000-0000-000000000001';
+      const targetUserId = params.userId || user?.id || '00000000-0000-0000-0000-000000000001';
+
       await createProfileApi({
         userId: targetUserId,
         username: username.trim(),

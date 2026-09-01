@@ -24,6 +24,7 @@ import MapPreview from '../../components/ui/map-preview';
 import StarRating from '../../components/ui/star-rating';
 import { getNearbyPlacesApi } from '../../services/placeService';
 import { PlaceCategory as ApiCategory } from '../../services/profileService';
+import { useUserLocation } from '../../hooks/useUserLocation';
 
 type PlaceCategory = 'ALL' | 'FOOD_DRINK' | 'CULTURE' | 'NATURE' | 'ENTERTAINMENT' | 'SHOPPING' | 'SPORTS';
 type PriceRange = 'ALL' | 'CHEAP' | 'MODERATE' | 'EXPENSIVE' | 'LUXURY';
@@ -139,6 +140,7 @@ export default function ExploreScreen() {
   const { colors, typography, borderRadius, isDark } = useTheme();
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const userLoc = useUserLocation();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<PlaceCategory>('ALL');
@@ -154,7 +156,7 @@ export default function ExploreScreen() {
       setLoadingPlaces(true);
       try {
         const catFilter = selectedCategory !== 'ALL' ? (selectedCategory as ApiCategory) : undefined;
-        const apiPlaces = await getNearbyPlacesApi(-103.3702, 20.6745, 50.0, catFilter);
+        const apiPlaces = await getNearbyPlacesApi(userLoc.lng, userLoc.lat, 50.0, catFilter);
         if (apiPlaces && apiPlaces.length > 0) {
           const mappedPlaces: Place[] = apiPlaces.map((p) => ({
             id: p.id,
@@ -184,7 +186,7 @@ export default function ExploreScreen() {
       }
     }
     loadPlaces();
-  }, [selectedCategory]);
+  }, [selectedCategory, userLoc.lat, userLoc.lng]);
 
   // Swipe gesture right-to-left to close modal
   const panResponder = useRef(
@@ -231,16 +233,20 @@ export default function ExploreScreen() {
             <Text style={[styles.headerTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
               Explorar
             </Text>
-            <TouchableOpacity style={styles.locationRow} activeOpacity={0.8}>
+            <TouchableOpacity 
+              style={styles.locationRow} 
+              activeOpacity={0.8}
+              onPress={() => userLoc.requestUserLocation()}
+            >
               <Svg width={14} height={14} viewBox="0 0 24 24" fill={colors.primary} stroke={colors.primary} strokeWidth={0}>
                 <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <Path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" fill={colors.background} />
               </Svg>
               <Text style={[styles.locationText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
-                Guadalajara, Jal.
+                {userLoc.loading ? 'Detectando ubicación...' : userLoc.formattedAddress}
               </Text>
               <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2.5}>
-                <Path d="M6 9l6 6 6-6" />
+                <Path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
               </Svg>
             </TouchableOpacity>
           </View>
