@@ -16,8 +16,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
+import { useAuth } from '../../context/AuthContext';
 import StarRating from '../../components/ui/star-rating';
 import { recommendItineraryApi } from '../../services/itineraryService';
+
 
 interface ItineraryStep {
   stepNumber: number;
@@ -138,6 +140,7 @@ const MOCK_GENERATED_ITINERARY: GeneratedItinerary = {
 
 export default function GeneratorScreen() {
   const { colors, typography, borderRadius, isDark } = useTheme();
+  const { user } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
@@ -190,9 +193,11 @@ export default function GeneratorScreen() {
     setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
 
     const messageText = textToSend.trim();
+    const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
 
     try {
-      const result = await recommendItineraryApi('00000000-0000-0000-0000-000000000001', messageText);
+      const result = await recommendItineraryApi(currentUserId, messageText);
+
       const generatedItinerary: GeneratedItinerary = {
         id: result.id,
         title: result.title,

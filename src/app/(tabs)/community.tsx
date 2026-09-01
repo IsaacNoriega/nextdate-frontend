@@ -17,11 +17,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Line } from 'react-native-svg';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../hooks/useTheme';
+import { useAuth } from '../../context/AuthContext';
 import CommunityCard from '../../components/community/community-card';
 import StarRating from '../../components/ui/star-rating';
 import { getSharedExperiencesApi, shareExperienceApi } from '../../services/communityService';
 import LeafletMap, { MapClickEvent } from '../../components/map/leaflet-map';
 import { useUserLocation } from '../../hooks/useUserLocation';
+
 
 type FeedCategory = 'ALL' | 'ROMANTIC' | 'OUTDOOR' | 'GASTRO' | 'CULTURE';
 
@@ -81,7 +83,9 @@ const FEED_CATEGORIES: { id: FeedCategory; label: string }[] = [
 
 export default function CommunityScreen() {
   const { colors, typography, borderRadius, isDark } = useTheme();
+  const { user } = useAuth();
   const userLoc = useUserLocation();
+
 
   const [selectedCategory, setSelectedCategory] = useState<FeedCategory>('ALL');
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
@@ -198,9 +202,11 @@ export default function CommunityScreen() {
     const finalPlace = newPlace.trim() || 'Lugar recomendado';
     const finalLocation = newLocation.trim() ? `${finalPlace} (${newLocation.trim()})` : finalPlace;
 
+    const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
+
     try {
       await shareExperienceApi({
-        userId: '00000000-0000-0000-0000-000000000001',
+        userId: currentUserId,
         itineraryId: '00000000-0000-0000-0000-000000000001',
         title: newTitle.trim(),
         description: newReview.trim() || undefined,
@@ -209,6 +215,7 @@ export default function CommunityScreen() {
         rating: newRating,
         imageUrls: [selectedImage],
       });
+
     } catch (err) {
       console.log('Fallo API, publicando localmente:', err);
     } finally {

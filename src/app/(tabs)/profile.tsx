@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
+import { useAuth } from '../../context/AuthContext';
 import { getProfileByUserIdApi, Profile } from '../../services/profileService';
 
 type ProfileTab = 'SAVED' | 'SETTINGS';
@@ -50,6 +51,7 @@ const MOCK_SAVED_PLANS: SavedPlan[] = [
 
 export default function ProfileScreen() {
   const { colors, typography, borderRadius, isDark } = useTheme();
+  const { user, logout } = useAuth();
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<ProfileTab>('SAVED');
@@ -59,20 +61,22 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     async function loadProfile() {
+      if (!user?.id) return;
       setLoading(true);
       try {
-        const data = await getProfileByUserIdApi('00000000-0000-0000-0000-000000000001');
+        const data = await getProfileByUserIdApi(user.id);
         if (data) {
           setProfile(data);
         }
       } catch (err) {
-        // Fallback silencioso si no se encuentra
+        // Fallback si no se encuentra
       } finally {
         setLoading(false);
       }
     }
     loadProfile();
-  }, []);
+  }, [user?.id]);
+
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
@@ -257,12 +261,16 @@ export default function ProfileScreen() {
             <TouchableOpacity 
               style={[styles.logoutBtn, { borderColor: '#FF3B30', borderRadius: borderRadius.md }]}
               activeOpacity={0.8}
-              onPress={() => router.push('/(auth)/login')}
+              onPress={async () => {
+                await logout();
+                router.replace('/(auth)/login');
+              }}
             >
               <Text style={[styles.logoutBtnText, { color: '#FF3B30', fontFamily: typography.fonts.bold }]}>
                 Cerrar Sesión
               </Text>
             </TouchableOpacity>
+
 
           </View>
         ) : null}

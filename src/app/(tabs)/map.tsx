@@ -14,8 +14,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
+import { useAuth } from '../../context/AuthContext';
 import StarRating from '../../components/ui/star-rating';
 import { getItinerariesByUserIdApi } from '../../services/itineraryService';
+
 import LeafletMap, { MapWaypoint } from '../../components/map/leaflet-map';
 import { useUserLocation } from '../../hooks/useUserLocation';
 
@@ -117,7 +119,9 @@ const AVAILABLE_ITINERARIES: SavedItineraryOption[] = [
 
 export default function MapScreen() {
   const { colors, typography, borderRadius, isDark } = useTheme();
+  const { user } = useAuth();
   const userLoc = useUserLocation();
+
 
   const [selectedItineraryId, setSelectedItineraryId] = useState<string | null>('itin-1');
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
@@ -204,8 +208,11 @@ export default function MapScreen() {
         },
       ];
 
+      const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
+
       try {
-        const apiData = await getItinerariesByUserIdApi('00000000-0000-0000-0000-000000000001');
+        const apiData = await getItinerariesByUserIdApi(currentUserId);
+
         if (apiData && apiData.length > 0) {
           const mapped: SavedItineraryOption[] = apiData.map((itin) => ({
             id: itin.id,
