@@ -32,6 +32,9 @@ if (typeof document !== 'undefined') {
         background-color: #0d0d0d !important;
         font-family: system-ui, -apple-system, sans-serif !important;
       }
+      .dark-tiles .leaflet-tile {
+        filter: invert(100%) hue-rotate(180deg) brightness(90%) contrast(90%) !important;
+      }
       .leaflet-routing-container {
         background-color: rgba(28, 28, 30, 0.95) !important;
         color: #ffffff !important;
@@ -216,14 +219,12 @@ export default function LeafletMapWeb({
 
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      const tileUrl = isDark
-        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-        : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+      const tileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
       L.tileLayer(tileUrl, {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
-        subdomains: 'abcd',
+        className: isDark ? 'dark-tiles' : '',
       }).addTo(map);
 
       mapRef.current = map;
@@ -303,6 +304,13 @@ export default function LeafletMapWeb({
     markersRef.current = [];
 
     // Add Waypoint Markers
+    if (!waypoints || waypoints.length < 2) {
+      if (routingControlRef.current) {
+        map.removeControl(routingControlRef.current);
+        routingControlRef.current = null;
+      }
+    }
+
     if (waypoints && waypoints.length > 0) {
       const latLngs: L.LatLng[] = [];
 

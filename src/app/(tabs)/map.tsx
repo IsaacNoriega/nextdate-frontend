@@ -7,7 +7,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
+import { useRouter } from 'expo-router';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 import { useAuth } from '../../context/AuthContext';
 import { useUserLocation } from '../../hooks/useUserLocation';
@@ -16,49 +17,44 @@ import NavigationOverlay from '../../components/map/navigation-overlay';
 import ItinerarySelectorModal from '../../components/map/itinerary-selector-modal';
 import StepDetailModal from '../../components/generator/step-detail-modal';
 import { getItinerariesByUserIdApi } from '../../services/itineraryService';
-import {
-  RouteStep,
-  SavedItineraryOption,
-  STATIC_ITINERARIES,
-} from '../../mocks/map.mock';
+import { RouteStep, SavedItineraryOption } from '../../mocks/map.mock';
 
 export default function MapScreen() {
   const { colors, typography, borderRadius, isDark } = useTheme();
   const { user } = useAuth();
   const userLoc = useUserLocation();
+  const router = useRouter();
 
-  const [itineraries, setItineraries] =
-    useState<SavedItineraryOption[]>(STATIC_ITINERARIES);
-  const [selectedItineraryId, setSelectedItineraryId] = useState<string | null>(
-    'itin-1'
-  );
+  const [itineraries, setItineraries] = useState<SavedItineraryOption[]>([]);
+  const [selectedItineraryId, setSelectedItineraryId] = useState<string | null>(null);
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
-  const [isNavigating, setIsNavigating] = useState<boolean>(false);
   const [showSelectorModal, setShowSelectorModal] = useState<boolean>(false);
-  const [selectedStepDetail, setSelectedStepDetail] = useState<RouteStep | null>(
-    null
-  );
+  const [selectedStepDetail, setSelectedStepDetail] = useState<RouteStep | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     async function loadItineraries() {
+      if (!user?.id) {
+        setItineraries([]);
+        setSelectedItineraryId(null);
+        return;
+      }
       setLoading(true);
-      const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
 
       try {
-        const apiData = await getItinerariesByUserIdApi(currentUserId);
+        const apiData = await getItinerariesByUserIdApi(user.id);
         if (apiData && apiData.length > 0) {
           const mapped: SavedItineraryOption[] = apiData.map((itin: any) => ({
             id: itin.id,
             title: itin.title,
             tagline: itin.description || 'Itinerario de cita de NextDate',
-            totalDistance: '2.5 km',
-            totalTime: '15 min',
+            totalDistance: `${(itin.items?.length || 1) * 0.8} km`,
+            totalTime: `${itin.items?.reduce((acc: number, cur: any) => acc + (cur.durationInMinutes || 45), 0)} min`,
             matchScore: 98,
-            steps: itin.items.map((item: any, idx: number) => ({
+            steps: (itin.items || []).map((item: any, idx: number) => ({
               stepNumber: item.sequenceOrder || idx + 1,
               time: `${19 + idx}:00`,
-              title: item.notes || `Paso ${item.sequenceOrder}`,
+              title: item.notes || `Paso ${item.sequenceOrder || idx + 1}`,
               placeName: item.place ? item.place.name : 'Lugar Recomendado',
               categoryEmoji:
                 item.place?.category === 'FOOD_DRINK'
@@ -66,7 +62,7 @@ export default function MapScreen() {
                   : item.place?.category === 'CULTURE'
                   ? '🎭'
                   : '✨',
-              address: item.place?.address || 'Guadalajara, Jal.',
+              address: item.place?.address || 'Ubicación seleccionada',
               description:
                 item.place?.description ||
                 'Disfruta de esta experiencia recomendada.',
@@ -76,19 +72,21 @@ export default function MapScreen() {
               turnInstruction: `Dirígete hacia ${
                 item.place ? item.place.name : 'el siguiente punto'
               }`,
-              distanceRemaining: '800m',
-              eta: '10 min',
-              lat: item.place?.latitude || 20.6745,
-              lng: item.place?.longitude || -103.3702,
+              distanceRemaining: '500m',
+              eta: `${item.transitTimeToNext || 10} min`,
+              lat: item.place?.latitude || userLoc.lat,
+              lng: item.place?.longitude || userLoc.lng,
             })),
           }));
           setItineraries(mapped);
-          if (mapped.length > 0) {
-            setSelectedItineraryId(mapped[0].id);
-          }
+          setSelectedItineraryId(mapped[0].id);
+        } else {
+          setItineraries([]);
+          setSelectedItineraryId(null);
         }
       } catch (err) {
-        // Fallback a los datos mock estáticos
+        setItineraries([]);
+        setSelectedItineraryId(null);
       } finally {
         setLoading(false);
       }
@@ -97,7 +95,7 @@ export default function MapScreen() {
   }, [user?.id]);
 
   const currentItinerary =
-    itineraries.find((i) => i.id === selectedItineraryId) || itineraries[0];
+    itineraries.find((i) => i.id === selectedItineraryId) || null;
   const activeStep = currentItinerary?.steps[activeStepIndex] || null;
 
   const mapWaypoints: MapWaypoint[] = (currentItinerary?.steps || []).map(
@@ -117,51 +115,103 @@ export default function MapScreen() {
     >
       {/* Header flotante */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={[
-            styles.selectorBtn,
-            {
-              backgroundColor: colors.card,
-              borderColor: colors.border,
-              borderRadius: borderRadius.lg,
-            },
-          ]}
-          activeOpacity={0.8}
-          onPress={() => setShowSelectorModal(true)}
-        >
-          <View style={styles.selectorInfo}>
-            <Text
-              style={[
-                styles.selectorTitle,
-                { color: colors.text, fontFamily: typography.fonts.bold },
-              ]}
-              numberOfLines={1}
-            >
-              {currentItinerary?.title || 'Seleccionar Itinerario'}
-            </Text>
-            <Text
-              style={[
-                styles.selectorSubtitle,
-                {
-                  color: colors.textSecondary,
-                  fontFamily: typography.fonts.regular,
-                },
-              ]}
-            >
-              {currentItinerary?.steps.length || 0} paradas • {currentItinerary?.totalDistance}
-            </Text>
-          </View>
-          <Svg
-            width={16}
-            height={16}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke={colors.textSecondary}
-            strokeWidth={2}
+        {itineraries.length > 0 ? (
+          <TouchableOpacity
+            style={[
+              styles.selectorBtn,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                borderRadius: borderRadius.lg,
+              },
+            ]}
+            activeOpacity={0.8}
+            onPress={() => setShowSelectorModal(true)}
           >
-            <Path d="M6 9l6 6 6-6" />
-          </Svg>
-        </TouchableOpacity>
+            <View style={styles.selectorInfo}>
+              <Text
+                style={[
+                  styles.selectorTitle,
+                  { color: colors.text, fontFamily: typography.fonts.bold },
+                ]}
+                numberOfLines={1}
+              >
+                {currentItinerary?.title || 'Seleccionar Itinerario'}
+              </Text>
+              <Text
+                style={[
+                  styles.selectorSubtitle,
+                  {
+                    color: colors.textSecondary,
+                    fontFamily: typography.fonts.regular,
+                  },
+                ]}
+              >
+                {currentItinerary?.steps.length || 0} paradas • {currentItinerary?.totalDistance}
+              </Text>
+            </View>
+            <Svg
+              width={16}
+              height={16}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke={colors.textSecondary}
+              strokeWidth={2}
+            >
+              <Path d="M6 9l6 6 6-6" />
+            </Svg>
+          </TouchableOpacity>
+        ) : (
+          <View
+            style={[
+              styles.selectorBtn,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                borderRadius: borderRadius.lg,
+              },
+            ]}
+          >
+            <View style={styles.selectorInfo}>
+              <Text
+                style={[
+                  styles.selectorTitle,
+                  { color: colors.text, fontFamily: typography.fonts.bold },
+                ]}
+              >
+                📍 Tu Ubicación Actual
+              </Text>
+              <Text
+                style={[
+                  styles.selectorSubtitle,
+                  {
+                    color: colors.textSecondary,
+                    fontFamily: typography.fonts.regular,
+                  },
+                ]}
+              >
+                {userLoc.formattedAddress || 'Buscando GPS...'}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => userLoc.requestUserLocation()}
+              style={{ padding: 6 }}
+              activeOpacity={0.7}
+            >
+              <Svg
+                width={18}
+                height={18}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={colors.primary}
+                strokeWidth={2}
+              >
+                <Path d="M12 2v4m0 12v4M2 12h4m12 0h4" />
+                <Circle cx="12" cy="12" r="4" />
+              </Svg>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       {/* Mapa Completo con Leaflet / WebView */}
@@ -175,15 +225,15 @@ export default function MapScreen() {
             waypoints={mapWaypoints}
             activeStepIndex={activeStepIndex}
             onSelectWaypoint={(idx) => setActiveStepIndex(idx)}
-            showRoutingMachine={true}
+            showRoutingMachine={mapWaypoints.length >= 2}
             userLocation={{ lat: userLoc.lat, lng: userLoc.lng }}
             isDark={isDark}
           />
         )}
       </View>
 
-      {/* Overlay Flotante de Navegación */}
-      {activeStep && (
+      {/* Si hay itinerario activo, Overlay de Navegación */}
+      {currentItinerary && activeStep ? (
         <View style={styles.overlayWrapper}>
           <NavigationOverlay
             step={activeStep}
@@ -198,19 +248,69 @@ export default function MapScreen() {
             onOpenDetail={() => setSelectedStepDetail(activeStep)}
           />
         </View>
+      ) : (
+        /* Empty State Floating Card */
+        <View style={styles.emptyOverlayWrapper}>
+          <View
+            style={[
+              styles.emptyCard,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                borderRadius: borderRadius.lg,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.emptyCardTitle,
+                { color: colors.text, fontFamily: typography.fonts.bold },
+              ]}
+            >
+              Sin planes guardados aún
+            </Text>
+            <Text
+              style={[
+                styles.emptyCardText,
+                { color: colors.textSecondary, fontFamily: typography.fonts.regular },
+              ]}
+            >
+              Pídele al AI Concierge que diseñe tu próxima cita o explora lugares cercanos para trazarlos en el mapa.
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.emptyCardBtn,
+                { backgroundColor: colors.primary, borderRadius: borderRadius.md },
+              ]}
+              activeOpacity={0.85}
+              onPress={() => router.push('/(tabs)/generator')}
+            >
+              <Text
+                style={[
+                  styles.emptyCardBtnText,
+                  { color: colors.primaryContrast, fontFamily: typography.fonts.bold },
+                ]}
+              >
+                ✨ Crear Plan con IA
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       )}
 
       {/* Selector Modal de Itinerarios */}
-      <ItinerarySelectorModal
-        visible={showSelectorModal}
-        onClose={() => setShowSelectorModal(false)}
-        itineraries={itineraries}
-        selectedId={selectedItineraryId}
-        onSelect={(id) => {
-          setSelectedItineraryId(id);
-          setActiveStepIndex(0);
-        }}
-      />
+      {itineraries.length > 0 && (
+        <ItinerarySelectorModal
+          visible={showSelectorModal}
+          onClose={() => setShowSelectorModal(false)}
+          itineraries={itineraries}
+          selectedId={selectedItineraryId}
+          onSelect={(id) => {
+            setSelectedItineraryId(id);
+            setActiveStepIndex(0);
+          }}
+        />
+      )}
 
       {/* Modal de Detalle de Paso */}
       <StepDetailModal
@@ -230,7 +330,6 @@ export default function MapScreen() {
         }
         onClose={() => setSelectedStepDetail(null)}
       />
-
     </SafeAreaView>
   );
 }
@@ -284,5 +383,38 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     zIndex: 20,
+  },
+  emptyOverlayWrapper: {
+    position: 'absolute',
+    bottom: 30,
+    left: 16,
+    right: 16,
+    zIndex: 20,
+  },
+  emptyCard: {
+    padding: 18,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  emptyCardTitle: {
+    fontSize: 16,
+    marginBottom: 6,
+  },
+  emptyCardText: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 14,
+  },
+  emptyCardBtn: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyCardBtnText: {
+    fontSize: 14,
   },
 });

@@ -15,39 +15,9 @@ import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 import { useAuth } from '../../context/AuthContext';
 import { getProfileByUserIdApi, Profile } from '../../services/profileService';
+import { getItinerariesByUserIdApi, Itinerary } from '../../services/itineraryService';
 
 type ProfileTab = 'SAVED' | 'SETTINGS';
-
-interface SavedPlan {
-  id: string;
-  title: string;
-  tagline: string;
-  matchScore: number;
-  stepsCount: number;
-  imageUrl: string;
-  savedAt: string;
-}
-
-const MOCK_SAVED_PLANS: SavedPlan[] = [
-  {
-    id: 'plan-1',
-    title: 'Noche Mágica en la Americana',
-    tagline: 'Coctelería de autor, cena gourmet y caminata bajo las estrellas.',
-    matchScore: 98,
-    stepsCount: 3,
-    imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
-    savedAt: 'Guardado ayer'
-  },
-  {
-    id: 'plan-2',
-    title: 'Tarde Romántica & Picnic',
-    tagline: 'Helado artesanal, caminata por el bosque y vista panorámica.',
-    matchScore: 95,
-    stepsCount: 3,
-    imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80',
-    savedAt: 'Guardado hace 3 días'
-  }
-];
 
 export default function ProfileScreen() {
   const { colors, typography, borderRadius, isDark } = useTheme();
@@ -57,26 +27,35 @@ export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState<ProfileTab>('SAVED');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [savedItineraries, setSavedItineraries] = useState<Itinerary[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    async function loadProfile() {
+    async function loadUserData() {
       if (!user?.id) return;
       setLoading(true);
       try {
-        const data = await getProfileByUserIdApi(user.id);
-        if (data) {
-          setProfile(data);
+        const [profileData, itinerariesData] = await Promise.all([
+          getProfileByUserIdApi(user.id),
+          getItinerariesByUserIdApi(user.id),
+        ]);
+        if (profileData) {
+          setProfile(profileData);
+        }
+        if (itinerariesData) {
+          setSavedItineraries(itinerariesData);
         }
       } catch (err) {
-        // Fallback si no se encuentra
+        console.log('Error loading user data:', err);
       } finally {
         setLoading(false);
       }
     }
-    loadProfile();
+    loadUserData();
   }, [user?.id]);
 
+  const displayName = profile?.username || user?.email?.split('@')[0] || 'Usuario NextDate';
+  const displayHandle = `@${(profile?.username || user?.email?.split('@')[0] || 'usuario').toLowerCase().replace(/\s+/g, '_')}`;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
@@ -93,10 +72,10 @@ export default function ProfileScreen() {
           </View>
 
           <Text style={[styles.userNameText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-            {profile ? profile.username : 'Isaac Noriega'}
+            {displayName}
           </Text>
           <Text style={[styles.userHandleText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
-            @{profile ? profile.username.toLowerCase().replace(/\s+/g, '_') : 'isaac_noriega'}
+            {displayHandle}
           </Text>
 
           <TouchableOpacity 
@@ -110,14 +89,14 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Metrics */}
+        {/* Metrics Reales */}
         <View style={[styles.metricsContainer, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
           <View style={styles.metricItem}>
             <Text style={[styles.metricNumber, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-              12
+              {savedItineraries.length}
             </Text>
             <Text style={[styles.metricLabel, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
-              Planes
+              Planes Guardados
             </Text>
           </View>
 
@@ -125,7 +104,7 @@ export default function ProfileScreen() {
 
           <View style={styles.metricItem}>
             <Text style={[styles.metricNumber, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-              15
+              {savedItineraries.length}
             </Text>
             <Text style={[styles.metricLabel, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
               Citas
@@ -140,7 +119,7 @@ export default function ProfileScreen() {
                 <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
               </Svg>
               <Text style={[styles.metricNumber, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                4.9
+                {savedItineraries.length > 0 ? '5.0' : '—'}
               </Text>
             </View>
             <Text style={[styles.metricLabel, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
@@ -180,39 +159,68 @@ export default function ProfileScreen() {
         {/* Tab 1: Saved plans */}
         {activeTab === 'SAVED' ? (
           <View style={styles.savedSection}>
-            {MOCK_SAVED_PLANS.map((plan) => (
-              <View key={plan.id} style={[styles.savedCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
-                <Image source={{ uri: plan.imageUrl }} style={styles.savedCardImage} />
-                
-                <View style={styles.savedCardContent}>
-                  <View style={styles.savedBadgeRow}>
-                    <Text style={[styles.savedMatchText, { color: '#30D158', fontFamily: typography.fonts.bold }]}>
-                      {plan.matchScore}% Compatibilidad
+            {loading ? (
+              <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 20 }} />
+            ) : savedItineraries.length > 0 ? (
+              savedItineraries.map((plan) => (
+                <View key={plan.id} style={[styles.savedCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
+                  <Image 
+                    source={{ uri: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80' }} 
+                    style={styles.savedCardImage} 
+                  />
+                  
+                  <View style={styles.savedCardContent}>
+                    <View style={styles.savedBadgeRow}>
+                      <Text style={[styles.savedMatchText, { color: '#30D158', fontFamily: typography.fonts.bold }]}>
+                        ✨ {plan.items?.length || 0} Paradas
+                      </Text>
+                      <Text style={[styles.savedDateText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                        ${plan.totalCost.toFixed(2)} USD
+                      </Text>
+                    </View>
+
+                    <Text style={[styles.savedTitleText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                      {plan.title}
                     </Text>
-                    <Text style={[styles.savedDateText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                      {plan.savedAt}
+                    <Text style={[styles.savedTaglineText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                      {plan.description || 'Itinerario personalizado de NextDate.'}
                     </Text>
+
+                    <TouchableOpacity 
+                      style={[styles.planActionBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
+                      activeOpacity={0.88}
+                      onPress={() => router.push('/(tabs)/map')}
+                    >
+                      <Text style={[styles.planActionBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                        Ver en Mapa & Navegar
+                      </Text>
+                    </TouchableOpacity>
                   </View>
-
-                  <Text style={[styles.savedTitleText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                    {plan.title}
-                  </Text>
-                  <Text style={[styles.savedTaglineText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                    {plan.tagline}
-                  </Text>
-
-                  <TouchableOpacity 
-                    style={[styles.planActionBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
-                    activeOpacity={0.88}
-                    onPress={() => router.push('/(tabs)/generator')}
-                  >
-                    <Text style={[styles.planActionBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                      Ver Itinerario & Planear
-                    </Text>
-                  </TouchableOpacity>
                 </View>
+              ))
+            ) : (
+              /* Empty State */
+              <View style={[styles.emptyContainer, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
+                <Svg width={40} height={40} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={1.5} style={{ marginBottom: 12 }}>
+                  <Path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                </Svg>
+                <Text style={[styles.emptyTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                  No tienes planes guardados
+                </Text>
+                <Text style={[styles.emptyText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+                  Pídele a nuestro AI Concierge que diseñe tu próxima cita romántica o salida ideal.
+                </Text>
+                <TouchableOpacity 
+                  style={[styles.emptyBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
+                  activeOpacity={0.85}
+                  onPress={() => router.push('/(tabs)/generator')}
+                >
+                  <Text style={[styles.emptyBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                    ✨ Diseñar Cita con IA
+                  </Text>
+                </TouchableOpacity>
               </View>
-            ))}
+            )}
           </View>
         ) : null}
 
@@ -270,7 +278,6 @@ export default function ProfileScreen() {
                 Cerrar Sesión
               </Text>
             </TouchableOpacity>
-
 
           </View>
         ) : null}
@@ -403,6 +410,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   planActionBtnText: {
+    fontSize: 13,
+  },
+  emptyContainer: {
+    padding: 24,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+  },
+  emptyTitle: {
+    fontSize: 16,
+    marginBottom: 6,
+  },
+  emptyText: {
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  emptyBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  emptyBtnText: {
     fontSize: 13,
   },
   settingsSection: {

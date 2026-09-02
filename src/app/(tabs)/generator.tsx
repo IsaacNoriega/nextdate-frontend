@@ -23,7 +23,6 @@ import {
   GeneratedItinerary,
   ChatMessage,
   INITIAL_MESSAGES,
-  MOCK_GENERATED_ITINERARY,
 } from '../../mocks/generator.mock';
 
 export default function GeneratorScreen() {
@@ -105,16 +104,15 @@ export default function GeneratorScreen() {
       };
 
       setMessages((prev) => [...prev, aiMsg]);
-    } catch (err) {
-      console.log('Error conectando con el Concierge de IA, usando sugerencia mock:', err);
-      const fallbackAiMsg: ChatMessage = {
-        id: `ai-mock-${Date.now()}`,
+    } catch (err: any) {
+      console.log('Error conectando con el Concierge de IA:', err);
+      const errorAiMsg: ChatMessage = {
+        id: `ai-err-${Date.now()}`,
         sender: 'ai',
-        text: `Aquí tienes una recomendación personalizada para tu plan:`,
-        itinerary: MOCK_GENERATED_ITINERARY,
+        text: `Lo siento, no pude generar el itinerario en este momento (${err?.message || 'Error del servidor'}). Por favor verifica la conexión con el backend o intenta con otra solicitud.`,
         timestamp: 'Ahora',
       };
-      setMessages((prev) => [...prev, fallbackAiMsg]);
+      setMessages((prev) => [...prev, errorAiMsg]);
     } finally {
       setIsTyping(false);
       setIsThinking(false);

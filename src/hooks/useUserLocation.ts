@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Platform } from 'react-native';
 import * as Location from 'expo-location';
 
@@ -14,20 +14,84 @@ export interface UserLocationState {
   permissionGranted: boolean;
 }
 
-const DEFAULT_LOCATION: UserLocationState = {
+const DEFAULT_FALLBACK: UserLocationState = {
   lat: 20.6736,
   lng: -103.3698,
-  city: 'Guadalajara',
-  state: 'Jalisco',
+  city: 'Detectando ubicación...',
+  state: '',
   country: 'México',
-  formattedAddress: 'Guadalajara, Jal.',
-  loading: false,
+  formattedAddress: 'Obteniendo GPS...',
+  loading: true,
   error: null,
   permissionGranted: false,
 };
 
 export function useUserLocation() {
-  const [location, setLocation] = useState<UserLocationState>(DEFAULT_LOCATION);
+  const [location, setLocation] = useState<UserLocationState>(DEFAULT_FALLBACK);
+  const isFetchedRef = useRef(false);
+
+  const fetchIpFallbackLocation = async () => {
+    try {
+      // Intentar servicio IP gratuito 1: freeipapi.com
+      const res = await fetch('https://freeipapi.com/api/json');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.latitude && data.longitude) {
+          const city = data.cityName || 'Mi Ciudad';
+          const state = data.regionName || '';
+          const country = data.countryName || 'México';
+          const formattedAddress = state ? `${city}, ${state}` : city;
+
+          setLocation((prev) => ({
+            ...prev,
+            lat: Number(data.latitude),
+            lng: Number(data.longitude),
+            city,
+            state,
+            country,
+            formattedAddress,
+            loading: false,
+            permissionGranted: true,
+            error: null,
+          }));
+          return true;
+        }
+      }
+    } catch (e) {
+      console.log('IP fallback 1 failed, trying fallback 2:', e);
+    }
+
+    try {
+      // Intentar servicio IP fallback 2: ipapi.co
+      const res = await fetch('https://ipapi.co/json/');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.latitude && data.longitude) {
+          const city = data.city || 'Mi Ciudad';
+          const state = data.region || '';
+          const country = data.country_name || 'México';
+          const formattedAddress = state ? `${city}, ${state}` : city;
+
+          setLocation((prev) => ({
+            ...prev,
+            lat: Number(data.latitude),
+            lng: Number(data.longitude),
+            city,
+            state,
+            country,
+            formattedAddress,
+            loading: false,
+            permissionGranted: true,
+            error: null,
+          }));
+          return true;
+        }
+      }
+    } catch (e) {
+      console.log('IP fallback 2 failed:', e);
+    }
+    return false;
+  };
 
   const reverseGeocode = async (lat: number, lng: number) => {
     try {
@@ -35,13 +99,13 @@ export function useUserLocation() {
         const addresses = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
         if (addresses && addresses.length > 0) {
           const addr = addresses[0];
-          const city = addr.city || addr.subregion || addr.district || 'Guadalajara';
-          const state = addr.region || 'Jalisco';
+          const city = addr.city || addr.subregion || addr.district || 'Ubicación Actual';
+          const state = addr.region || '';
           const country = addr.country || 'México';
-          const shortState = state.replace('Jalisco', 'Jal.').replace('Nuevo León', 'N.L.').replace('Ciudad de México', 'CDMX');
-          const formattedAddress = `${city}, ${shortState}`;
+          const formattedAddress = state ? `${city}, ${state}` : city;
 
-          setLocation({
+          setLocation((prev) => ({
+            ...prev,
             lat,
             lng,
             city,
@@ -51,31 +115,25 @@ export function useUserLocation() {
             loading: false,
             error: null,
             permissionGranted: true,
-          });
+          }));
           return;
         }
       }
 
-      // Fallback web / OSM nominatim
+      // Web nominatim reverse geocoding
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`,
-        {
-          headers: {
-            'User-Agent': 'NextDateApp/1.0',
-          },
-        }
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`
       );
       if (response.ok) {
         const data = await response.json();
         const address = data.address || {};
-        const city = address.city || address.town || address.village || address.suburb || 'Guadalajara';
-        const state = address.state || 'Jalisco';
+        const city = address.city || address.town || address.village || address.suburb || address.county || 'Ubicación Actual';
+        const state = address.state || '';
         const country = address.country || 'México';
+        const formattedAddress = state ? `${city}, ${state}` : city;
 
-        const shortState = state.replace('Jalisco', 'Jal.').replace('Nuevo León', 'N.L.').replace('Ciudad de México', 'CDMX');
-        const formattedAddress = `${city}, ${shortState}`;
-
-        setLocation({
+        setLocation((prev) => ({
+          ...prev,
           lat,
           lng,
           city,
@@ -85,13 +143,10 @@ export function useUserLocation() {
           loading: false,
           error: null,
           permissionGranted: true,
-        });
-      } else {
-        setLocation((prev) => ({ ...prev, lat, lng, loading: false, permissionGranted: true }));
+        }));
       }
     } catch (err) {
-      console.log('Error reverse geocoding location:', err);
-      setLocation((prev) => ({ ...prev, lat, lng, loading: false, permissionGranted: true }));
+      console.log('Error in reverse geocoding:', err);
     }
   };
 
@@ -102,12 +157,15 @@ export function useUserLocation() {
       if (Platform.OS !== 'web') {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-          setLocation((prev) => ({
-            ...prev,
-            loading: false,
-            error: 'Permiso de ubicación denegado.',
-            permissionGranted: false,
-          }));
+          const ipOk = await fetchIpFallbackLocation();
+          if (!ipOk) {
+            setLocation((prev) => ({
+              ...prev,
+              loading: false,
+              error: 'Permiso de ubicación denegado.',
+              permissionGranted: false,
+            }));
+          }
           return;
         }
 
@@ -115,52 +173,65 @@ export function useUserLocation() {
           accuracy: Location.Accuracy.Balanced,
         });
         const { latitude, longitude } = currentLocation.coords;
-        await reverseGeocode(latitude, longitude);
+        setLocation((prev) => ({
+          ...prev,
+          lat: latitude,
+          lng: longitude,
+          loading: false,
+          permissionGranted: true,
+          error: null,
+        }));
+        reverseGeocode(latitude, longitude);
         return;
       }
 
-      // Web handling
+      // Web Geolocation
       if (typeof window !== 'undefined' && 'geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const { latitude, longitude } = position.coords;
-            reverseGeocode(latitude, longitude);
-          },
-          (error) => {
-            console.log('Geolocation error or permission denied:', error.message);
             setLocation((prev) => ({
               ...prev,
+              lat: latitude,
+              lng: longitude,
               loading: false,
-              error: 'Permiso denegado o ubicación no disponible.',
-              permissionGranted: false,
+              permissionGranted: true,
+              error: null,
             }));
+            reverseGeocode(latitude, longitude);
+          },
+          async (error) => {
+            console.log('HTML5 Geolocation error:', error.message, 'Trying IP fallback...');
+            const ipOk = await fetchIpFallbackLocation();
+            if (!ipOk) {
+              setLocation((prev) => ({
+                ...prev,
+                loading: false,
+                error: 'Permiso denegado o ubicación no disponible.',
+                permissionGranted: false,
+              }));
+            }
           },
           {
             enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 60000,
+            timeout: 8000,
+            maximumAge: 30000,
           }
         );
       } else {
-        setLocation((prev) => ({
-          ...prev,
-          loading: false,
-          error: 'Geolocalización no soportada.',
-        }));
+        await fetchIpFallbackLocation();
       }
     } catch (error: any) {
       console.log('Error getting location:', error);
-      setLocation((prev) => ({
-        ...prev,
-        loading: false,
-        error: error.message || 'Error al obtener la ubicación.',
-        permissionGranted: false,
-      }));
+      await fetchIpFallbackLocation();
     }
   }, []);
 
   useEffect(() => {
-    requestUserLocation();
+    if (!isFetchedRef.current) {
+      isFetchedRef.current = true;
+      requestUserLocation();
+    }
   }, [requestUserLocation]);
 
   return {
@@ -168,4 +239,3 @@ export function useUserLocation() {
     requestUserLocation,
   };
 }
-

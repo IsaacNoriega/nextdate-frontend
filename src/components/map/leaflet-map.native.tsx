@@ -85,14 +85,19 @@ export default function LeafletMapNative({
             transform: scale(1.15);
             box-shadow: 0 0 15px rgba(255, 45, 85, 0.6);
           }
+          .dark-tiles .leaflet-tile {
+            filter: invert(100%) hue-rotate(180deg) brightness(90%) contrast(90%) !important;
+          }
         </style>
       </head>
       <body>
         <div id="map"></div>
         <script>
           const map = L.map('map', { zoomControl: false }).setView([${initialLat}, ${initialLng}], 14);
-          L.tileLayer('${isDark ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'}', {
-            maxZoom: 19
+          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            className: '${isDark ? 'dark-tiles' : ''}',
+            attribution: '&copy; OpenStreetMap contributors'
           }).addTo(map);
 
           ${showGeocoder ? "L.Control.geocoder({ position: 'topleft', placeholder: 'Buscar lugar...' }).addTo(map);" : ''}
