@@ -12,6 +12,7 @@ export interface Profile {
   birthdate: string;
   gender: Gender;
   bio?: string;
+  avatarUrl?: string;
   latitude: number;
   longitude: number;
   active: boolean;
@@ -26,6 +27,7 @@ export interface CreateProfileInput {
   birthdate: string;
   gender: Gender;
   bio?: string;
+  avatarUrl?: string;
   latitude: number;
   longitude: number;
   dietaryPreference: DietaryPreference;
@@ -40,6 +42,7 @@ export interface UpdateProfileInput {
   birthdate?: string;
   gender?: Gender;
   bio?: string;
+  avatarUrl?: string;
   latitude?: number;
   longitude?: number;
   dietaryPreference?: DietaryPreference;
@@ -57,6 +60,7 @@ const PROFILE_BY_USER_ID_QUERY = `
       birthdate
       gender
       bio
+      avatarUrl
       latitude
       longitude
       active
@@ -84,6 +88,7 @@ const CREATE_PROFILE_MUTATION = `
       birthdate
       gender
       bio
+      avatarUrl
       latitude
       longitude
       active
@@ -111,6 +116,7 @@ const UPDATE_PROFILE_MUTATION = `
       birthdate
       gender
       bio
+      avatarUrl
       latitude
       longitude
       active

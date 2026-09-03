@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -6,15 +6,24 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Modal,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Image,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
+import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../hooks/useTheme';
-import { updateProfileApi, DietaryPreference, PriceRange } from '../services/profileService';
+import { useAuth } from '../context/AuthContext';
+import {
+  getProfileByUserIdApi,
+  updateProfileApi,
+  DietaryPreference,
+  PriceRange,
+} from '../services/profileService';
 
 const PRICE_RANGES: { id: PriceRange; label: string; desc: string }[] = [
   { id: 'CHEAP', label: '$ Económico', desc: 'Planes accesibles e informales' },
@@ -33,45 +42,119 @@ const DIETARY_OPTIONS: { id: DietaryPreference; label: string }[] = [
   { id: 'OTHER', label: 'Otro' },
 ];
 
+const AVATAR_PRESETS = [
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300&auto=format&fit=crop&q=80',
+];
+
 export default function EditProfileModalScreen() {
-  const { colors, typography, borderRadius } = useTheme();
+  const { colors, typography, borderRadius, isDark } = useTheme();
+  const { user } = useAuth();
   const router = useRouter();
-  const params = useLocalSearchParams<{ mode?: 'profile' | 'preferences' | 'budget'; profileId?: string; userId?: string }>();
+  const params = useLocalSearchParams<{
+    mode?: 'profile' | 'preferences' | 'budget';
+    profileId?: string;
+    userId?: string;
+  }>();
 
   const mode = params.mode || 'profile';
 
   // State
-  const [username, setUsername] = useState('isaac_noriega');
-  const [bio, setBio] = useState('Apasionado de la buena comida y nuevas experiencias.');
+  const [profileId, setProfileId] = useState<string>(params.profileId || '');
+  const [username, setUsername] = useState('Usuario NextDate');
+  const [bio, setBio] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
   const [preferredPriceRange, setPreferredPriceRange] = useState<PriceRange>('MODERATE');
   const [dietaryPreference, setDietaryPreference] = useState<DietaryPreference>('NONE');
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [fetchingInitial, setFetchingInitial] = useState(true);
+
+  // Cargar datos actuales del perfil del usuario
+  useEffect(() => {
+    async function loadCurrentProfile() {
+      const targetUserId = params.userId || user?.id;
+      if (!targetUserId) {
+        setFetchingInitial(false);
+        return;
+      }
+
+      try {
+        const existingProfile = await getProfileByUserIdApi(targetUserId);
+        if (existingProfile) {
+          setProfileId(existingProfile.id);
+          setUsername(existingProfile.username || '');
+          setBio(existingProfile.bio || '');
+          setAvatarUrl(existingProfile.avatarUrl || '');
+          setPreferredPriceRange(existingProfile.preferredPriceRange || 'MODERATE');
+          setDietaryPreference(existingProfile.dietaryPreference || 'NONE');
+        }
+      } catch (err) {
+        console.warn('Error cargando perfil actual:', err);
+      } finally {
+        setFetchingInitial(false);
+      }
+    }
+
+    loadCurrentProfile();
+  }, [params.userId, user?.id]);
+
+  // Selección de foto desde la galería
+  const handlePickAvatar = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert('Permiso requerido', 'Se necesita permiso para acceder a tus fotos.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.6,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets && result.assets[0]) {
+      const asset = result.assets[0];
+      const selectedImage = asset.base64
+        ? `data:image/jpeg;base64,${asset.base64}`
+        : asset.uri;
+      setAvatarUrl(selectedImage);
+    }
+  };
 
   const handleSave = async () => {
+    const targetUserId = params.userId || user?.id;
+    if (!targetUserId || !profileId) {
+      Alert.alert('Error', 'No se encontró la información del perfil para guardar.');
+      return;
+    }
+
     setLoading(true);
     try {
-      if (params.profileId && params.userId) {
-        await updateProfileApi({
-          id: params.profileId,
-          userId: params.userId,
-          username: username.trim(),
-          bio: bio.trim() || undefined,
-          preferredPriceRange,
-          dietaryPreference,
-        });
-      }
+      await updateProfileApi({
+        id: profileId,
+        userId: targetUserId,
+        username: username.trim(),
+        bio: bio.trim() || undefined,
+        avatarUrl: avatarUrl || undefined,
+        preferredPriceRange,
+        dietaryPreference,
+      });
+
       setSavedSuccess(true);
       setTimeout(() => {
         setSavedSuccess(false);
         router.back();
-      }, 800);
+      }, 700);
     } catch (err: any) {
-      setSavedSuccess(true);
-      setTimeout(() => {
-        setSavedSuccess(false);
-        router.back();
-      }, 800);
+      console.error('Error actualizando perfil:', err);
+      Alert.alert('Error', err?.message || 'No se pudieron guardar los cambios.');
     } finally {
       setLoading(false);
     }
@@ -83,10 +166,19 @@ export default function EditProfileModalScreen() {
     budget: 'Rango de Presupuesto',
   };
 
+  const currentDisplayAvatar =
+    avatarUrl ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(username || 'NextDate')}&background=E11D48&color=fff&size=256`;
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      edges={['top', 'left', 'right']}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
@@ -100,137 +192,271 @@ export default function EditProfileModalScreen() {
           <View style={{ width: 24 }} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-
-          {/* Mode: Profile */}
-          {mode === 'profile' && (
-            <View style={styles.section}>
-              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                Actualiza tu información pública de perfil.
-              </Text>
-
-              <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
-                  Nombre de Usuario
-                </Text>
-                <TextInput
-                  style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card, borderRadius: borderRadius.md, fontFamily: typography.fonts.regular }]}
-                  placeholder="Username"
-                  placeholderTextColor={colors.textSecondary}
-                  value={username}
-                  onChangeText={setUsername}
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
-                  Biografía
-                </Text>
-                <TextInput
-                  style={[styles.textArea, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card, borderRadius: borderRadius.md, fontFamily: typography.fonts.regular }]}
-                  placeholder="Escribe algo sobre ti..."
-                  placeholderTextColor={colors.textSecondary}
-                  value={bio}
-                  onChangeText={setBio}
-                  multiline
-                  numberOfLines={3}
-                />
-              </View>
-            </View>
-          )}
-
-          {/* Mode: Preferences */}
-          {mode === 'preferences' && (
-            <View style={styles.section}>
-              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                Selecciona tus hábitos o restricciones alimenticias.
-              </Text>
-
-              <View style={styles.dietaryWrap}>
-                {DIETARY_OPTIONS.map((d) => {
-                  const isSelected = dietaryPreference === d.id;
-                  return (
+        {fetchingInitial ? (
+          <View style={styles.loadingWrapper}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : (
+          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            {/* Mode: Profile */}
+            {mode === 'profile' && (
+              <View style={styles.section}>
+                {/* Avatar Section */}
+                <View style={styles.avatarSection}>
+                  <View style={styles.avatarWrapper}>
+                    <Image source={{ uri: currentDisplayAvatar }} style={styles.avatarPreview} />
                     <TouchableOpacity
-                      key={d.id}
-                      style={[
-                        styles.dietChip,
-                        {
-                          borderColor: isSelected ? colors.primary : colors.border,
-                          backgroundColor: isSelected ? colors.primary : colors.card,
-                          borderRadius: borderRadius.round
-                        }
-                      ]}
-                      activeOpacity={0.8}
-                      onPress={() => setDietaryPreference(d.id)}
+                      style={[styles.cameraBadge, { backgroundColor: colors.primary }]}
+                      activeOpacity={0.85}
+                      onPress={handlePickAvatar}
                     >
-                      <Text style={[
-                        styles.dietChipText,
-                        { color: isSelected ? colors.primaryContrast : colors.text, fontFamily: typography.fonts.medium }
-                      ]}>
-                        {d.label}
-                      </Text>
+                      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2.2}>
+                        <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                        <Path d="M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
+                      </Svg>
                     </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-          )}
+                  </View>
 
-          {/* Mode: Budget */}
-          {mode === 'budget' && (
-            <View style={styles.section}>
-              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                Determina el rango de precio promedio para tus recomendaciones de cita.
-              </Text>
-
-              <View style={styles.priceList}>
-                {PRICE_RANGES.map((pr) => {
-                  const isSelected = preferredPriceRange === pr.id;
-                  return (
-                    <TouchableOpacity
-                      key={pr.id}
+                  <TouchableOpacity
+                    style={[
+                      styles.pickPhotoBtn,
+                      { borderColor: colors.primary, borderRadius: borderRadius.round },
+                    ]}
+                    activeOpacity={0.8}
+                    onPress={handlePickAvatar}
+                  >
+                    <Text
                       style={[
-                        styles.priceOption,
-                        {
-                          borderColor: isSelected ? colors.primary : colors.border,
-                          backgroundColor: isSelected ? colors.primary + '08' : colors.card,
-                          borderRadius: borderRadius.md
-                        }
+                        styles.pickPhotoBtnText,
+                        { color: colors.primary, fontFamily: typography.fonts.bold },
                       ]}
-                      activeOpacity={0.8}
-                      onPress={() => setPreferredPriceRange(pr.id)}
                     >
-                      <Text style={[styles.priceLabel, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                        {pr.label}
-                      </Text>
-                      <Text style={[styles.priceDesc, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                        {pr.desc}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+                      📸 Cambiar Foto de Perfil
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Presets de Foto */}
+                  <View style={styles.presetsContainer}>
+                    <Text
+                      style={[
+                        styles.presetsTitle,
+                        { color: colors.textSecondary, fontFamily: typography.fonts.medium },
+                      ]}
+                    >
+                      O elige un avatar predeterminado:
+                    </Text>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={{ gap: 10, paddingVertical: 4 }}
+                    >
+                      {AVATAR_PRESETS.map((url, idx) => {
+                        const isSelected = avatarUrl === url;
+                        return (
+                          <TouchableOpacity
+                            key={idx}
+                            activeOpacity={0.8}
+                            onPress={() => setAvatarUrl(url)}
+                            style={[
+                              styles.presetThumbWrap,
+                              {
+                                borderColor: isSelected ? colors.primary : 'transparent',
+                                borderWidth: isSelected ? 3 : 1,
+                              },
+                            ]}
+                          >
+                            <Image source={{ uri: url }} style={styles.presetThumb} />
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+                </View>
+
+                {/* Form Inputs */}
+                <View style={styles.inputGroup}>
+                  <Text style={[styles.label, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+                    Nombre de Usuario
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        color: colors.text,
+                        borderColor: colors.border,
+                        backgroundColor: colors.card,
+                        borderRadius: borderRadius.md,
+                        fontFamily: typography.fonts.regular,
+                      },
+                    ]}
+                    placeholder="Username"
+                    placeholderTextColor={colors.textSecondary}
+                    value={username}
+                    onChangeText={setUsername}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={[styles.label, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+                    Biografía
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.textArea,
+                      {
+                        color: colors.text,
+                        borderColor: colors.border,
+                        backgroundColor: colors.card,
+                        borderRadius: borderRadius.md,
+                        fontFamily: typography.fonts.regular,
+                      },
+                    ]}
+                    placeholder="Escribe algo sobre ti..."
+                    placeholderTextColor={colors.textSecondary}
+                    value={bio}
+                    onChangeText={setBio}
+                    multiline
+                    numberOfLines={3}
+                  />
+                </View>
               </View>
-            </View>
-          )}
+            )}
 
-          {/* Save Button */}
-          <TouchableOpacity
-            style={[
-              styles.saveBtn,
-              {
-                backgroundColor: savedSuccess ? '#30D158' : colors.primary,
-                borderRadius: borderRadius.md
-              }
-            ]}
-            activeOpacity={0.9}
-            onPress={handleSave}
-          >
-            <Text style={[styles.saveBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-              {savedSuccess ? '¡Guardado correctamente!' : 'Guardar Cambios'}
-            </Text>
-          </TouchableOpacity>
+            {/* Mode: Preferences */}
+            {mode === 'preferences' && (
+              <View style={styles.section}>
+                <Text
+                  style={[
+                    styles.sectionSubtitle,
+                    { color: colors.textSecondary, fontFamily: typography.fonts.regular },
+                  ]}
+                >
+                  Selecciona tus hábitos o restricciones alimenticias.
+                </Text>
 
-        </ScrollView>
+                <View style={styles.dietaryWrap}>
+                  {DIETARY_OPTIONS.map((d) => {
+                    const isSelected = dietaryPreference === d.id;
+                    return (
+                      <TouchableOpacity
+                        key={d.id}
+                        style={[
+                          styles.dietChip,
+                          {
+                            borderColor: isSelected ? colors.primary : colors.border,
+                            backgroundColor: isSelected ? colors.primary : colors.card,
+                            borderRadius: borderRadius.round,
+                          },
+                        ]}
+                        activeOpacity={0.8}
+                        onPress={() => setDietaryPreference(d.id)}
+                      >
+                        <Text
+                          style={[
+                            styles.dietChipText,
+                            {
+                              color: isSelected ? colors.primaryContrast : colors.text,
+                              fontFamily: typography.fonts.medium,
+                            },
+                          ]}
+                        >
+                          {isSelected ? `✓ ${d.label}` : d.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            {/* Mode: Budget */}
+            {mode === 'budget' && (
+              <View style={styles.section}>
+                <Text
+                  style={[
+                    styles.sectionSubtitle,
+                    { color: colors.textSecondary, fontFamily: typography.fonts.regular },
+                  ]}
+                >
+                  Determina el rango de precio promedio para tus recomendaciones de cita.
+                </Text>
+
+                <View style={styles.priceList}>
+                  {PRICE_RANGES.map((pr) => {
+                    const isSelected = preferredPriceRange === pr.id;
+                    return (
+                      <TouchableOpacity
+                        key={pr.id}
+                        style={[
+                          styles.priceOption,
+                          {
+                            borderColor: isSelected ? colors.primary : colors.border,
+                            borderWidth: isSelected ? 2 : 1,
+                            backgroundColor: isSelected ? colors.primary + '12' : colors.card,
+                            borderRadius: borderRadius.md,
+                          },
+                        ]}
+                        activeOpacity={0.8}
+                        onPress={() => setPreferredPriceRange(pr.id)}
+                      >
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                          <Text
+                            style={[
+                              styles.priceLabel,
+                              { color: isSelected ? colors.primary : colors.text, fontFamily: typography.fonts.bold },
+                            ]}
+                          >
+                            {pr.label}
+                          </Text>
+                          {isSelected && (
+                            <Text style={{ color: colors.primary, fontSize: 14, fontFamily: typography.fonts.bold }}>
+                              ✓ Seleccionado
+                            </Text>
+                          )}
+                        </View>
+                        <Text
+                          style={[
+                            styles.priceDesc,
+                            { color: colors.textSecondary, fontFamily: typography.fonts.regular },
+                          ]}
+                        >
+                          {pr.desc}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            {/* Save Button */}
+            <TouchableOpacity
+              style={[
+                styles.saveBtn,
+                {
+                  backgroundColor: savedSuccess ? '#30D158' : colors.primary,
+                  borderRadius: borderRadius.md,
+                },
+              ]}
+              activeOpacity={0.9}
+              onPress={handleSave}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#FFF" />
+              ) : (
+                <Text
+                  style={[
+                    styles.saveBtnText,
+                    { color: colors.primaryContrast, fontFamily: typography.fonts.bold },
+                  ]}
+                >
+                  {savedSuccess ? '¡Guardado correctamente! ✨' : 'Guardar Cambios'}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -239,6 +465,11 @@ export default function EditProfileModalScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingWrapper: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   header: {
     height: 56,
@@ -260,6 +491,59 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 24,
+  },
+  avatarSection: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  avatarWrapper: {
+    position: 'relative',
+    marginBottom: 12,
+  },
+  avatarPreview: {
+    width: 104,
+    height: 104,
+    borderRadius: 52,
+  },
+  cameraBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  pickPhotoBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  pickPhotoBtnText: {
+    fontSize: 13,
+  },
+  presetsContainer: {
+    width: '100%',
+    marginTop: 6,
+  },
+  presetsTitle: {
+    fontSize: 12,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  presetThumbWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  presetThumb: {
+    width: '100%',
+    height: '100%',
   },
   sectionSubtitle: {
     fontSize: 14,

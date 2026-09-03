@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -10,12 +10,29 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 import { useAuth } from '../../context/AuthContext';
 import { getProfileByUserIdApi, Profile } from '../../services/profileService';
 import { getItinerariesByUserIdApi, Itinerary } from '../../services/itineraryService';
+
+const DIETARY_LABELS: Record<string, string> = {
+  NONE: 'Sin Restricciones',
+  VEGETARIAN: 'Vegetariano',
+  VEGAN: 'Vegano',
+  GLUTEN_FREE: 'Libre de Gluten',
+  DAIRY_FREE: 'Sin Lácteos',
+  PESCATARIAN: 'Pescetariano',
+  OTHER: 'Otro / Personalizado',
+};
+
+const PRICE_LABELS: Record<string, string> = {
+  CHEAP: '$ Económico (Accesible)',
+  MODERATE: '$$ Moderado (Equilibrado)',
+  EXPENSIVE: '$$$ Exclusivo (Premium)',
+  LUXURY: '$$$$ Lujo (Alta Gama)',
+};
 
 type ProfileTab = 'SAVED' | 'SETTINGS';
 
@@ -30,32 +47,38 @@ export default function ProfileScreen() {
   const [savedItineraries, setSavedItineraries] = useState<Itinerary[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    async function loadUserData() {
-      if (!user?.id) return;
-      setLoading(true);
-      try {
-        const [profileData, itinerariesData] = await Promise.all([
-          getProfileByUserIdApi(user.id),
-          getItinerariesByUserIdApi(user.id),
-        ]);
-        if (profileData) {
-          setProfile(profileData);
-        }
-        if (itinerariesData) {
-          setSavedItineraries(itinerariesData);
-        }
-      } catch (err) {
-        console.log('Error loading user data:', err);
-      } finally {
-        setLoading(false);
+  const loadUserData = useCallback(async () => {
+    if (!user?.id) return;
+    setLoading(true);
+    try {
+      const [profileData, itinerariesData] = await Promise.all([
+        getProfileByUserIdApi(user.id),
+        getItinerariesByUserIdApi(user.id),
+      ]);
+      if (profileData) {
+        setProfile(profileData);
       }
+      if (itinerariesData) {
+        setSavedItineraries(itinerariesData);
+      }
+    } catch (err) {
+      console.log('Error loading user data:', err);
+    } finally {
+      setLoading(false);
     }
-    loadUserData();
   }, [user?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadUserData();
+    }, [loadUserData])
+  );
 
   const displayName = profile?.username || user?.email?.split('@')[0] || 'Usuario NextDate';
   const displayHandle = `@${(profile?.username || user?.email?.split('@')[0] || 'usuario').toLowerCase().replace(/\s+/g, '_')}`;
+  const displayAvatar =
+    profile?.avatarUrl ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=E11D48&color=fff&size=256`;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
@@ -66,7 +89,7 @@ export default function ProfileScreen() {
         <View style={styles.profileHeader}>
           <View style={styles.avatarWrapper}>
             <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80' }} 
+              source={{ uri: displayAvatar }} 
               style={styles.avatarImage} 
             />
           </View>
@@ -81,7 +104,7 @@ export default function ProfileScreen() {
           <TouchableOpacity 
             style={[styles.editProfileBtn, { borderColor: colors.border, borderRadius: borderRadius.round }]}
             activeOpacity={0.8}
-            onPress={() => router.push('/edit-profile?mode=profile')}
+            onPress={() => router.push(`/edit-profile?mode=profile&profileId=${profile?.id || ''}&userId=${user?.id || ''}`)}
           >
             <Text style={[styles.editProfileBtnText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
               Editar Perfil
@@ -242,10 +265,25 @@ export default function ProfileScreen() {
 
               <View style={[styles.settingDivider, { backgroundColor: colors.border }]} />
 
-              <TouchableOpacity style={styles.settingItemRow} onPress={() => router.push('/edit-profile?mode=preferences')}>
-                <Text style={[styles.settingLabel, { color: colors.text, fontFamily: typography.fonts.medium }]}>
-                  Preferencias Gastronómicas
-                </Text>
+              <TouchableOpacity
+                style={styles.settingItemRow}
+                activeOpacity={0.7}
+                onPress={() =>
+                  router.push(
+                    `/edit-profile?mode=preferences&profileId=${profile?.id || ''}&userId=${user?.id || ''}`
+                  )
+                }
+              >
+                <View style={{ flex: 1, paddingRight: 10 }}>
+                  <Text style={[styles.settingLabel, { color: colors.text, fontFamily: typography.fonts.medium }]}>
+                    Preferencias Gastronómicas
+                  </Text>
+                  <Text style={[styles.settingValueSubtitle, { color: colors.primary, fontFamily: typography.fonts.medium }]}>
+                    {profile?.dietaryPreference
+                      ? DIETARY_LABELS[profile.dietaryPreference] || profile.dietaryPreference
+                      : 'Sin Restricciones'}
+                  </Text>
+                </View>
 
                 <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
                   <Path d="M9 18l6-6-6-6" />
@@ -254,10 +292,25 @@ export default function ProfileScreen() {
 
               <View style={[styles.settingDivider, { backgroundColor: colors.border }]} />
 
-              <TouchableOpacity style={styles.settingItemRow} onPress={() => router.push('/edit-profile?mode=budget')}>
-                <Text style={[styles.settingLabel, { color: colors.text, fontFamily: typography.fonts.medium }]}>
-                  Rango de Presupuesto Habitual
-                </Text>
+              <TouchableOpacity
+                style={styles.settingItemRow}
+                activeOpacity={0.7}
+                onPress={() =>
+                  router.push(
+                    `/edit-profile?mode=budget&profileId=${profile?.id || ''}&userId=${user?.id || ''}`
+                  )
+                }
+              >
+                <View style={{ flex: 1, paddingRight: 10 }}>
+                  <Text style={[styles.settingLabel, { color: colors.text, fontFamily: typography.fonts.medium }]}>
+                    Rango de Presupuesto Habitual
+                  </Text>
+                  <Text style={[styles.settingValueSubtitle, { color: colors.primary, fontFamily: typography.fonts.medium }]}>
+                    {profile?.preferredPriceRange
+                      ? PRICE_LABELS[profile.preferredPriceRange] || profile.preferredPriceRange
+                      : '$$ Moderado (Equilibrado)'}
+                  </Text>
+                </View>
 
                 <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
                   <Path d="M9 18l6-6-6-6" />
@@ -451,6 +504,10 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     fontSize: 14,
+    marginBottom: 2,
+  },
+  settingValueSubtitle: {
+    fontSize: 12,
   },
   settingDivider: {
     height: 1,
