@@ -12,6 +12,7 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 import { useAuth } from '../../context/AuthContext';
@@ -28,6 +29,7 @@ import {
 export default function GeneratorScreen() {
   const { colors, typography, borderRadius } = useTheme();
   const { user } = useAuth();
+  const router = useRouter();
   const scrollViewRef = useRef<ScrollView>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
@@ -61,10 +63,23 @@ export default function GeneratorScreen() {
     setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
 
     const messageText = textToSend.trim();
-    const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
+
+    if (!user?.id) {
+      const authRequiredMsg: ChatMessage = {
+        id: `ai-auth-${Date.now()}`,
+        sender: 'ai',
+        text: 'Para que pueda diseñar y guardar tu itinerario personalizado en tu cuenta de NextDate, por favor inicia sesión o crea una cuenta.',
+        timestamp: 'Ahora',
+      };
+      setMessages((prev) => [...prev, authRequiredMsg]);
+      setIsTyping(false);
+      setIsThinking(false);
+      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+      return;
+    }
 
     try {
-      const result = await recommendItineraryApi(currentUserId, messageText);
+      const result = await recommendItineraryApi(user.id, messageText);
       const generatedItinerary: GeneratedItinerary = {
         id: result.id,
         title: result.title,
@@ -106,10 +121,14 @@ export default function GeneratorScreen() {
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err: any) {
       console.log('Error conectando con el Concierge de IA:', err);
+      let errorDetail = err?.message || 'Error del servidor';
+      if (errorDetail.includes('token JWT') || errorDetail.includes('Acceso no autorizado')) {
+        errorDetail = 'Tu sesión no está activa o ha expirado. Por favor inicia sesión nuevamente.';
+      }
       const errorAiMsg: ChatMessage = {
         id: `ai-err-${Date.now()}`,
         sender: 'ai',
-        text: `Lo siento, no pude generar el itinerario en este momento (${err?.message || 'Error del servidor'}). Por favor verifica la conexión con el backend o intenta con otra solicitud.`,
+        text: `Lo siento, no pude generar el itinerario en este momento: ${errorDetail}`,
         timestamp: 'Ahora',
       };
       setMessages((prev) => [...prev, errorAiMsg]);
@@ -232,13 +251,40 @@ export default function GeneratorScreen() {
                     style={[
                       styles.bubbleText,
                       {
-                        color: isUser ? '#FFFFFF' : colors.text,
+                        color: isUser ? colors.primaryContrast : colors.text,
                         fontFamily: typography.fonts.regular,
                       },
                     ]}
                   >
                     {msg.text}
                   </Text>
+
+                  {/* CTA para iniciar sesión si no está autenticado */}
+                  {!user?.id && msg.id.startsWith('ai-auth') && (
+                    <TouchableOpacity
+                      style={[
+                        styles.authPromptBtn,
+                        {
+                          backgroundColor: colors.primary,
+                          borderRadius: borderRadius.md,
+                        },
+                      ]}
+                      activeOpacity={0.85}
+                      onPress={() => router.push('/(auth)/login')}
+                    >
+                      <Text
+                        style={[
+                          styles.authPromptBtnText,
+                          {
+                            color: colors.primaryContrast,
+                            fontFamily: typography.fonts.bold,
+                          },
+                        ]}
+                      >
+                        🔐 Iniciar Sesión / Registrarse
+                      </Text>
+                    </TouchableOpacity>
+                  )}
 
                   {/* Tarjeta de Itinerario Generado */}
                   {msg.itinerary && (
@@ -581,6 +627,16 @@ const styles = StyleSheet.create({
   bubbleText: {
     fontSize: 15,
     lineHeight: 22,
+  },
+  authPromptBtn: {
+    marginTop: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  authPromptBtnText: {
+    fontSize: 13,
   },
   itinContainer: {
     marginTop: 12,
