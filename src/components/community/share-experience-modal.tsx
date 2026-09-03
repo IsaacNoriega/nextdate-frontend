@@ -125,14 +125,6 @@ export default function ShareExperienceModal({
       return;
     }
 
-    if (!selectedItineraryId && userItineraries.length === 0) {
-      Alert.alert(
-        'Sin itinerarios',
-        'Para compartir una experiencia primero crea o guarda un itinerario.'
-      );
-      return;
-    }
-
     await onSubmit({
       title: title.trim(),
       place: place.trim(),
@@ -142,7 +134,7 @@ export default function ShareExperienceModal({
       imageUrl: selectedImage,
       reviewText: review.trim(),
       rating,
-      selectedItineraryId: selectedItineraryId || userItineraries[0]?.id,
+      selectedItineraryId: selectedItineraryId || undefined,
     });
   };
 

@@ -4,7 +4,8 @@ import { Itinerary } from './itineraryService';
 export interface SharedExperience {
   id: string;
   userId: string;
-  itinerary: Itinerary;
+  itineraryId?: string;
+  itinerary?: Itinerary;
   title: string;
   description?: string;
   tips?: string;
@@ -16,7 +17,7 @@ export interface SharedExperience {
 
 export interface ShareExperienceInput {
   userId: string;
-  itineraryId: string;
+  itineraryId?: string;
   title: string;
   description?: string;
   tips?: string;

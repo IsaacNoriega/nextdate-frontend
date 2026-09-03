@@ -109,24 +109,12 @@ export default function CommunityScreen() {
     setPublishing(true);
 
     try {
-      // Intentamos asociar con un itinerario existente del usuario si está disponible
-      let itineraryIdToUse = payload.selectedItineraryId;
-      
-      if (!itineraryIdToUse) {
-        Alert.alert(
-          'Itinerario requerido',
-          'Para publicar una experiencia, debes seleccionar o haber creado un itinerario primero.'
-        );
-        setPublishing(false);
-        return;
-      }
-
       await shareExperienceApi({
         userId: user.id,
-        itineraryId: itineraryIdToUse,
+        itineraryId: payload.selectedItineraryId || undefined,
         title: payload.title,
         description: payload.reviewText || undefined,
-        tips: payload.location,
+        tips: payload.place ? `${payload.place}${payload.location ? ` • ${payload.location}` : ''}` : payload.location || undefined,
         actualCost:
           payload.budget === '$'
             ? 250
