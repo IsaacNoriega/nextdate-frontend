@@ -24,8 +24,6 @@ import {
 import {
   FeedCategory,
   SharedExperienceItem,
-  INITIAL_COMMUNITY_POSTS,
-  DEFAULT_PRESET_IMAGES,
 } from '../../mocks/community.mock';
 
 export default function CommunityScreen() {
@@ -36,45 +34,58 @@ export default function CommunityScreen() {
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const [savedPosts, setSavedPosts] = useState<Record<string, boolean>>({});
   const [showShareModal, setShowShareModal] = useState(false);
-  const [experiencesList, setExperiencesList] =
-    useState<SharedExperienceItem[]>(INITIAL_COMMUNITY_POSTS);
+  const [experiencesList, setExperiencesList] = useState<SharedExperienceItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [publishing, setPublishing] = useState(false);
 
-  useEffect(() => {
-    async function loadExperiences() {
-      setLoading(true);
-      try {
-        const apiData = await getSharedExperiencesApi();
-        if (apiData && apiData.length > 0) {
-          const mapped: SharedExperienceItem[] = apiData.map((exp: any) => ({
+  const loadExperiences = async () => {
+    setLoading(true);
+    try {
+      const apiData = await getSharedExperiencesApi();
+      if (apiData && Array.isArray(apiData)) {
+        const mapped: SharedExperienceItem[] = apiData.map((exp: any) => {
+          const dateStr = exp.createdAt
+            ? new Date(exp.createdAt).toLocaleDateString(undefined, {
+                day: 'numeric',
+                month: 'short',
+              })
+            : '';
+
+          return {
             id: exp.id,
-            authorName: 'Pareja NextDate',
-            partnerName: 'Pareja',
-            authorAvatar:
-              'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-            timeAgo: 'Hace un momento',
+            authorName: exp.userId ? `Usuario (${exp.userId.slice(0, 4)})` : 'Comunidad',
+            partnerName: '',
+            authorAvatar: '',
+            timeAgo: dateStr,
             planTitle: exp.title,
-            placeName: exp.itinerary ? exp.itinerary.title : 'Cita Romántica',
+            placeName: exp.itinerary?.title || exp.tips || 'Cita Recomendada',
+            location: exp.tips || undefined,
             rating: exp.rating || 5,
-            likesCount: 12,
-            commentsCount: 2,
+            likesCount: 0,
+            commentsCount: 0,
             imageUrl:
               exp.imageUrls && exp.imageUrls.length > 0
                 ? exp.imageUrls[0]
-                : DEFAULT_PRESET_IMAGES[0],
+                : '',
             reviewText:
-              exp.description || exp.tips || 'Una gran experiencia en pareja.',
-            category: 'ROMANTIC',
-          }));
-          setExperiencesList(mapped);
-        }
-      } catch (err) {
-        // Fallback a los datos mock iniciales
-      } finally {
-        setLoading(false);
+              exp.description || '',
+            category: 'ALL',
+            budget: exp.actualCost ? `$${exp.actualCost} MXN` : undefined,
+          };
+        });
+        setExperiencesList(mapped);
+      } else {
+        setExperiencesList([]);
       }
+    } catch (err) {
+      console.warn('Error al cargar experiencias:', err);
+      setExperiencesList([]);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     loadExperiences();
   }, []);
 
@@ -87,13 +98,32 @@ export default function CommunityScreen() {
   };
 
   const handleShareSubmit = async (payload: CreateExperiencePayload) => {
+    if (!user) {
+      Alert.alert(
+        'Iniciar Sesión',
+        'Debes iniciar sesión con tu cuenta para poder compartir experiencias con la comunidad.'
+      );
+      return;
+    }
+
     setPublishing(true);
-    const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
 
     try {
+      // Intentamos asociar con un itinerario existente del usuario si está disponible
+      let itineraryIdToUse = payload.selectedItineraryId;
+      
+      if (!itineraryIdToUse) {
+        Alert.alert(
+          'Itinerario requerido',
+          'Para publicar una experiencia, debes seleccionar o haber creado un itinerario primero.'
+        );
+        setPublishing(false);
+        return;
+      }
+
       await shareExperienceApi({
-        userId: currentUserId,
-        itineraryId: '00000000-0000-0000-0000-000000000001',
+        userId: user.id,
+        itineraryId: itineraryIdToUse,
         title: payload.title,
         description: payload.reviewText || undefined,
         tips: payload.location,
@@ -106,35 +136,17 @@ export default function CommunityScreen() {
             ? 1000
             : 2000,
         rating: payload.rating,
-        imageUrls: [payload.imageUrl],
+        imageUrls: payload.imageUrl ? [payload.imageUrl] : [],
       });
-    } catch (err) {
-      console.log('Fallo API, publicando localmente:', err);
-    } finally {
-      const newExp: SharedExperienceItem = {
-        id: `exp-${Date.now()}`,
-        authorName: 'Tú',
-        partnerName: 'Pareja',
-        authorAvatar:
-          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
-        timeAgo: 'Ahora mismo',
-        planTitle: payload.title,
-        placeName: payload.place || 'Lugar recomendado',
-        location: payload.location,
-        budget: payload.budget,
-        gastroTags: payload.selectedGastro,
-        rating: payload.rating,
-        likesCount: 0,
-        commentsCount: 0,
-        imageUrl: payload.imageUrl,
-        reviewText: payload.reviewText || '¡Gran cita recomendada!',
-        category: 'ROMANTIC',
-      };
 
-      setExperiencesList((prev) => [newExp, ...prev]);
-      setPublishing(false);
       setShowShareModal(false);
-      Alert.alert('¡Publicado!', 'Tu experiencia ha sido compartida con la comunidad.');
+      Alert.alert('¡Publicado!', 'Tu experiencia ha sido compartida con éxito.');
+      await loadExperiences();
+    } catch (err: any) {
+      console.error('Error al compartir experiencia:', err);
+      Alert.alert('Error', err?.message || 'No se pudo publicar la experiencia. Intenta de nuevo.');
+    } finally {
+      setPublishing(false);
     }
   };
 

@@ -19,6 +19,8 @@ import { useTheme } from '../../hooks/useTheme';
 import StarRating from '../ui/star-rating';
 import LeafletMap, { MapClickEvent } from '../map/leaflet-map';
 import { useUserLocation } from '../../hooks/useUserLocation';
+import { useAuth } from '../../context/AuthContext';
+import { getItinerariesByUserIdApi, Itinerary } from '../../services/itineraryService';
 import {
   GASTRO_PREFERENCES,
   BUDGET_OPTIONS,
@@ -34,6 +36,7 @@ export interface CreateExperiencePayload {
   imageUrl: string;
   reviewText: string;
   rating: number;
+  selectedItineraryId?: string;
 }
 
 interface ShareExperienceModalProps {
@@ -50,6 +53,7 @@ export default function ShareExperienceModal({
   publishing = false,
 }: ShareExperienceModalProps) {
   const { colors, typography, borderRadius, isDark } = useTheme();
+  const { user } = useAuth();
   const userLoc = useUserLocation();
 
   const [title, setTitle] = useState('');
@@ -62,6 +66,27 @@ export default function ShareExperienceModal({
   const [selectedImage, setSelectedImage] = useState<string>(DEFAULT_PRESET_IMAGES[0]);
   const [review, setReview] = useState('');
   const [rating, setRating] = useState(5);
+  const [userItineraries, setUserItineraries] = useState<Itinerary[]>([]);
+  const [selectedItineraryId, setSelectedItineraryId] = useState<string>('');
+  const [loadingItineraries, setLoadingItineraries] = useState(false);
+
+  useEffect(() => {
+    if (visible && user?.id) {
+      setLoadingItineraries(true);
+      getItinerariesByUserIdApi(user.id)
+        .then((itins) => {
+          if (itins && itins.length > 0) {
+            setUserItineraries(itins);
+            setSelectedItineraryId(itins[0].id);
+            if (!title) {
+              setTitle(itins[0].title);
+            }
+          }
+        })
+        .catch((err) => console.warn('Error loading itineraries for sharing:', err))
+        .finally(() => setLoadingItineraries(false));
+    }
+  }, [visible, user?.id]);
 
   useEffect(() => {
     if (userLoc.formattedAddress && !location) {
@@ -100,6 +125,14 @@ export default function ShareExperienceModal({
       return;
     }
 
+    if (!selectedItineraryId && userItineraries.length === 0) {
+      Alert.alert(
+        'Sin itinerarios',
+        'Para compartir una experiencia primero necesitas crear un itinerario en la pestaña de Planificador o IA Concierge.'
+      );
+      return;
+    }
+
     await onSubmit({
       title: title.trim(),
       place: place.trim(),
@@ -109,6 +142,7 @@ export default function ShareExperienceModal({
       imageUrl: selectedImage,
       reviewText: review.trim(),
       rating,
+      selectedItineraryId: selectedItineraryId || userItineraries[0]?.id,
     });
   };
 
@@ -142,6 +176,52 @@ export default function ShareExperienceModal({
         </View>
 
         <ScrollView contentContainerStyle={styles.formScroll} showsVerticalScrollIndicator={false}>
+          {/* Selector de Itinerarios */}
+          {userItineraries.length > 0 && (
+            <View style={{ marginBottom: 16 }}>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
+                Seleccionar Itinerario a compartir 📋
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
+                {userItineraries.map((itin) => {
+                  const isSelected = selectedItineraryId === itin.id;
+                  return (
+                    <TouchableOpacity
+                      key={itin.id}
+                      style={[
+                        styles.itineraryChip,
+                        {
+                          backgroundColor: isSelected ? colors.primary + '20' : colors.card,
+                          borderColor: isSelected ? colors.primary : colors.border,
+                          borderRadius: borderRadius.md,
+                        },
+                      ]}
+                      onPress={() => {
+                        setSelectedItineraryId(itin.id);
+                        if (!title) setTitle(itin.title);
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.itineraryChipTitle,
+                          {
+                            color: isSelected ? colors.primary : colors.text,
+                            fontFamily: typography.fonts.bold,
+                          },
+                        ]}
+                      >
+                        {itin.title}
+                      </Text>
+                      <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                        ${itin.totalCost} MXN • {itin.items?.length || 0} lugares
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
           {/* Título de la Cita */}
           <Text style={[styles.fieldLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
             Título de la cita *
@@ -421,4 +501,6 @@ const styles = StyleSheet.create({
   budgetChipLabel: { fontSize: 12 },
   ratingRow: { paddingVertical: 4 },
   textArea: { borderWidth: 1, padding: 12, height: 100, textAlignVertical: 'top', fontSize: 14 },
+  itineraryChip: { paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, minWidth: 160 },
+  itineraryChipTitle: { fontSize: 13, marginBottom: 2 },
 });

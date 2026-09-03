@@ -49,10 +49,13 @@ export default function CommunityCard({
       
       {/* Header (Avatar & Names & Time) */}
       <View style={styles.postHeader}>
-        <Image source={{ uri: authorAvatar }} style={styles.avatarImage} />
+        <Image 
+          source={{ uri: authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName || 'NextDate')}&background=E11D48&color=fff` }} 
+          style={styles.avatarImage} 
+        />
         <View style={{ flex: 1 }}>
           <Text style={[styles.authorName, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-            {authorName} & {partnerName}
+            {partnerName ? `${authorName} & ${partnerName}` : authorName}
           </Text>
           <Text style={[styles.postTime, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
             {timeAgo}
@@ -108,12 +111,16 @@ export default function CommunityCard({
       )}
 
       {/* Main Image */}
-      <Image source={{ uri: imageUrl }} style={[styles.postImage, { borderRadius: borderRadius.md }]} />
+      {!!imageUrl && (
+        <Image source={{ uri: imageUrl }} style={[styles.postImage, { borderRadius: borderRadius.md }]} />
+      )}
 
       {/* Review Text */}
-      <Text style={[styles.reviewText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-        "{reviewText}"
-      </Text>
+      {!!reviewText && (
+        <Text style={[styles.reviewText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+          "{reviewText}"
+        </Text>
+      )}
 
       {/* Action Bar */}
       <View style={[styles.actionsRow, { borderTopColor: colors.border }]}>
