@@ -40,8 +40,47 @@ function removeStorageItem(key: string): void {
   memoryStorage.delete(key);
 }
 
+const LOCATION_KEY = 'nextdate_saved_location';
+
+export interface SavedLocationData {
+  lat: number;
+  lng: number;
+  city: string;
+  state: string;
+  country: string;
+  formattedAddress: string;
+}
+
 // Storage universal con soporte para Web (localStorage), Mobile y Node/Jest fallback
 export const storageService = {
+  async setLocation(location: SavedLocationData): Promise<void> {
+    try {
+      setStorageItem(LOCATION_KEY, JSON.stringify(location));
+    } catch (e) {
+      console.warn('Error guardando ubicación en storage:', e);
+    }
+  },
+
+  async getLocation(): Promise<SavedLocationData | null> {
+    try {
+      const raw = getStorageItem(LOCATION_KEY);
+      if (raw) {
+        return JSON.parse(raw) as SavedLocationData;
+      }
+    } catch (e) {
+      console.warn('Error recuperando ubicación de storage:', e);
+    }
+    return null;
+  },
+
+  async removeLocation(): Promise<void> {
+    try {
+      removeStorageItem(LOCATION_KEY);
+    } catch (e) {
+      console.warn('Error eliminando ubicación de storage:', e);
+    }
+  },
+
   async setToken(token: string): Promise<void> {
     try {
       setStorageItem(TOKEN_KEY, token);
@@ -98,5 +137,6 @@ export const storageService = {
   async clearAll(): Promise<void> {
     await this.removeToken();
     await this.removeUser();
+    await this.removeLocation();
   },
 };
