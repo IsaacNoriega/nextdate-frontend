@@ -10,7 +10,7 @@ import {
   PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 import StarRating from '../ui/star-rating';
 import { ItineraryStep } from '../../mocks/generator.mock';
@@ -80,19 +80,30 @@ export default function StepDetailModal({
             </Text>
 
             <View style={styles.modalMeta}>
-              <View style={[styles.modalMetaChip, { backgroundColor: colors.card }]}>
+              <View style={[styles.modalMetaChip, { backgroundColor: colors.card, flexDirection: 'row', alignItems: 'center', gap: 6 }]}>
+                <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2}>
+                  <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                  <Circle cx="12" cy="10" r="3" />
+                </Svg>
                 <Text style={[styles.modalMetaText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
-                  📍 {step.placeName}
+                  {step.placeName}
                 </Text>
               </View>
-              <View style={[styles.modalMetaChip, { backgroundColor: colors.card }]}>
+              <View style={[styles.modalMetaChip, { backgroundColor: colors.card, flexDirection: 'row', alignItems: 'center', gap: 6 }]}>
+                <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
+                  <Circle cx="12" cy="12" r="10" />
+                  <Path d="M12 6v6l4 2" />
+                </Svg>
                 <Text style={[styles.modalMetaText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
-                  ⏰ {step.time} ({step.duration})
+                  {step.time} ({step.duration})
                 </Text>
               </View>
-              <View style={[styles.modalMetaChip, { backgroundColor: colors.card }]}>
+              <View style={[styles.modalMetaChip, { backgroundColor: colors.card, flexDirection: 'row', alignItems: 'center', gap: 6 }]}>
+                <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2}>
+                  <Path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </Svg>
                 <Text style={[styles.modalMetaText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-                  💵 {step.cost || step.estimatedCost || '$0.00'}
+                  {step.cost || step.estimatedCost || '$0.00'}
                 </Text>
               </View>
             </View>

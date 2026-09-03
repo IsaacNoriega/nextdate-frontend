@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Rect } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 import { useAuth } from '../../context/AuthContext';
 import QuickPrompts from '../../components/generator/quick-prompts';
@@ -272,17 +272,23 @@ export default function GeneratorScreen() {
                       activeOpacity={0.85}
                       onPress={() => router.push('/(auth)/login')}
                     >
-                      <Text
-                        style={[
-                          styles.authPromptBtnText,
-                          {
-                            color: colors.primaryContrast,
-                            fontFamily: typography.fonts.bold,
-                          },
-                        ]}
-                      >
-                        🔐 Iniciar Sesión / Registrarse
-                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2.2}>
+                          <Rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                          <Path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </Svg>
+                        <Text
+                          style={[
+                            styles.authPromptBtnText,
+                            {
+                              color: colors.primaryContrast,
+                              fontFamily: typography.fonts.bold,
+                            },
+                          ]}
+                        >
+                          Iniciar Sesión / Registrarse
+                        </Text>
+                      </View>
                     </TouchableOpacity>
                   )}
 

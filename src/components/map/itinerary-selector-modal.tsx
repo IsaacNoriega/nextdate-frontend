@@ -81,7 +81,7 @@ export default function ItinerarySelectorModal({
                 </Text>
                 <View style={styles.metaRow}>
                   <Text style={[styles.metaText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
-                    📍 {itin.steps.length} paradas • 🚶 {itin.totalDistance} • ⏱️ {itin.totalTime}
+                    {itin.steps.length} paradas • {itin.totalDistance} • {itin.totalTime}
                   </Text>
                 </View>
               </TouchableOpacity>

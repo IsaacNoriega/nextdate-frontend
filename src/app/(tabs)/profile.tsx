@@ -194,9 +194,15 @@ export default function ProfileScreen() {
                   
                   <View style={styles.savedCardContent}>
                     <View style={styles.savedBadgeRow}>
-                      <Text style={[styles.savedMatchText, { color: '#30D158', fontFamily: typography.fonts.bold }]}>
-                        ✨ {plan.items?.length || 0} Paradas
-                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#30D158" strokeWidth={2.5}>
+                          <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                          <Circle cx="12" cy="10" r="3" />
+                        </Svg>
+                        <Text style={[styles.savedMatchText, { color: '#30D158', fontFamily: typography.fonts.bold }]}>
+                          {plan.items?.length || 0} Paradas
+                        </Text>
+                      </View>
                       <Text style={[styles.savedDateText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
                         ${plan.totalCost.toFixed(2)} USD
                       </Text>
@@ -234,12 +240,15 @@ export default function ProfileScreen() {
                   Pídele a nuestro AI Concierge que diseñe tu próxima cita romántica o salida ideal.
                 </Text>
                 <TouchableOpacity 
-                  style={[styles.emptyBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
+                  style={[styles.emptyBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md, flexDirection: 'row', alignItems: 'center', gap: 6 }]}
                   activeOpacity={0.85}
                   onPress={() => router.push('/(tabs)/generator')}
                 >
+                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2.2}>
+                    <Path d="M12 2l2.4 7.2h7.6l-6.1 4.5 2.3 7.3-6.2-4.6-6.2 4.6 2.3-7.3-6.1-4.5h7.6z" />
+                  </Svg>
                   <Text style={[styles.emptyBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-                    ✨ Diseñar Cita con IA
+                    Diseñar Cita con IA
                   </Text>
                 </TouchableOpacity>
               </View>

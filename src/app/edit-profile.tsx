@@ -220,18 +220,29 @@ export default function EditProfileModalScreen() {
                   <TouchableOpacity
                     style={[
                       styles.pickPhotoBtn,
-                      { borderColor: colors.primary, borderRadius: borderRadius.round },
+                      {
+                        borderColor: colors.primary,
+                        borderRadius: borderRadius.round,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                      },
                     ]}
                     activeOpacity={0.8}
                     onPress={handlePickAvatar}
                   >
+                    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2}>
+                      <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                      <Circle cx="12" cy="13" r="4" />
+                    </Svg>
                     <Text
                       style={[
                         styles.pickPhotoBtnText,
                         { color: colors.primary, fontFamily: typography.fonts.bold },
                       ]}
                     >
-                      📸 Cambiar Foto de Perfil
+                      Cambiar Foto de Perfil
                     </Text>
                   </TouchableOpacity>
 
@@ -346,11 +357,19 @@ export default function EditProfileModalScreen() {
                             borderColor: isSelected ? colors.primary : colors.border,
                             backgroundColor: isSelected ? colors.primary : colors.card,
                             borderRadius: borderRadius.round,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 6,
                           },
                         ]}
                         activeOpacity={0.8}
                         onPress={() => setDietaryPreference(d.id)}
                       >
+                        {isSelected && (
+                          <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={3}>
+                            <Path d="M20 6L9 17l-5-5" />
+                          </Svg>
+                        )}
                         <Text
                           style={[
                             styles.dietChipText,
@@ -360,7 +379,7 @@ export default function EditProfileModalScreen() {
                             },
                           ]}
                         >
-                          {isSelected ? `✓ ${d.label}` : d.label}
+                          {d.label}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -409,9 +428,14 @@ export default function EditProfileModalScreen() {
                             {pr.label}
                           </Text>
                           {isSelected && (
-                            <Text style={{ color: colors.primary, fontSize: 14, fontFamily: typography.fonts.bold }}>
-                              ✓ Seleccionado
-                            </Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2.5}>
+                                <Path d="M20 6L9 17l-5-5" />
+                              </Svg>
+                              <Text style={{ color: colors.primary, fontSize: 13, fontFamily: typography.fonts.bold }}>
+                                Seleccionado
+                              </Text>
+                            </View>
                           )}
                         </View>
                         <Text
@@ -445,14 +469,21 @@ export default function EditProfileModalScreen() {
               {loading ? (
                 <ActivityIndicator size="small" color="#FFF" />
               ) : (
-                <Text
-                  style={[
-                    styles.saveBtnText,
-                    { color: colors.primaryContrast, fontFamily: typography.fonts.bold },
-                  ]}
-                >
-                  {savedSuccess ? '¡Guardado correctamente! ✨' : 'Guardar Cambios'}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  {savedSuccess && (
+                    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2.5}>
+                      <Path d="M20 6L9 17l-5-5" />
+                    </Svg>
+                  )}
+                  <Text
+                    style={[
+                      styles.saveBtnText,
+                      { color: colors.primaryContrast, fontFamily: typography.fonts.bold },
+                    ]}
+                  >
+                    {savedSuccess ? '¡Guardado correctamente!' : 'Guardar Cambios'}
+                  </Text>
+                </View>
               )}
             </TouchableOpacity>
           </ScrollView>
