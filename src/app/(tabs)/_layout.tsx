@@ -12,7 +12,7 @@ export default function TabsLayout() {
         if (routeName === 'explore') activeTab = 'explore';
         else if (routeName === 'map') activeTab = 'map';
         else if (routeName === 'generator') activeTab = 'ai';
-        else if (routeName === 'community') activeTab = 'community';
+        else if (routeName === 'saved' || routeName === 'community') activeTab = 'saved';
         else if (routeName === 'profile') activeTab = 'profile';
 
         const handleTabPress = (tab: BottomBarTab) => {
@@ -20,7 +20,7 @@ export default function TabsLayout() {
           if (tab === 'explore') targetRoute = 'explore';
           else if (tab === 'map') targetRoute = 'map';
           else if (tab === 'ai') targetRoute = 'generator';
-          else if (tab === 'community') targetRoute = 'community';
+          else if (tab === 'saved') targetRoute = 'saved';
           else if (tab === 'profile') targetRoute = 'profile';
 
           props.navigation.navigate(targetRoute);
@@ -38,7 +38,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="explore" />
       <Tabs.Screen name="map" />
       <Tabs.Screen name="generator" />
-      <Tabs.Screen name="community" />
+      <Tabs.Screen name="saved" />
+      <Tabs.Screen name="community" options={{ href: null }} />
       <Tabs.Screen name="profile" />
     </Tabs>
   );

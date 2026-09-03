@@ -25,6 +25,7 @@ import StarRating from '../../components/ui/star-rating';
 import { getNearbyPlacesApi } from '../../services/placeService';
 import { PlaceCategory as ApiCategory } from '../../services/profileService';
 import { useUserLocation } from '../../hooks/useUserLocation';
+import { storageService } from '../../services/storage';
 
 type PlaceCategory = 'ALL' | 'FOOD_DRINK' | 'CULTURE' | 'NATURE' | 'ENTERTAINMENT' | 'SHOPPING' | 'SPORTS';
 type PriceRange = 'ALL' | 'CHEAP' | 'MODERATE' | 'EXPENSIVE' | 'LUXURY';
@@ -205,11 +206,25 @@ export default function ExploreScreen() {
   // Estado del Rating del Plan
   const [userRating, setUserRating] = useState<number>(0);
   const [ratingSubmitted, setRatingSubmitted] = useState<boolean>(false);
+  const [isPlaceSaved, setIsPlaceSaved] = useState<boolean>(false);
 
-  const openPlaceDetails = (place: Place) => {
+  const openPlaceDetails = async (place: Place) => {
     setSelectedPlace(place);
     setUserRating(0);
     setRatingSubmitted(false);
+    const saved = await storageService.isPlaceSaved(place.id);
+    setIsPlaceSaved(saved);
+  };
+
+  const toggleSavePlace = async () => {
+    if (!selectedPlace) return;
+    if (isPlaceSaved) {
+      await storageService.removeSavedPlace(selectedPlace.id);
+      setIsPlaceSaved(false);
+    } else {
+      await storageService.savePlace(selectedPlace);
+      setIsPlaceSaved(true);
+    }
   };
 
   // Filtrado dinámico
@@ -443,6 +458,17 @@ export default function ExploreScreen() {
                   </Svg>
                 </TouchableOpacity>
 
+                {/* Save / Favorite button */}
+                <TouchableOpacity
+                  style={styles.heroSaveButton}
+                  activeOpacity={0.8}
+                  onPress={toggleSavePlace}
+                >
+                  <Svg width={20} height={20} viewBox="0 0 24 24" fill={isPlaceSaved ? colors.primary : 'none'} stroke={isPlaceSaved ? colors.primary : '#FFFFFF'} strokeWidth={2.2}>
+                    <Path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                  </Svg>
+                </TouchableOpacity>
+
                 {/* Badge on image */}
                 <View style={styles.heroBadge}>
                   <Text style={styles.heroBadgeText}>
@@ -535,7 +561,10 @@ export default function ExploreScreen() {
                 <TouchableOpacity
                   style={[styles.ctaButton, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
                   activeOpacity={0.9}
-                  onPress={() => setSelectedPlace(null)}
+                  onPress={() => {
+                    setSelectedPlace(null);
+                    router.push('/(tabs)/generator');
+                  }}
                 >
                   <Svg width={18} height={18} viewBox="0 0 24 24" fill={colors.primaryContrast}>
                     <Path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
@@ -923,6 +952,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: Platform.select({ android: 36, default: 20 }),
     right: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  heroSaveButton: {
+    position: 'absolute',
+    top: Platform.select({ android: 36, default: 20 }),
+    right: 64,
     width: 40,
     height: 40,
     borderRadius: 20,

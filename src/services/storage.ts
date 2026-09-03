@@ -134,9 +134,54 @@ export const storageService = {
     }
   },
 
+  // Saved / Favorite Places Storage
+  async getSavedPlaces<T = any>(): Promise<T[]> {
+    try {
+      const raw = getStorageItem('nextdate_saved_places');
+      if (raw) {
+        return JSON.parse(raw) as T[];
+      }
+    } catch (e) {
+      console.warn('Error recuperando lugares guardados:', e);
+    }
+    return [];
+  },
+
+  async savePlace(place: any): Promise<void> {
+    try {
+      const current = await this.getSavedPlaces();
+      if (!current.some((p: any) => p.id === place.id)) {
+        current.unshift(place);
+        setStorageItem('nextdate_saved_places', JSON.stringify(current));
+      }
+    } catch (e) {
+      console.warn('Error guardando lugar:', e);
+    }
+  },
+
+  async removeSavedPlace(placeId: string): Promise<void> {
+    try {
+      const current = await this.getSavedPlaces();
+      const filtered = current.filter((p: any) => p.id !== placeId);
+      setStorageItem('nextdate_saved_places', JSON.stringify(filtered));
+    } catch (e) {
+      console.warn('Error eliminando lugar guardado:', e);
+    }
+  },
+
+  async isPlaceSaved(placeId: string): Promise<boolean> {
+    try {
+      const current = await this.getSavedPlaces();
+      return current.some((p: any) => p.id === placeId);
+    } catch (e) {
+      return false;
+    }
+  },
+
   async clearAll(): Promise<void> {
     await this.removeToken();
     await this.removeUser();
     await this.removeLocation();
   },
 };
+

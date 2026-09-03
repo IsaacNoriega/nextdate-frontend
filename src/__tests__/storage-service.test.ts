@@ -35,4 +35,26 @@ describe('StorageService', () => {
     expect(await storageService.getToken()).toBeNull();
     expect(await storageService.getUser()).toBeNull();
   });
+
+  test('debe guardar, consultar y eliminar lugares favoritos', async () => {
+    const mockPlace = {
+      id: 'place-123',
+      name: 'Café Romántico',
+      category: 'FOOD_DRINK',
+      priceRange: 'MODERATE',
+    };
+
+    expect(await storageService.isPlaceSaved('place-123')).toBe(false);
+
+    await storageService.savePlace(mockPlace);
+    expect(await storageService.isPlaceSaved('place-123')).toBe(true);
+
+    const savedList = await storageService.getSavedPlaces();
+    expect(savedList.length).toBe(1);
+    expect(savedList[0].name).toBe('Café Romántico');
+
+    await storageService.removeSavedPlace('place-123');
+    expect(await storageService.isPlaceSaved('place-123')).toBe(false);
+  });
 });
+

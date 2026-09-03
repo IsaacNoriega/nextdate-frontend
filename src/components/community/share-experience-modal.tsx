@@ -558,6 +558,34 @@ export default function ShareExperienceModal({
               onChangeText={setReview}
             />
           </View>
+
+          {/* Botón Principal de Publicar al final del formulario */}
+          <TouchableOpacity
+            style={[
+              styles.bottomSubmitBtn,
+              {
+                backgroundColor: colors.primary,
+                borderRadius: borderRadius.lg,
+              },
+            ]}
+            activeOpacity={0.88}
+            onPress={handleFormSubmit}
+            disabled={publishing}
+          >
+            {publishing ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <View style={styles.bottomSubmitBtnInner}>
+                <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.2}>
+                  <Path d="M22 2L11 13" />
+                  <Path d="M22 2l-7 20-4-9-9-4 20-7z" />
+                </Svg>
+                <Text style={[styles.bottomSubmitBtnText, { fontFamily: typography.fonts.bold }]}>
+                  Publicar Experiencia
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </ScrollView>
 
         {/* Modal de Mapa Completo */}
@@ -604,8 +632,29 @@ const styles = StyleSheet.create({
   },
   closeBtn: { padding: 4 },
   modalTitle: { fontSize: 17 },
-  publishActionBtn: { paddingHorizontal: 18, paddingVertical: 8 },
-  publishActionText: { color: '#FFF', fontSize: 13 },
+  publishActionBtn: { paddingHorizontal: 18, paddingVertical: 8, alignItems: 'center', justifyContent: 'center' },
+  publishActionText: { color: '#FFFFFF', fontSize: 13 },
+  bottomSubmitBtn: {
+    marginTop: 16,
+    marginBottom: 40,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  bottomSubmitBtnInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  bottomSubmitBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+  },
   formScroll: { padding: 20, paddingBottom: 60 },
   inputSection: { marginBottom: 18 },
   labelWithIcon: {

@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 
-export type BottomBarTab = 'explore' | 'map' | 'ai' | 'community' | 'profile';
+export type BottomBarTab = 'explore' | 'map' | 'ai' | 'saved' | 'profile';
 
 interface BottomBarProps {
   activeTab: BottomBarTab;
@@ -15,7 +15,7 @@ const TABS: { id: BottomBarTab; label: string }[] = [
   { id: 'explore', label: 'Explorar' },
   { id: 'map', label: 'Mapa' },
   { id: 'ai', label: 'AI Citas' },
-  { id: 'community', label: 'Comunidad' },
+  { id: 'saved', label: 'Guardados' },
   { id: 'profile', label: 'Perfil' },
 ];
 
@@ -50,7 +50,7 @@ export default function BottomBar({ activeTab, onTabPress }: BottomBarProps) {
     if (tab === 'explore') router.push('/(tabs)/explore');
     else if (tab === 'map') router.push('/(tabs)/map');
     else if (tab === 'ai') router.push('/(tabs)/generator');
-    else if (tab === 'community') router.push('/(tabs)/community');
+    else if (tab === 'saved') router.push('/(tabs)/saved');
     else if (tab === 'profile') router.push('/(tabs)/profile');
   };
 
@@ -80,11 +80,10 @@ export default function BottomBar({ activeTab, onTabPress }: BottomBarProps) {
             <Path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
           </Svg>
         );
-      case 'community':
+      case 'saved':
         return (
-          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={strokeWidth}>
-            <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-            <Circle cx="9" cy="7" r="4" />
+          <Svg width={20} height={20} viewBox="0 0 24 24" fill={isActive ? activeColor : 'none'} stroke={stroke} strokeWidth={strokeWidth}>
+            <Path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
           </Svg>
         );
       case 'profile':
