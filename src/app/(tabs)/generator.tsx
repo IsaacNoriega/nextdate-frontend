@@ -12,7 +12,7 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 import { useAuth } from '../../context/AuthContext';
@@ -30,6 +30,7 @@ export default function GeneratorScreen() {
   const { colors, typography, borderRadius } = useTheme();
   const { user } = useAuth();
   const router = useRouter();
+  const params = useLocalSearchParams<{ presetPrompt?: string }>();
   const scrollViewRef = useRef<ScrollView>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
@@ -40,6 +41,12 @@ export default function GeneratorScreen() {
   const [savedItineraryIds, setSavedItineraryIds] = useState<Record<string, boolean>>({});
   const [selectedStep, setSelectedStep] = useState<ItineraryStep | null>(null);
   const [stepRating, setStepRating] = useState<number>(0);
+
+  useEffect(() => {
+    if (params.presetPrompt && typeof params.presetPrompt === 'string') {
+      setInputPrompt(params.presetPrompt);
+    }
+  }, [params.presetPrompt]);
 
   const toggleSaveItinerary = (id: string) => {
     setSavedItineraryIds((prev) => ({ ...prev, [id]: !prev[id] }));

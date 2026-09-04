@@ -26,6 +26,8 @@ export interface CreateExperiencePayload {
   title: string;
   place: string;
   location: string;
+  latitude?: number;
+  longitude?: number;
   selectedGastro: string[];
   budget: string;
   imageUrl: string;
@@ -65,6 +67,13 @@ export default function ShareExperienceModal({
   const [selectedItineraryId, setSelectedItineraryId] = useState<string>('');
   const [loadingItineraries, setLoadingItineraries] = useState(false);
 
+  // Sugerencias y Autocompletado de Lugares
+  const [placeSuggestions, setPlaceSuggestions] = useState<
+    { name: string; address: string; lat: number; lng: number }[]
+  >([]);
+  const [isSearchingPlaces, setIsSearchingPlaces] = useState(false);
+  const searchTimeoutRef = React.useRef<any>(null);
+
   useEffect(() => {
     if (visible && user?.id) {
       setLoadingItineraries(true);
@@ -88,6 +97,92 @@ export default function ShareExperienceModal({
       setLocation(userLoc.formattedAddress);
     }
   }, [userLoc.formattedAddress, location]);
+
+  const handlePlaceChange = (text: string) => {
+    setPlace(text);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    if (text.trim().length >= 3) {
+      setIsSearchingPlaces(true);
+      searchTimeoutRef.current = setTimeout(async () => {
+        try {
+          // Delimitar búsqueda estricta a la ciudad del usuario (~20km)
+          const delta = 0.18;
+          const left = userLoc.lng - delta;
+          const top = userLoc.lat + delta;
+          const right = userLoc.lng + delta;
+          const bottom = userLoc.lat - delta;
+          const viewbox = `${left},${top},${right},${bottom}`;
+
+          const cityName = userLoc.city || 'Guadalajara';
+          const queryText = `${text.trim()}, ${cityName}`;
+
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+              queryText
+            )}&viewbox=${viewbox}&bounded=1&limit=6&addressdetails=1`
+          );
+          if (res.ok) {
+            const data = await res.json();
+            // Filtrar estrictamente para que solo aparezcan lugares dentro de la ciudad/región actual
+            const localResults = (data || []).filter((item: any) => {
+              const itemLat = parseFloat(item.lat);
+              const itemLng = parseFloat(item.lon);
+              const isWithinBounds =
+                itemLat >= bottom && itemLat <= top && itemLng >= left && itemLng <= right;
+              return isWithinBounds;
+            });
+
+            const suggestions = localResults.map((item: any) => ({
+              name: item.name || item.display_name.split(',')[0],
+              address: item.display_name,
+              lat: parseFloat(item.lat),
+              lng: parseFloat(item.lon),
+            }));
+            setPlaceSuggestions(suggestions);
+          }
+        } catch (e) {
+          console.warn('Place search error:', e);
+        } finally {
+          setIsSearchingPlaces(false);
+        }
+      }, 300);
+    } else {
+      setPlaceSuggestions([]);
+      setIsSearchingPlaces(false);
+    }
+  };
+
+  const handleSelectSuggestion = (s: { name: string; address: string; lat: number; lng: number }) => {
+    setPlace(s.name);
+    setLocation(s.address);
+    setPickedCoords({ lat: s.lat, lng: s.lng });
+    setPlaceSuggestions([]);
+  };
+
+  const handleMapClick = async (e: MapClickEvent) => {
+    setPickedCoords({ lat: e.lat, lng: e.lng });
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.lat}&lon=${e.lng}&zoom=18&addressdetails=1`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const amenityName = data.name || data.address?.amenity || data.address?.shop || data.address?.tourism;
+        const road = data.address?.road || '';
+        const suburb = data.address?.suburb || data.address?.neighbourhood || '';
+        const city = data.address?.city || data.address?.town || data.address?.municipality || 'Guadalajara';
+        const formatted = data.display_name || [road, suburb, city].filter(Boolean).join(', ');
+        setLocation(formatted || `${city}, Jalisco`);
+        if (!place && amenityName) {
+          setPlace(amenityName);
+        }
+      } else {
+        setLocation(`Ubicación seleccionada (${e.lat.toFixed(4)}, ${e.lng.toFixed(4)})`);
+      }
+    } catch {
+      setLocation(`Ubicación seleccionada (${e.lat.toFixed(4)}, ${e.lng.toFixed(4)})`);
+    }
+  };
 
   const toggleGastro = (pref: string) => {
     setSelectedGastro((prev) =>
@@ -127,8 +222,10 @@ export default function ShareExperienceModal({
 
     await onSubmit({
       title: title.trim(),
-      place: place.trim(),
-      location: location.trim(),
+      place: place.trim() || title.trim(),
+      location: location.trim() || userLoc.formattedAddress,
+      latitude: pickedCoords?.lat ?? userLoc.lat,
+      longitude: pickedCoords?.lng ?? userLoc.lng,
       selectedGastro,
       budget,
       imageUrl: selectedImage,
@@ -339,6 +436,7 @@ export default function ShareExperienceModal({
               <Text style={[styles.fieldLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
                 Lugar visitado
               </Text>
+              {isSearchingPlaces && <ActivityIndicator size="small" color={colors.primary} style={{ marginLeft: 6 }} />}
             </View>
             <TextInput
               style={[
@@ -354,8 +452,51 @@ export default function ShareExperienceModal({
               placeholder="Ej. Terraza Luna Gastro Bar"
               placeholderTextColor={colors.textSecondary}
               value={place}
-              onChangeText={setPlace}
+              onChangeText={handlePlaceChange}
             />
+
+            {/* Lista desplegable de sugerencias */}
+            {placeSuggestions.length > 0 && (
+              <View
+                style={[
+                  styles.suggestionsBox,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: colors.border,
+                    borderRadius: borderRadius.md,
+                  },
+                ]}
+              >
+                {placeSuggestions.map((s, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    style={[
+                      styles.suggestionItem,
+                      { borderBottomColor: colors.border },
+                      idx === placeSuggestions.length - 1 && { borderBottomWidth: 0 },
+                    ]}
+                    activeOpacity={0.7}
+                    onPress={() => handleSelectSuggestion(s)}
+                  >
+                    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2}>
+                      <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                      <Circle cx="12" cy="10" r="3" />
+                    </Svg>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.suggestionTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                        {s.name}
+                      </Text>
+                      <Text
+                        style={[styles.suggestionAddress, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}
+                        numberOfLines={1}
+                      >
+                        {s.address}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
 
           {/* Ubicación y Mapa */}
@@ -607,10 +748,7 @@ export default function ShareExperienceModal({
                 showGeocoder={true}
                 userLocation={{ lat: userLoc.lat, lng: userLoc.lng }}
                 isDark={isDark}
-                onMapClick={(e: MapClickEvent) => {
-                  setPickedCoords({ lat: e.lat, lng: e.lng });
-                  setLocation(`Lat: ${e.lat.toFixed(4)}, Lng: ${e.lng.toFixed(4)}`);
-                }}
+                onMapClick={(e: MapClickEvent) => handleMapClick(e)}
               />
             </View>
           </SafeAreaView>
@@ -665,6 +803,27 @@ const styles = StyleSheet.create({
   },
   fieldLabel: { fontSize: 13 },
   inputField: { borderWidth: 1, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14 },
+  suggestionsBox: {
+    marginTop: 6,
+    borderWidth: 1,
+    maxHeight: 180,
+    overflow: 'hidden',
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  suggestionTitle: {
+    fontSize: 13,
+  },
+  suggestionAddress: {
+    fontSize: 11,
+    marginTop: 2,
+  },
   imagePickerCard: { borderWidth: 1, padding: 12, overflow: 'hidden' },
   imagePreviewWrap: { position: 'relative', height: 180, borderRadius: 10, overflow: 'hidden' },
   previewImage: { width: '100%', height: '100%' },

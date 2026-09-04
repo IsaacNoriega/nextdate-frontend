@@ -24,6 +24,8 @@ import {
   getSharedExperiencesApi,
   shareExperienceApi,
 } from '../../services/communityService';
+import { createPlaceApi } from '../../services/placeService';
+import { PlaceCategory, PriceRange } from '../../services/profileService';
 import StepDetailModal from '../../components/generator/step-detail-modal';
 import ShareExperienceModal, {
   CreateExperiencePayload,
@@ -105,20 +107,78 @@ export default function SavedScreen() {
     }
     setPublishing(true);
     try {
-      await shareExperienceApi({
-        userId: user.id,
-        title: payload.title,
-        description: payload.reviewText,
-        tips: payload.location || payload.place,
-        rating: payload.rating,
-        actualCost: payload.budget === 'FREE' ? 0 : payload.budget === 'LUXURY' ? 2000 : 500,
-        itineraryId: payload.selectedItineraryId,
-        imageUrls: payload.imageUrl ? [payload.imageUrl] : [],
+      // 1. Registrar o verificar el lugar en el catálogo de lugares físicos (con deduplicación backend)
+      const mappedPriceRange: PriceRange =
+        payload.budget === '$'
+          ? 'CHEAP'
+          : payload.budget === '$$$'
+          ? 'EXPENSIVE'
+          : payload.budget === '$$$$'
+          ? 'LUXURY'
+          : 'MODERATE';
+
+      const placeName = payload.place || payload.title;
+      const placeCategory: PlaceCategory =
+        payload.selectedGastro.length > 0
+          ? 'FOOD_DRINK'
+          : 'ENTERTAINMENT';
+
+      await createPlaceApi({
+        name: placeName,
+        description: payload.reviewText || `Lugar compartido: ${placeName}`,
+        category: placeCategory,
+        priceRange: mappedPriceRange,
+        address: payload.location,
+        latitude: payload.latitude ?? 20.6745,
+        longitude: payload.longitude ?? -103.3702,
+      }).catch((err) => {
+        console.warn('Aviso al registrar lugar en catálogo:', err);
       });
+
+      // 2. Validar formato UUID para el itinerario seleccionado
+      const isValidUuid = (id?: string) =>
+        typeof id === 'string' &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+      const targetItineraryId = isValidUuid(payload.selectedItineraryId)
+        ? payload.selectedItineraryId
+        : undefined;
+
+      // 3. Guardar la experiencia de la comunidad vinculada
+      try {
+        await shareExperienceApi({
+          userId: user.id,
+          title: payload.title,
+          description: payload.reviewText,
+          tips: payload.location || payload.place,
+          rating: payload.rating,
+          actualCost: payload.budget === '$' ? 150 : payload.budget === '$$$' ? 800 : payload.budget === '$$$$' ? 2000 : 400,
+          itineraryId: targetItineraryId,
+          imageUrls: payload.imageUrl ? [payload.imageUrl] : [],
+        });
+      } catch (err: any) {
+        // Si falló por itinerario inexistente, reintentar sin itinerario
+        if (targetItineraryId && err.message && err.message.includes('Itinerario no encontrado')) {
+          await shareExperienceApi({
+            userId: user.id,
+            title: payload.title,
+            description: payload.reviewText,
+            tips: payload.location || payload.place,
+            rating: payload.rating,
+            actualCost: payload.budget === '$' ? 150 : payload.budget === '$$$' ? 800 : payload.budget === '$$$$' ? 2000 : 400,
+            itineraryId: undefined,
+            imageUrls: payload.imageUrl ? [payload.imageUrl] : [],
+          });
+        } else {
+          throw err;
+        }
+      }
+
       setShowUploadModal(false);
-      Alert.alert('¡Publicado!', 'Tu experiencia o lugar ha sido guardado y compartido exitosamente.');
+      Alert.alert('¡Publicado!', 'Tu lugar y experiencia han sido guardados y ahora son visibles en la comunidad y en el mapa.');
       loadData();
     } catch (e: any) {
+      console.error('Error al publicar experiencia:', e);
       Alert.alert('Error', e.message || 'No se pudo guardar la experiencia.');
     } finally {
       setPublishing(false);

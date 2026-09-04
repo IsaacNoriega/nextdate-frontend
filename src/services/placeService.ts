@@ -69,3 +69,36 @@ export async function getNearbyPlacesApi(
   });
   return data.nearbyPlaces;
 }
+
+// 3. Crear o registrar un lugar en la base de datos
+const CREATE_PLACE_MUTATION = `
+  mutation CreatePlace($input: CreatePlaceInput!) {
+    createPlace(input: $input) {
+      id
+      name
+      description
+      category
+      priceRange
+      address
+      latitude
+      longitude
+      active
+      createdAt
+    }
+  }
+`;
+
+export interface CreatePlaceInput {
+  name: string;
+  description?: string;
+  category: PlaceCategory;
+  priceRange: PriceRange;
+  address?: string;
+  latitude: number;
+  longitude: number;
+}
+
+export async function createPlaceApi(input: CreatePlaceInput): Promise<Place> {
+  const data = await fetchGraphQL<{ createPlace: Place }>(CREATE_PLACE_MUTATION, { input });
+  return data.createPlace;
+}
