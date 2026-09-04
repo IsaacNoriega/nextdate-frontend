@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import Svg, { Path, Rect } from 'react-native-svg';
+import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 import { useAuth } from '../../context/AuthContext';
 import QuickPrompts from '../../components/generator/quick-prompts';
@@ -25,9 +25,17 @@ import {
   ChatMessage,
   INITIAL_MESSAGES,
 } from '../../mocks/generator.mock';
+import {
+  SparklesIcon,
+  BookmarkIcon,
+  CompassIcon,
+  StarIcon,
+  CheckIcon,
+  WandIcon,
+} from '../../components/ui/icons';
 
 export default function GeneratorScreen() {
-  const { colors, typography, borderRadius } = useTheme();
+  const { colors, typography, borderRadius, isDark } = useTheme();
   const { user } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{ presetPrompt?: string }>();
@@ -50,6 +58,13 @@ export default function GeneratorScreen() {
 
   const toggleSaveItinerary = (id: string) => {
     setSavedItineraryIds((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleResetChat = () => {
+    setMessages(INITIAL_MESSAGES);
+    setInputPrompt('');
+    setIsTyping(false);
+    setIsThinking(false);
   };
 
   const handleSendMessage = async (customPrompt?: string) => {
@@ -153,50 +168,86 @@ export default function GeneratorScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       edges={['top', 'left', 'right']}
     >
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerTitleRow}>
-          <View
-            style={[
-              styles.avatarIconWrap,
-              { backgroundColor: colors.primary + '20' },
-            ]}
-          >
-            <Svg
-              width={20}
-              height={20}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke={colors.primary}
-              strokeWidth={2}
-            >
-              <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </Svg>
-          </View>
-          <View>
-            <Text
+      {/* Header Estilizado */}
+      <View style={[styles.header, { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
+            <View
               style={[
-                styles.headerTitle,
-                { color: colors.text, fontFamily: typography.fonts.bold },
+                styles.avatarIconWrap,
+                {
+                  backgroundColor: colors.primary + '18',
+                  borderColor: colors.primary + '35',
+                },
               ]}
             >
-              Concierge de IA
-            </Text>
-            <View style={styles.statusRow}>
-              <View style={styles.statusDot} />
-              <Text
-                style={[
-                  styles.statusText,
-                  {
-                    color: colors.textSecondary,
-                    fontFamily: typography.fonts.regular,
-                  },
-                ]}
-              >
-                Online • Generador de citas
-              </Text>
+              <SparklesIcon size={18} color={colors.primary} />
+            </View>
+            <View>
+              <View style={styles.headerTitleRow}>
+                <Text
+                  style={[
+                    styles.headerTitle,
+                    { color: colors.text, fontFamily: typography.fonts.bold },
+                  ]}
+                >
+                  Concierge de IA
+                </Text>
+                <View
+                  style={[
+                    styles.aiBadge,
+                    { backgroundColor: colors.primary + '16', borderColor: colors.primary + '30' },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.aiBadgeText,
+                      { color: colors.primary, fontFamily: typography.fonts.bold },
+                    ]}
+                  >
+                    AI 2.0
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.statusRow}>
+                <View style={styles.statusDot} />
+                <Text
+                  style={[
+                    styles.statusText,
+                    {
+                      color: colors.textSecondary,
+                      fontFamily: typography.fonts.regular,
+                    },
+                  ]}
+                >
+                  Online • Diseñador inteligente de citas
+                </Text>
+              </View>
             </View>
           </View>
+
+          {hasUserSentMessage && (
+            <TouchableOpacity
+              style={[
+                styles.resetBtn,
+                {
+                  borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)',
+                },
+              ]}
+              onPress={handleResetChat}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.resetBtnText,
+                  { color: colors.textSecondary, fontFamily: typography.fonts.medium },
+                ]}
+              >
+                Nueva cita
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -210,283 +261,378 @@ export default function GeneratorScreen() {
           contentContainerStyle={styles.chatScroll}
           showsVerticalScrollIndicator={false}
         >
-          {messages.map((msg) => {
-            const isUser = msg.sender === 'user';
-            return (
-              <View
-                key={msg.id}
-                style={[
-                  styles.msgRow,
-                  isUser ? styles.userRow : styles.aiRow,
-                ]}
-              >
-                {!isUser && (
-                  <View
-                    style={[
-                      styles.msgAvatar,
-                      { backgroundColor: colors.primary },
-                    ]}
-                  >
-                    <Svg
-                      width={12}
-                      height={12}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#FFF"
-                      strokeWidth={2.5}
-                    >
-                      <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </Svg>
-                  </View>
-                )}
-
+          <View style={styles.chatCenterWrap}>
+            {messages.map((msg) => {
+              const isUser = msg.sender === 'user';
+              return (
                 <View
+                  key={msg.id}
                   style={[
-                    styles.bubble,
-                    isUser
-                      ? [
-                          styles.userBubble,
-                          {
-                            backgroundColor: colors.primary,
-                            borderRadius: borderRadius.lg,
-                          },
-                        ]
-                      : styles.aiBubble,
+                    styles.msgRow,
+                    isUser ? styles.userRow : styles.aiRow,
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.bubbleText,
-                      {
-                        color: isUser ? colors.primaryContrast : colors.text,
-                        fontFamily: typography.fonts.regular,
-                      },
-                    ]}
-                  >
-                    {msg.text}
-                  </Text>
-
-                  {/* CTA para iniciar sesión si no está autenticado */}
-                  {!user?.id && msg.id.startsWith('ai-auth') && (
-                    <TouchableOpacity
+                  {!isUser && (
+                    <View
                       style={[
-                        styles.authPromptBtn,
-                        {
-                          backgroundColor: colors.primary,
-                          borderRadius: borderRadius.md,
-                        },
+                        styles.msgAvatar,
+                        { backgroundColor: colors.primary },
                       ]}
-                      activeOpacity={0.85}
-                      onPress={() => router.push('/(auth)/login')}
                     >
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2.2}>
-                          <Rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                          <Path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        </Svg>
-                        <Text
-                          style={[
-                            styles.authPromptBtnText,
-                            {
-                              color: colors.primaryContrast,
-                              fontFamily: typography.fonts.bold,
-                            },
-                          ]}
-                        >
-                          Iniciar Sesión / Registrarse
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
+                      <SparklesIcon size={12} color="#FFF" />
+                    </View>
                   )}
 
-                  {/* Tarjeta de Itinerario Generado */}
-                  {msg.itinerary && (
-                    <View style={styles.itinContainer}>
-                      <View
+                  <View
+                    style={[
+                      styles.bubble,
+                      isUser
+                        ? [
+                            styles.userBubble,
+                            {
+                              backgroundColor: colors.primary,
+                              borderRadius: borderRadius.lg,
+                              borderBottomRightRadius: 4,
+                            },
+                          ]
+                        : [
+                            styles.aiBubble,
+                            {
+                              backgroundColor: isDark ? 'rgba(28, 28, 34, 0.96)' : '#F2F3F7',
+                              borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                              borderRadius: borderRadius.lg,
+                              borderBottomLeftRadius: 4,
+                            },
+                          ],
+                    ]}
+                  >
+                    {!isUser && (
+                      <View style={styles.aiSenderHeader}>
+                        <Text style={[styles.aiSenderName, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+                          Concierge AI
+                        </Text>
+                        <Text style={[styles.msgTime, { color: colors.textSecondary }]}>
+                          {msg.timestamp}
+                        </Text>
+                      </View>
+                    )}
+
+                    <Text
+                      style={[
+                        styles.bubbleText,
+                        {
+                          color: isUser ? colors.primaryContrast : colors.text,
+                          fontFamily: typography.fonts.regular,
+                        },
+                      ]}
+                    >
+                      {msg.text}
+                    </Text>
+
+                    {isUser && (
+                      <Text style={[styles.userMsgTime, { color: colors.primaryContrast + 'B3' }]}>
+                        {msg.timestamp}
+                      </Text>
+                    )}
+
+                    {/* CTA para iniciar sesión si no está autenticado */}
+                    {!user?.id && msg.id.startsWith('ai-auth') && (
+                      <TouchableOpacity
                         style={[
-                          styles.itinHeader,
+                          styles.authPromptBtn,
                           {
-                            backgroundColor: colors.card,
-                            borderColor: colors.border,
-                            borderRadius: borderRadius.lg,
+                            backgroundColor: colors.primary,
+                            borderRadius: borderRadius.md,
                           },
                         ]}
+                        activeOpacity={0.85}
+                        onPress={() => router.push('/(auth)/login')}
                       >
-                        <View style={styles.itinHeaderTop}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2.2}>
+                            <Rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <Path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                          </Svg>
                           <Text
                             style={[
-                              styles.itinTitle,
+                              styles.authPromptBtnText,
                               {
-                                color: colors.text,
+                                color: colors.primaryContrast,
                                 fontFamily: typography.fonts.bold,
                               },
                             ]}
                           >
-                            {msg.itinerary.title}
+                            Iniciar Sesión / Registrarse
                           </Text>
-                          <View
-                            style={[
-                              styles.matchBadge,
-                              { backgroundColor: colors.primary },
-                            ]}
-                          >
+                        </View>
+                      </TouchableOpacity>
+                    )}
+
+                    {/* Tarjeta de Itinerario Generado */}
+                    {msg.itinerary && (
+                      <View style={styles.itinContainer}>
+                        <View
+                          style={[
+                            styles.itinHeader,
+                            {
+                              backgroundColor: isDark ? '#1C1C20' : '#FFFFFF',
+                              borderColor: colors.border,
+                              borderRadius: borderRadius.lg,
+                            },
+                          ]}
+                        >
+                          <View style={styles.itinHeaderTop}>
                             <Text
                               style={[
-                                styles.matchBadgeText,
-                                { fontFamily: typography.fonts.bold },
+                                styles.itinTitle,
+                                {
+                                  color: colors.text,
+                                  fontFamily: typography.fonts.bold,
+                                },
                               ]}
                             >
-                              {msg.itinerary.matchScore}% Match
+                              {msg.itinerary.title}
+                            </Text>
+                            <View
+                              style={[
+                                styles.matchBadge,
+                                { backgroundColor: colors.primary },
+                              ]}
+                            >
+                              <StarIcon size={10} color="#FFF" fill="#FFF" />
+                              <Text
+                                style={[
+                                  styles.matchBadgeText,
+                                  { fontFamily: typography.fonts.bold },
+                                ]}
+                              >
+                                {msg.itinerary.matchScore}% Match
+                              </Text>
+                            </View>
+                          </View>
+                          <Text
+                            style={[
+                              styles.itinTagline,
+                              {
+                                color: colors.textSecondary,
+                                fontFamily: typography.fonts.regular,
+                              },
+                            ]}
+                          >
+                            {msg.itinerary.tagline}
+                          </Text>
+
+                          <View style={styles.itinMetaRow}>
+                            <Text
+                              style={[
+                                styles.itinCost,
+                                {
+                                  color: colors.primary,
+                                  fontFamily: typography.fonts.bold,
+                                },
+                              ]}
+                            >
+                              Presupuesto: {msg.itinerary.totalCost}
+                            </Text>
+                            <Text
+                              style={[
+                                styles.itinStepsBadge,
+                                {
+                                  color: colors.textSecondary,
+                                  fontFamily: typography.fonts.medium,
+                                },
+                              ]}
+                            >
+                              {msg.itinerary.steps.length} paradas
                             </Text>
                           </View>
                         </View>
-                        <Text
-                          style={[
-                            styles.itinTagline,
-                            {
-                              color: colors.textSecondary,
-                              fontFamily: typography.fonts.regular,
-                            },
-                          ]}
-                        >
-                          {msg.itinerary.tagline}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.itinCost,
-                            {
-                              color: colors.primary,
-                              fontFamily: typography.fonts.bold,
-                            },
-                          ]}
-                        >
-                          {msg.itinerary.totalCost}
-                        </Text>
-                      </View>
 
-                      {/* Pasos */}
-                      <View style={styles.stepsList}>
-                        {msg.itinerary.steps.map((step, idx) => (
+                        {/* Pasos Interactivos */}
+                        <View style={styles.stepsList}>
+                          {msg.itinerary.steps.map((step, idx) => (
+                            <TouchableOpacity
+                              key={idx}
+                              style={[
+                                styles.stepCard,
+                                {
+                                  backgroundColor: isDark ? '#1C1C20' : '#FFFFFF',
+                                  borderColor: colors.border,
+                                  borderRadius: borderRadius.md,
+                                },
+                              ]}
+                              activeOpacity={0.8}
+                              onPress={() => setSelectedStep(step)}
+                            >
+                              <View style={[styles.stepNumWrap, { backgroundColor: colors.primary + '18' }]}>
+                                <Text style={[styles.stepNumText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
+                                  {step.stepNumber}
+                                </Text>
+                              </View>
+                              <Image
+                                source={{ uri: step.imageUrl }}
+                                style={[
+                                  styles.stepImage,
+                                  { borderRadius: borderRadius.sm },
+                                ]}
+                              />
+                              <View style={styles.stepInfo}>
+                                <Text
+                                  style={[
+                                    styles.stepTime,
+                                    {
+                                      color: colors.primary,
+                                      fontFamily: typography.fonts.bold,
+                                    },
+                                  ]}
+                                  numberOfLines={1}
+                                >
+                                  {step.time} • {step.categoryEmoji} {step.placeName}
+                                </Text>
+                                <Text
+                                  style={[
+                                    styles.stepTitle,
+                                    {
+                                      color: colors.text,
+                                      fontFamily: typography.fonts.medium,
+                                    },
+                                  ]}
+                                  numberOfLines={1}
+                                >
+                                  {step.title}
+                                </Text>
+                                <Text
+                                  style={[
+                                    styles.stepDurationText,
+                                    {
+                                      color: colors.textSecondary,
+                                      fontFamily: typography.fonts.regular,
+                                    },
+                                  ]}
+                                >
+                                  {step.duration} • {step.transitTime} traslado
+                                </Text>
+                              </View>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+
+                        {/* Botones de Acción */}
+                        <View style={styles.itinActionsRow}>
                           <TouchableOpacity
-                            key={idx}
                             style={[
-                              styles.stepCard,
+                              styles.saveBtn,
                               {
-                                backgroundColor: colors.card,
-                                borderColor: colors.border,
+                                backgroundColor: savedItineraryIds[msg.itinerary.id]
+                                  ? '#30D158'
+                                  : colors.primary,
                                 borderRadius: borderRadius.md,
                               },
                             ]}
                             activeOpacity={0.8}
-                            onPress={() => setSelectedStep(step)}
+                            onPress={() => toggleSaveItinerary(msg.itinerary!.id)}
                           >
-                            <Image
-                              source={{ uri: step.imageUrl }}
+                            {savedItineraryIds[msg.itinerary.id] ? (
+                              <CheckIcon size={14} color="#FFF" />
+                            ) : (
+                              <BookmarkIcon size={14} color={colors.primaryContrast} />
+                            )}
+                            <Text
                               style={[
-                                styles.stepImage,
-                                { borderRadius: borderRadius.sm },
+                                styles.saveBtnText,
+                                { fontFamily: typography.fonts.bold, color: colors.primaryContrast },
                               ]}
-                            />
-                            <View style={styles.stepInfo}>
-                              <Text
-                                style={[
-                                  styles.stepTime,
-                                  {
-                                    color: colors.primary,
-                                    fontFamily: typography.fonts.bold,
-                                  },
-                                ]}
-                              >
-                                {step.time} • {step.placeName}
-                              </Text>
-                              <Text
-                                style={[
-                                  styles.stepTitle,
-                                  {
-                                    color: colors.text,
-                                    fontFamily: typography.fonts.medium,
-                                  },
-                                ]}
-                              >
-                                {step.title}
-                              </Text>
-                            </View>
+                            >
+                              {savedItineraryIds[msg.itinerary.id]
+                                ? '✓ Guardado en tu Perfil'
+                                : 'Guardar Itinerario'}
+                            </Text>
                           </TouchableOpacity>
-                        ))}
+
+                          <TouchableOpacity
+                            style={[
+                              styles.mapBtn,
+                              {
+                                borderColor: colors.border,
+                                borderRadius: borderRadius.md,
+                                backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+                              },
+                            ]}
+                            activeOpacity={0.8}
+                            onPress={() => router.push('/(tabs)/map')}
+                          >
+                            <CompassIcon size={14} color={colors.text} />
+                            <Text
+                              style={[
+                                styles.mapBtnText,
+                                { color: colors.text, fontFamily: typography.fonts.medium },
+                              ]}
+                            >
+                              Ver en Mapa
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
                       </View>
-
-                      {/* Botón Guardar */}
-                      <TouchableOpacity
-                        style={[
-                          styles.saveBtn,
-                          {
-                            backgroundColor: savedItineraryIds[msg.itinerary.id]
-                              ? '#30D158'
-                              : colors.primary,
-                            borderRadius: borderRadius.md,
-                          },
-                        ]}
-                        activeOpacity={0.8}
-                        onPress={() => toggleSaveItinerary(msg.itinerary!.id)}
-                      >
-                        <Text
-                          style={[
-                            styles.saveBtnText,
-                            { fontFamily: typography.fonts.bold },
-                          ]}
-                        >
-                          {savedItineraryIds[msg.itinerary.id]
-                            ? '✓ Guardado en tu Perfil'
-                            : 'Guardar Itinerario'}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
+                    )}
+                  </View>
                 </View>
-              </View>
-            );
-          })}
+              );
+            })}
 
-          {isThinking && (
-            <View style={styles.msgRow}>
-              <View
-                style={[
-                  styles.thinkingBubble,
-                  {
-                    backgroundColor: colors.card,
-                    borderRadius: borderRadius.lg,
-                  },
-                ]}
-              >
-                <ActivityIndicator size="small" color={colors.primary} />
-                <Text
+            {isThinking && (
+              <View style={styles.msgRow}>
+                <View
                   style={[
-                    styles.thinkingText,
+                    styles.msgAvatar,
+                    { backgroundColor: colors.primary },
+                  ]}
+                >
+                  <SparklesIcon size={12} color="#FFF" />
+                </View>
+                <View
+                  style={[
+                    styles.thinkingBubble,
                     {
-                      color: colors.textSecondary,
-                      fontFamily: typography.fonts.medium,
+                      backgroundColor: isDark ? 'rgba(28, 28, 34, 0.96)' : '#F2F3F7',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                      borderRadius: borderRadius.lg,
                     },
                   ]}
                 >
-                  El Concierge está diseñando tu cita...
-                </Text>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                  <Text
+                    style={[
+                      styles.thinkingText,
+                      {
+                        color: colors.textSecondary,
+                        fontFamily: typography.fonts.medium,
+                      },
+                    ]}
+                  >
+                    El Concierge está diseñando tu cita ideal...
+                  </Text>
+                </View>
               </View>
-            </View>
-          )}
+            )}
+          </View>
         </ScrollView>
 
         {/* Quick Prompts */}
         {!hasUserSentMessage && !isThinking && (
-          <QuickPrompts onSelectPrompt={(p) => handleSendMessage(p)} />
+          <View style={styles.quickPromptsContainer}>
+            <View style={styles.quickPromptsInner}>
+              <QuickPrompts onSelectPrompt={(p) => handleSendMessage(p)} />
+            </View>
+          </View>
         )}
 
-        {/* Input Bar */}
+        {/* Input Bar Flotante sobre la Navbar */}
         <View
           style={[
             styles.inputBar,
             {
-              backgroundColor: colors.card,
-              borderTopColor: colors.border,
+              backgroundColor: isDark ? 'rgba(16, 16, 20, 0.94)' : 'rgba(255, 255, 255, 0.94)',
+              borderTopColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
             },
           ]}
         >
@@ -494,12 +640,22 @@ export default function GeneratorScreen() {
             style={[
               styles.inputWrapper,
               {
-                backgroundColor: colors.background,
-                borderColor: isInputFocused ? colors.primary : colors.border,
-                borderRadius: borderRadius.round,
+                backgroundColor: isDark ? 'rgba(28, 28, 34, 0.96)' : '#F5F6F9',
+                borderColor: isInputFocused
+                  ? colors.primary
+                  : isDark
+                  ? 'rgba(255, 255, 255, 0.12)'
+                  : 'rgba(0, 0, 0, 0.08)',
               },
             ]}
           >
+            <View style={styles.inputLeftIconWrap}>
+              <SparklesIcon
+                size={16}
+                color={isInputFocused ? colors.primary : colors.textSecondary}
+              />
+            </View>
+
             <TextInput
               style={[
                 styles.input,
@@ -508,7 +664,7 @@ export default function GeneratorScreen() {
                   fontFamily: typography.fonts.regular,
                 },
               ]}
-              placeholder="Describe tu cita ideal..."
+              placeholder="Describe tu cita ideal (lugar, vibra, presupuesto)..."
               placeholderTextColor={colors.textSecondary}
               value={inputPrompt}
               onChangeText={setInputPrompt}
@@ -517,13 +673,16 @@ export default function GeneratorScreen() {
               onBlur={() => setIsInputFocused(false)}
               returnKeyType="send"
             />
+
             <TouchableOpacity
               style={[
                 styles.sendBtn,
                 {
                   backgroundColor: inputPrompt.trim()
                     ? colors.primary
-                    : colors.border,
+                    : isDark
+                    ? 'rgba(255, 255, 255, 0.08)'
+                    : 'rgba(0, 0, 0, 0.06)',
                 },
               ]}
               activeOpacity={0.8}
@@ -531,8 +690,8 @@ export default function GeneratorScreen() {
               disabled={!inputPrompt.trim() || isThinking}
             >
               <Svg
-                width={16}
-                height={16}
+                width={15}
+                height={15}
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke={
@@ -540,7 +699,7 @@ export default function GeneratorScreen() {
                     ? colors.primaryContrast
                     : colors.textSecondary
                 }
-                strokeWidth={2.5}
+                strokeWidth={2.4}
               >
                 <Path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
               </Svg>
@@ -566,29 +725,53 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderBottomWidth: 1,
+  },
+  headerContent: {
+    width: '100%',
+    maxWidth: 768,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  avatarIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-  },
-  avatarIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
+    gap: 6,
   },
   headerTitle: {
     fontSize: 16,
   },
+  aiBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  aiBadgeText: {
+    fontSize: 9,
+    letterSpacing: 0.5,
+  },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginTop: 1,
+    gap: 5,
+    marginTop: 2,
   },
   statusDot: {
     width: 6,
@@ -599,13 +782,27 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 11,
   },
+  resetBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  resetBtnText: {
+    fontSize: 11,
+  },
   keyboardRoot: {
     flex: 1,
   },
   chatScroll: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 20,
+    paddingBottom: 190, // Margen holgado para no chocar con el input bar ni la navbar
+  },
+  chatCenterWrap: {
+    width: '100%',
+    maxWidth: 768,
+    alignSelf: 'center',
   },
   msgRow: {
     flexDirection: 'row',
@@ -619,13 +816,13 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   msgAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
-    marginTop: 4,
+    marginTop: 2,
   },
   bubble: {
     maxWidth: '85%',
@@ -633,13 +830,39 @@ const styles = StyleSheet.create({
   userBubble: {
     paddingHorizontal: 16,
     paddingVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
   },
   aiBubble: {
-    paddingVertical: 2,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+  },
+  aiSenderHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  aiSenderName: {
+    fontSize: 11,
+    letterSpacing: 0.3,
+  },
+  msgTime: {
+    fontSize: 10,
+    opacity: 0.7,
+  },
+  userMsgTime: {
+    fontSize: 9,
+    alignSelf: 'flex-end',
+    marginTop: 4,
   },
   bubbleText: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 14,
+    lineHeight: 21,
   },
   authPromptBtn: {
     marginTop: 10,
@@ -667,11 +890,14 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   itinTitle: {
-    fontSize: 17,
+    fontSize: 16,
     flex: 1,
     marginRight: 8,
   },
   matchBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 12,
@@ -682,10 +908,22 @@ const styles = StyleSheet.create({
   },
   itinTagline: {
     fontSize: 12,
-    marginBottom: 6,
+    marginBottom: 8,
+    lineHeight: 16,
+  },
+  itinMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(150,150,150,0.2)',
   },
   itinCost: {
-    fontSize: 14,
+    fontSize: 13,
+  },
+  itinStepsBadge: {
+    fontSize: 11,
   },
   stepsList: {
     gap: 8,
@@ -697,9 +935,20 @@ const styles = StyleSheet.create({
     padding: 10,
     borderWidth: 1,
   },
+  stepNumWrap: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  stepNumText: {
+    fontSize: 11,
+  },
   stepImage: {
-    width: 50,
-    height: 50,
+    width: 48,
+    height: 48,
     marginRight: 10,
   },
   stepInfo: {
@@ -712,47 +961,92 @@ const styles = StyleSheet.create({
   stepTitle: {
     fontSize: 13,
   },
+  stepDurationText: {
+    fontSize: 10,
+    marginTop: 2,
+  },
+  itinActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   saveBtn: {
-    paddingVertical: 12,
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
   },
   saveBtnText: {
-    color: '#FFF',
-    fontSize: 13,
+    fontSize: 12,
+  },
+  mapBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+  },
+  mapBtnText: {
+    fontSize: 12,
   },
   thinkingBubble: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
     paddingVertical: 10,
+    borderWidth: 1,
     gap: 8,
   },
   thinkingText: {
-    fontSize: 13,
+    fontSize: 12,
+  },
+  quickPromptsContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  quickPromptsInner: {
+    width: '100%',
+    maxWidth: 768,
   },
   inputBar: {
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 24,
+    paddingTop: 10,
+    paddingBottom: 104, // Elevado 16px arriba de la navbar flotante (bottom: 24 + height: 64 = 88 + 16px = 104)
     borderTopWidth: 1,
   },
   inputWrapper: {
+    width: '100%',
+    maxWidth: 768,
+    alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderWidth: 1,
+    borderWidth: 1.5,
+    borderRadius: 26,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  inputLeftIconWrap: {
+    marginRight: 6,
+    marginLeft: 2,
   },
   input: {
     flex: 1,
-    height: 38,
+    height: 40,
     fontSize: 14,
-    paddingHorizontal: 12,
+    paddingHorizontal: 6,
   },
   sendBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },

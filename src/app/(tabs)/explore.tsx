@@ -426,6 +426,7 @@ export default function ExploreScreen() {
                 likesCount={item.likesCount}
                 commentsCount={item.commentsCount}
                 imageUrl={item.imageUrl}
+                imageUrls={item.imageUrls}
                 reviewText={item.reviewText}
                 isLiked={!!likesMap[item.id]}
                 isSaved={!!savedMap[item.id]}
@@ -494,11 +495,11 @@ const styles = StyleSheet.create({
   feedContent: {
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 90, // Espacio extra para que el FAB no tape la última tarjeta
+    paddingBottom: 170, // Espacio para que el FAB y el navbar no tapen la última tarjeta
   },
   fabButton: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 104, // Ubicado por encima del navbar flotante (bottom: 24 + height: 64 + 16px gap)
     right: 20,
     width: 56,
     height: 56,

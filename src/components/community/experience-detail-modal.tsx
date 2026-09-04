@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -19,6 +19,8 @@ import {
   CompassIcon,
   TagIcon,
   PhotoIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from '../ui/icons';
 import { SharedExperienceItem } from '../../mocks/community.mock';
 
@@ -45,20 +47,32 @@ export default function ExperienceDetailModal({
 }: ExperienceDetailModalProps) {
   const { colors, typography, borderRadius, isDark } = useTheme();
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+  const [galleryWidth, setGalleryWidth] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
 
   if (!item) return null;
 
-  // Extraer todas las fotos disponibles
-  const allImages =
+  // Extraer todas las fotos disponibles de la experiencia
+  const allImages: string[] =
     item.imageUrls && item.imageUrls.length > 0
       ? item.imageUrls
       : item.imageUrl
       ? [item.imageUrl]
       : [];
 
+  const slideWidth = galleryWidth > 0 ? galleryWidth : Math.min(SCREEN_WIDTH - 40, 540);
+
   const handleClose = () => {
     setActivePhotoIndex(0);
     onClose();
+  };
+
+  const goToSlide = (idx: number) => {
+    const nextIdx = Math.max(0, Math.min(idx, allImages.length - 1));
+    setActivePhotoIndex(nextIdx);
+    if (slideWidth > 0) {
+      scrollRef.current?.scrollTo({ x: nextIdx * slideWidth, animated: true });
+    }
   };
 
   return (
@@ -113,23 +127,29 @@ export default function ExperienceDetailModal({
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
           >
-            {/* Galería / Carrusel de Todas las Fotos */}
+            {/* Galería / Carrusel Interactivo de Fotos */}
             {allImages.length > 0 && (
-              <View style={styles.galleryWrapper}>
+              <View
+                style={styles.galleryWrapper}
+                onLayout={(e) => setGalleryWidth(e.nativeEvent.layout.width)}
+              >
                 <ScrollView
+                  ref={scrollRef}
                   horizontal
                   pagingEnabled
                   showsHorizontalScrollIndicator={false}
                   onMomentumScrollEnd={(e) => {
-                    const slideIndex = Math.round(
-                      e.nativeEvent.contentOffset.x / (SCREEN_WIDTH - 40)
-                    );
-                    setActivePhotoIndex(slideIndex);
+                    if (slideWidth > 0) {
+                      const slideIndex = Math.round(
+                        e.nativeEvent.contentOffset.x / slideWidth
+                      );
+                      setActivePhotoIndex(slideIndex);
+                    }
                   }}
                   contentContainerStyle={{ gap: 0 }}
                 >
                   {allImages.map((imgUri, idx) => (
-                    <View key={idx} style={[styles.slideContainer, { width: SCREEN_WIDTH - 40 }]}>
+                    <View key={idx} style={[styles.slideContainer, { width: slideWidth }]}>
                       <Image
                         source={{ uri: imgUri }}
                         style={[styles.bannerImage, { borderRadius: borderRadius.lg }]}
@@ -139,7 +159,32 @@ export default function ExperienceDetailModal({
                   ))}
                 </ScrollView>
 
-                {/* Badge con el contador de fotos */}
+                {/* Flechas de navegación rápida para PC y móvil */}
+                {allImages.length > 1 && (
+                  <>
+                    {activePhotoIndex > 0 && (
+                      <TouchableOpacity
+                        style={[styles.arrowBtn, styles.arrowLeft]}
+                        onPress={() => goToSlide(activePhotoIndex - 1)}
+                        activeOpacity={0.8}
+                      >
+                        <ChevronLeftIcon size={18} color="#FFFFFF" />
+                      </TouchableOpacity>
+                    )}
+
+                    {activePhotoIndex < allImages.length - 1 && (
+                      <TouchableOpacity
+                        style={[styles.arrowBtn, styles.arrowRight]}
+                        onPress={() => goToSlide(activePhotoIndex + 1)}
+                        activeOpacity={0.8}
+                      >
+                        <ChevronRightIcon size={18} color="#FFFFFF" />
+                      </TouchableOpacity>
+                    )}
+                  </>
+                )}
+
+                {/* Badge con contador de fotos */}
                 {allImages.length > 1 && (
                   <View
                     style={[
@@ -157,9 +202,32 @@ export default function ExperienceDetailModal({
                   </View>
                 )}
 
-                {/* Tiras de miniaturas rápidas si hay más de 1 foto */}
+                {/* Indicador de puntos (Dots) */}
                 {allImages.length > 1 && (
-                  <View style={styles.thumbStrip}>
+                  <View style={styles.dotsRow}>
+                    {allImages.map((_, idx) => (
+                      <TouchableOpacity
+                        key={idx}
+                        onPress={() => goToSlide(idx)}
+                        activeOpacity={0.7}
+                        style={[
+                          styles.dot,
+                          idx === activePhotoIndex
+                            ? [styles.dotActive, { backgroundColor: colors.primary }]
+                            : styles.dotInactive,
+                        ]}
+                      />
+                    ))}
+                  </View>
+                )}
+
+                {/* Tira de miniaturas interactivas */}
+                {allImages.length > 1 && (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.thumbStrip}
+                  >
                     {allImages.map((thumbUri, idx) => (
                       <TouchableOpacity
                         key={idx}
@@ -171,7 +239,7 @@ export default function ExperienceDetailModal({
                             borderRadius: borderRadius.sm,
                           },
                         ]}
-                        onPress={() => setActivePhotoIndex(idx)}
+                        onPress={() => goToSlide(idx)}
                         activeOpacity={0.8}
                       >
                         <Image
@@ -180,7 +248,7 @@ export default function ExperienceDetailModal({
                         />
                       </TouchableOpacity>
                     ))}
-                  </View>
+                  </ScrollView>
                 )}
               </View>
             )}
@@ -272,7 +340,7 @@ export default function ExperienceDetailModal({
                     { color: colors.text, fontFamily: typography.fonts.regular },
                   ]}
                 >
-                  {item.reviewText}
+                  "{item.reviewText}"
                 </Text>
               </View>
             ) : null}
@@ -396,13 +464,16 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
   },
   backdrop: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
   },
   sheetContainer: {
-    maxHeight: '85%',
+    maxHeight: '88%',
+    maxWidth: 600,
+    width: '100%',
+    alignSelf: 'center',
     borderTopWidth: 1,
     paddingTop: 8,
   },
@@ -434,6 +505,7 @@ const styles = StyleSheet.create({
   galleryWrapper: {
     position: 'relative',
     marginBottom: 14,
+    width: '100%',
   },
   slideContainer: {
     alignItems: 'center',
@@ -441,7 +513,24 @@ const styles = StyleSheet.create({
   },
   bannerImage: {
     width: '100%',
-    height: 210,
+    height: 240,
+  },
+  arrowBtn: {
+    position: 'absolute',
+    top: '42%',
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 5,
+  },
+  arrowLeft: {
+    left: 10,
+  },
+  arrowRight: {
+    right: 10,
   },
   photoCounterBadge: {
     position: 'absolute',
@@ -452,22 +541,43 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
+    zIndex: 4,
   },
   photoCounterText: {
     color: '#FFFFFF',
     fontSize: 11,
   },
+  dotsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  dot: {
+    height: 6,
+    borderRadius: 3,
+  },
+  dotActive: {
+    width: 18,
+  },
+  dotInactive: {
+    width: 6,
+    backgroundColor: 'rgba(150, 150, 150, 0.4)',
+  },
   thumbStrip: {
     flexDirection: 'row',
     gap: 8,
-    marginTop: 8,
+    marginTop: 6,
+    paddingVertical: 2,
   },
   thumbWrap: {
     padding: 1,
   },
   thumbImage: {
-    width: 44,
-    height: 44,
+    width: 50,
+    height: 50,
   },
   authorRow: {
     flexDirection: 'row',

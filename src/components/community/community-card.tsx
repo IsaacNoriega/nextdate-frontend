@@ -6,7 +6,7 @@ import {
   StarIcon,
   MapPinIcon,
   BookmarkIcon,
-  MessageSquareIcon,
+  PhotoIcon,
   TagIcon,
 } from '../ui/icons';
 
@@ -23,6 +23,7 @@ export interface CommunityCardProps {
   likesCount?: number;
   commentsCount?: number;
   imageUrl?: string;
+  imageUrls?: string[];
   reviewText?: string;
   isLiked: boolean;
   isSaved: boolean;
@@ -44,6 +45,7 @@ export default function CommunityCard({
   likesCount = 0,
   commentsCount = 0,
   imageUrl,
+  imageUrls,
   reviewText,
   isLiked,
   isSaved,
@@ -135,24 +137,23 @@ export default function CommunityCard({
             </View>
           ) : null}
 
-          {/* Floating heart like button */}
-          <TouchableOpacity
-            style={[
-              styles.floatingLikeBtn,
-              {
-                backgroundColor: 'rgba(0, 0, 0, 0.55)',
-                borderRadius: borderRadius.round,
-              },
-            ]}
-            onPress={onToggleLike}
-            activeOpacity={0.8}
-          >
-            <HeartIcon
-              size={16}
-              color={isLiked ? '#FF3B30' : '#FFFFFF'}
-              fill={isLiked ? '#FF3B30' : 'none'}
-            />
-          </TouchableOpacity>
+          {/* Multiple photos badge indicator */}
+          {imageUrls && imageUrls.length > 1 ? (
+            <View
+              style={[
+                styles.photoBadge,
+                {
+                  backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                  borderRadius: borderRadius.round,
+                },
+              ]}
+            >
+              <PhotoIcon size={11} color="#FFFFFF" />
+              <Text style={[styles.photoBadgeText, { fontFamily: typography.fonts.bold }]}>
+                {imageUrls.length}
+              </Text>
+            </View>
+          ) : null}
         </View>
       ) : null}
 
@@ -256,15 +257,6 @@ export default function CommunityCard({
           </Text>
         </TouchableOpacity>
 
-        <View style={styles.actionItem}>
-          <MessageSquareIcon size={15} color={colors.textSecondary} />
-          <Text
-            style={[styles.actionText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}
-          >
-            {commentsCount}
-          </Text>
-        </View>
-
         <TouchableOpacity
           style={[
             styles.savePlanPill,
@@ -357,14 +349,19 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 11,
   },
-  floatingLikeBtn: {
+  photoBadge: {
     position: 'absolute',
     top: 10,
     right: 10,
-    width: 32,
-    height: 32,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  photoBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
   },
   planTitleText: {
     fontSize: 16,

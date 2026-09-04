@@ -291,23 +291,25 @@ export default function MapScreen() {
       {/* Bottom Content Depending on Active Mode */}
       {mode === 'itineraries' ? (
         currentItinerary && activeStep ? (
-          <View style={styles.overlayWrapper}>
-            <NavigationOverlay
-              step={activeStep}
-              activeStepIndex={activeStepIndex}
-              totalSteps={currentItinerary.steps.length}
-              onNextStep={() =>
-                setActiveStepIndex((prev) =>
-                  Math.min(prev + 1, currentItinerary.steps.length - 1)
-                )
-              }
-              onPrevStep={() => setActiveStepIndex((prev) => Math.max(prev - 1, 0))}
-              onOpenDetail={() => setSelectedStepDetail(activeStep)}
-            />
+          <View style={styles.overlayWrapper} pointerEvents="box-none">
+            <View style={styles.cardMaxWidthWrap}>
+              <NavigationOverlay
+                step={activeStep}
+                activeStepIndex={activeStepIndex}
+                totalSteps={currentItinerary.steps.length}
+                onNextStep={() =>
+                  setActiveStepIndex((prev) =>
+                    Math.min(prev + 1, currentItinerary.steps.length - 1)
+                  )
+                }
+                onPrevStep={() => setActiveStepIndex((prev) => Math.max(prev - 1, 0))}
+                onOpenDetail={() => setSelectedStepDetail(activeStep)}
+              />
+            </View>
           </View>
         ) : (
           /* Empty Itineraries State */
-          <View style={styles.emptyOverlayWrapper}>
+          <View style={styles.emptyOverlayWrapper} pointerEvents="box-none">
             <View
               style={[
                 styles.emptyCard,
@@ -360,20 +362,22 @@ export default function MapScreen() {
         )
       ) : (
         /* Mode: 'places' */
-        <View style={styles.placesBottomWrapper}>
+        <View style={styles.placesBottomWrapper} pointerEvents="box-none">
           {savedPlaces.length > 0 ? (
             <>
               {/* Carousel of saved places */}
-              <MapSavedPlacesCarousel
-                places={savedPlaces}
-                selectedPlaceId={selectedPlace?.id}
-                onSelectPlace={(place) => {
-                  setSelectedPlace(place);
-                  setIsPlaceRoutingActive(true);
-                }}
-                userLat={userLoc.lat}
-                userLng={userLoc.lng}
-              />
+              <View style={styles.carouselWrap} pointerEvents="box-none">
+                <MapSavedPlacesCarousel
+                  places={savedPlaces}
+                  selectedPlaceId={selectedPlace?.id}
+                  onSelectPlace={(place) => {
+                    setSelectedPlace(place);
+                    setIsPlaceRoutingActive(true);
+                  }}
+                  userLat={userLoc.lat}
+                  userLng={userLoc.lng}
+                />
+              </View>
 
               {/* Selected place full action card */}
               {selectedPlace && (
@@ -402,7 +406,7 @@ export default function MapScreen() {
             </>
           ) : (
             /* Empty Saved Places State */
-            <View style={styles.emptyCardContainer}>
+            <View style={styles.emptyCardContainer} pointerEvents="box-none">
               <View
                 style={[
                   styles.emptyCard,
@@ -554,33 +558,50 @@ const styles = StyleSheet.create({
   },
   overlayWrapper: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 104, // Ubicado por encima del navbar flotante (bottom: 24 + height: 64 + 16px gap)
     left: 16,
     right: 16,
     zIndex: 20,
+    alignItems: 'center',
+  },
+  cardMaxWidthWrap: {
+    width: '100%',
+    maxWidth: 500,
   },
   placesBottomWrapper: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 104, // Ubicado por encima del navbar flotante
     left: 0,
     right: 0,
     zIndex: 20,
+    alignItems: 'center',
+  },
+  carouselWrap: {
+    width: '100%',
+    maxWidth: 600,
   },
   selectedPlaceWrap: {
+    width: '100%',
+    maxWidth: 500,
     paddingHorizontal: 16,
     marginTop: 6,
   },
   emptyOverlayWrapper: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 104,
     left: 16,
     right: 16,
     zIndex: 20,
+    alignItems: 'center',
   },
   emptyCardContainer: {
+    width: '100%',
+    maxWidth: 500,
     paddingHorizontal: 16,
   },
   emptyCard: {
+    width: '100%',
+    maxWidth: 500,
     padding: 18,
     borderWidth: 1,
     shadowColor: '#000',

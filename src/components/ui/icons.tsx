@@ -303,3 +303,15 @@ export const ChevronRightIcon: React.FC<IconProps> = ({
   </Svg>
 );
 
+export const ChevronLeftIcon: React.FC<IconProps> = ({
+  size = 16,
+  color = '#000000',
+  strokeWidth = 2,
+  style,
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} style={style}>
+    <Path d="M15 18l-6-6 6-6" />
+  </Svg>
+);
+
+

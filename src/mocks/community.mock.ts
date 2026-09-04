@@ -73,6 +73,11 @@ export const INITIAL_COMMUNITY_POSTS: SharedExperienceItem[] = [
     likesCount: 24,
     commentsCount: 5,
     imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
+    imageUrls: [
+      'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=600&auto=format&fit=crop&q=80',
+    ],
     reviewText: 'La mejor pasta artesanal y un ambiente increíble con luces tenues y música en vivo. Muy recomendado para parejas.',
     category: 'ROMANTIC',
   },
@@ -91,6 +96,11 @@ export const INITIAL_COMMUNITY_POSTS: SharedExperienceItem[] = [
     likesCount: 18,
     commentsCount: 3,
     imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80',
+    imageUrls: [
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=600&auto=format&fit=crop&q=80',
+    ],
     reviewText: 'Plan perfecto para una tarde relajada, caminata alrededor del lago y helado artesanal de pistache.',
     category: 'OUTDOOR',
   },
