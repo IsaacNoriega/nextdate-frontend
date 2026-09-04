@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -7,8 +7,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import Svg, { Path, Circle } from 'react-native-svg';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useTheme } from '../../hooks/useTheme';
 import { useAuth } from '../../context/AuthContext';
 import { useUserLocation } from '../../hooks/useUserLocation';
@@ -16,7 +15,19 @@ import LeafletMap, { MapWaypoint } from '../../components/map/leaflet-map';
 import NavigationOverlay from '../../components/map/navigation-overlay';
 import ItinerarySelectorModal from '../../components/map/itinerary-selector-modal';
 import StepDetailModal from '../../components/generator/step-detail-modal';
+import MapHeaderSwitcher, { MapNavigationMode } from '../../components/map/map-header-switcher';
+import MapSavedPlaceCard, { SavedPlaceItem } from '../../components/map/map-saved-place-card';
+import MapSavedPlacesCarousel from '../../components/map/map-saved-places-carousel';
+import {
+  SparklesIcon,
+  BookmarkIcon,
+  CompassIcon,
+  ChevronDownIcon,
+  WandIcon,
+  CompassIcon as TargetIcon,
+} from '../../components/ui/icons';
 import { getItinerariesByUserIdApi } from '../../services/itineraryService';
+import { storageService } from '../../services/storage';
 import { RouteStep, SavedItineraryOption } from '../../mocks/map.mock';
 
 export default function MapScreen() {
@@ -25,280 +36,427 @@ export default function MapScreen() {
   const userLoc = useUserLocation();
   const router = useRouter();
 
+  // Mode: 'itineraries' | 'places'
+  const [mode, setMode] = useState<MapNavigationMode>('itineraries');
+
+  // Itineraries state
   const [itineraries, setItineraries] = useState<SavedItineraryOption[]>([]);
   const [selectedItineraryId, setSelectedItineraryId] = useState<string | null>(null);
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
   const [showSelectorModal, setShowSelectorModal] = useState<boolean>(false);
   const [selectedStepDetail, setSelectedStepDetail] = useState<RouteStep | null>(null);
+
+  // Saved places state
+  const [savedPlaces, setSavedPlaces] = useState<SavedPlaceItem[]>([]);
+  const [selectedPlace, setSelectedPlace] = useState<SavedPlaceItem | null>(null);
+  const [isPlaceRoutingActive, setIsPlaceRoutingActive] = useState<boolean>(false);
+
   const [loading, setLoading] = useState<boolean>(false);
 
-  useEffect(() => {
-    async function loadItineraries() {
-      if (!user?.id) {
-        setItineraries([]);
-        setSelectedItineraryId(null);
-        return;
-      }
-      setLoading(true);
+  // Load all user itineraries & saved places upon screen focus
+  useFocusEffect(
+    useCallback(() => {
+      let isMounted = true;
 
-      try {
-        const apiData = await getItinerariesByUserIdApi(user.id);
-        if (apiData && apiData.length > 0) {
-          const mapped: SavedItineraryOption[] = apiData.map((itin: any) => ({
-            id: itin.id,
-            title: itin.title,
-            tagline: itin.description || 'Itinerario de cita de NextDate',
-            totalDistance: `${(itin.items?.length || 1) * 0.8} km`,
-            totalTime: `${itin.items?.reduce((acc: number, cur: any) => acc + (cur.durationInMinutes || 45), 0)} min`,
-            matchScore: 98,
-            steps: (itin.items || []).map((item: any, idx: number) => ({
-              stepNumber: item.sequenceOrder || idx + 1,
-              time: `${19 + idx}:00`,
-              title: item.notes || `Paso ${item.sequenceOrder || idx + 1}`,
-              placeName: item.place ? item.place.name : 'Lugar Recomendado',
-              categoryEmoji:
-                item.place?.category === 'FOOD_DRINK'
-                  ? '🍷'
-                  : item.place?.category === 'CULTURE'
-                  ? '🎭'
-                  : '✨',
-              address: item.place?.address || 'Ubicación seleccionada',
-              description:
-                item.place?.description ||
-                'Disfruta de esta experiencia recomendada.',
-              imageUrl:
-                'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
-              estimatedCost: `$${item.transitTimeToNext || 50} USD`,
-              turnInstruction: `Dirígete hacia ${
-                item.place ? item.place.name : 'el siguiente punto'
-              }`,
-              distanceRemaining: '500m',
-              eta: `${item.transitTimeToNext || 10} min`,
-              lat: item.place?.latitude || userLoc.lat,
-              lng: item.place?.longitude || userLoc.lng,
-            })),
-          }));
-          setItineraries(mapped);
-          setSelectedItineraryId(mapped[0].id);
-        } else {
-          setItineraries([]);
-          setSelectedItineraryId(null);
+      async function loadData() {
+        setLoading(true);
+
+        try {
+          // 1. Fetch saved places from storage
+          const storedPlaces = await storageService.getSavedPlaces<SavedPlaceItem>().catch(() => []);
+          if (isMounted) {
+            setSavedPlaces(storedPlaces || []);
+          }
+
+          // 2. Fetch itineraries from backend API
+          if (user?.id) {
+            const apiData = await getItinerariesByUserIdApi(user.id).catch(() => []);
+            if (isMounted && apiData && apiData.length > 0) {
+              const mapped: SavedItineraryOption[] = apiData.map((itin: any) => ({
+                id: itin.id,
+                title: itin.title,
+                tagline: itin.description || 'Itinerario de cita de NextDate',
+                totalDistance: `${((itin.items?.length || 1) * 0.8).toFixed(1)} km`,
+                totalTime: `${itin.items?.reduce(
+                  (acc: number, cur: any) => acc + (cur.durationInMinutes || 45),
+                  0
+                )} min`,
+                matchScore: 98,
+                steps: (itin.items || []).map((item: any, idx: number) => ({
+                  stepNumber: item.sequenceOrder || idx + 1,
+                  time: `${18 + idx * 2}:00`,
+                  title: item.notes || `Paso ${item.sequenceOrder || idx + 1}`,
+                  placeName: item.place ? item.place.name : 'Lugar Recomendado',
+                  categoryEmoji: '',
+                  address: item.place?.address || 'Ubicación seleccionada',
+                  description:
+                    item.place?.description ||
+                    'Disfruta de esta experiencia recomendada.',
+                  imageUrl:
+                    item.place?.imageUrl ||
+                    'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
+                  estimatedCost: `$${item.transitTimeToNext || 50} USD`,
+                  turnInstruction: `Dirígete hacia ${
+                    item.place ? item.place.name : 'el siguiente punto'
+                  }`,
+                  distanceRemaining: '500m',
+                  eta: `${item.transitTimeToNext || 10} min`,
+                  lat: item.place?.latitude || userLoc.lat,
+                  lng: item.place?.longitude || userLoc.lng,
+                })),
+              }));
+              setItineraries(mapped);
+              if (!selectedItineraryId && mapped.length > 0) {
+                setSelectedItineraryId(mapped[0].id);
+              }
+            } else if (isMounted) {
+              setItineraries([]);
+              setSelectedItineraryId(null);
+            }
+          }
+        } catch {
+          // Graceful error fallback
+        } finally {
+          if (isMounted) {
+            setLoading(false);
+          }
         }
-      } catch (err) {
-        setItineraries([]);
-        setSelectedItineraryId(null);
-      } finally {
-        setLoading(false);
       }
-    }
-    loadItineraries();
-  }, [user?.id]);
+
+      loadData();
+
+      return () => {
+        isMounted = false;
+      };
+    }, [user?.id])
+  );
 
   const currentItinerary =
     itineraries.find((i) => i.id === selectedItineraryId) || null;
   const activeStep = currentItinerary?.steps[activeStepIndex] || null;
 
-  const mapWaypoints: MapWaypoint[] = (currentItinerary?.steps || []).map(
-    (step) => ({
+  // Derive Waypoints based on current mode
+  let mapWaypoints: MapWaypoint[] = [];
+  let showRoutingMachine = false;
+
+  if (mode === 'itineraries') {
+    mapWaypoints = (currentItinerary?.steps || []).map((step) => ({
       lat: step.lat,
       lng: step.lng,
       title: step.title,
       placeName: step.placeName,
       stepNumber: step.stepNumber,
-    })
-  );
+    }));
+    showRoutingMachine = mapWaypoints.length >= 2;
+  } else {
+    // Mode: 'places'
+    if (selectedPlace) {
+      const targetLat = selectedPlace.latitude ?? selectedPlace.lat ?? userLoc.lat;
+      const targetLng = selectedPlace.longitude ?? selectedPlace.lng ?? userLoc.lng;
+
+      mapWaypoints = [
+        {
+          lat: userLoc.lat,
+          lng: userLoc.lng,
+          title: 'Tu Ubicación',
+          placeName: userLoc.formattedAddress || 'Punto de partida',
+          stepNumber: 1,
+        },
+        {
+          lat: targetLat,
+          lng: targetLng,
+          title: selectedPlace.name,
+          placeName: selectedPlace.address || selectedPlace.name,
+          stepNumber: 2,
+        },
+      ];
+      showRoutingMachine = isPlaceRoutingActive;
+    } else {
+      mapWaypoints = savedPlaces.map((place, idx) => ({
+        lat: place.latitude ?? place.lat ?? userLoc.lat,
+        lng: place.longitude ?? place.lng ?? userLoc.lng,
+        title: place.name,
+        placeName: place.address || place.name,
+        stepNumber: idx + 1,
+      }));
+      showRoutingMachine = false;
+    }
+  }
+
+  // Handle clicking pins on Leaflet
+  const handleSelectWaypoint = (index: number) => {
+    if (mode === 'itineraries') {
+      setActiveStepIndex(index);
+    } else if (mode === 'places') {
+      if (!selectedPlace && savedPlaces[index]) {
+        setSelectedPlace(savedPlaces[index]);
+        setIsPlaceRoutingActive(true);
+      }
+    }
+  };
 
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
       edges={['top', 'left', 'right']}
     >
-      {/* Header flotante */}
-      <View style={styles.header}>
-        {itineraries.length > 0 ? (
+      {/* Dynamic Mode Switcher (Citas vs Lugares) */}
+      <MapHeaderSwitcher
+        mode={mode}
+        onModeChange={(newMode) => {
+          setMode(newMode);
+          if (newMode === 'places') {
+            setIsPlaceRoutingActive(false);
+          }
+        }}
+        itinerariesCount={itineraries.length}
+        placesCount={savedPlaces.length}
+        userAddress={userLoc.formattedAddress || 'Buscando GPS...'}
+        onLocationPress={() => userLoc.requestUserLocation()}
+      />
+
+      {/* Selector Pill for Itineraries when multiple are saved */}
+      {mode === 'itineraries' && currentItinerary && (
+        <View style={styles.itineraryPillWrap}>
           <TouchableOpacity
             style={[
-              styles.selectorBtn,
+              styles.itineraryPill,
               {
-                backgroundColor: colors.card,
+                backgroundColor: isDark ? 'rgba(28, 28, 30, 0.95)' : 'rgba(255, 255, 255, 0.98)',
                 borderColor: colors.border,
-                borderRadius: borderRadius.lg,
+                borderRadius: borderRadius.round,
               },
             ]}
-            activeOpacity={0.8}
             onPress={() => setShowSelectorModal(true)}
+            activeOpacity={0.8}
           >
-            <View style={styles.selectorInfo}>
+            <View style={styles.itineraryPillInfo}>
               <Text
                 style={[
-                  styles.selectorTitle,
+                  styles.itineraryPillTitle,
                   { color: colors.text, fontFamily: typography.fonts.bold },
                 ]}
                 numberOfLines={1}
               >
-                {currentItinerary?.title || 'Seleccionar Itinerario'}
+                {currentItinerary.title}
               </Text>
               <Text
                 style={[
-                  styles.selectorSubtitle,
-                  {
-                    color: colors.textSecondary,
-                    fontFamily: typography.fonts.regular,
-                  },
+                  styles.itineraryPillMeta,
+                  { color: colors.textSecondary, fontFamily: typography.fonts.regular },
                 ]}
               >
-                {currentItinerary?.steps.length || 0} paradas • {currentItinerary?.totalDistance}
+                {currentItinerary.steps.length} paradas • {currentItinerary.totalDistance}
               </Text>
             </View>
-            <Svg
-              width={16}
-              height={16}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke={colors.textSecondary}
-              strokeWidth={2}
-            >
-              <Path d="M6 9l6 6 6-6" />
-            </Svg>
+            <ChevronDownIcon size={14} color={colors.textSecondary} />
           </TouchableOpacity>
-        ) : (
-          <View
-            style={[
-              styles.selectorBtn,
-              {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-                borderRadius: borderRadius.lg,
-              },
-            ]}
-          >
-            <View style={styles.selectorInfo}>
-              <Text
-                style={[
-                  styles.selectorTitle,
-                  { color: colors.text, fontFamily: typography.fonts.bold },
-                ]}
-              >
-                📍 Tu Ubicación Actual
-              </Text>
-              <Text
-                style={[
-                  styles.selectorSubtitle,
-                  {
-                    color: colors.textSecondary,
-                    fontFamily: typography.fonts.regular,
-                  },
-                ]}
-              >
-                {userLoc.formattedAddress || 'Buscando GPS...'}
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => userLoc.requestUserLocation()}
-              style={{ padding: 6 }}
-              activeOpacity={0.7}
-            >
-              <Svg
-                width={18}
-                height={18}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke={colors.primary}
-                strokeWidth={2}
-              >
-                <Path d="M12 2v4m0 12v4M2 12h4m12 0h4" />
-                <Circle cx="12" cy="12" r="4" />
-              </Svg>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
+        </View>
+      )}
 
-      {/* Mapa Completo con Leaflet / WebView */}
+      {/* Floating GPS Re-Center Button */}
+      <TouchableOpacity
+        style={[
+          styles.recenterBtn,
+          {
+            backgroundColor: isDark ? 'rgba(28, 28, 30, 0.95)' : '#FFFFFF',
+            borderColor: colors.border,
+            borderRadius: borderRadius.round,
+          },
+        ]}
+        onPress={() => userLoc.requestUserLocation()}
+        activeOpacity={0.8}
+      >
+        <CompassIcon size={18} color={colors.primary} />
+      </TouchableOpacity>
+
+      {/* Interactive Map View */}
       <View style={styles.mapContainer}>
-        {loading ? (
+        {loading && itineraries.length === 0 && savedPlaces.length === 0 ? (
           <View style={styles.loadingWrapper}>
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : (
           <LeafletMap
             waypoints={mapWaypoints}
-            activeStepIndex={activeStepIndex}
-            onSelectWaypoint={(idx) => setActiveStepIndex(idx)}
-            showRoutingMachine={mapWaypoints.length >= 2}
+            activeStepIndex={mode === 'itineraries' ? activeStepIndex : undefined}
+            onSelectWaypoint={handleSelectWaypoint}
+            showRoutingMachine={showRoutingMachine}
             userLocation={{ lat: userLoc.lat, lng: userLoc.lng }}
             isDark={isDark}
           />
         )}
       </View>
 
-      {/* Si hay itinerario activo, Overlay de Navegación */}
-      {currentItinerary && activeStep ? (
-        <View style={styles.overlayWrapper}>
-          <NavigationOverlay
-            step={activeStep}
-            activeStepIndex={activeStepIndex}
-            totalSteps={currentItinerary.steps.length}
-            onNextStep={() =>
-              setActiveStepIndex((prev) =>
-                Math.min(prev + 1, currentItinerary.steps.length - 1)
-              )
-            }
-            onPrevStep={() => setActiveStepIndex((prev) => Math.max(prev - 1, 0))}
-            onOpenDetail={() => setSelectedStepDetail(activeStep)}
-          />
-        </View>
-      ) : (
-        /* Empty State Floating Card */
-        <View style={styles.emptyOverlayWrapper}>
-          <View
-            style={[
-              styles.emptyCard,
-              {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-                borderRadius: borderRadius.lg,
-              },
-            ]}
-          >
-            <Text
+      {/* Bottom Content Depending on Active Mode */}
+      {mode === 'itineraries' ? (
+        currentItinerary && activeStep ? (
+          <View style={styles.overlayWrapper}>
+            <NavigationOverlay
+              step={activeStep}
+              activeStepIndex={activeStepIndex}
+              totalSteps={currentItinerary.steps.length}
+              onNextStep={() =>
+                setActiveStepIndex((prev) =>
+                  Math.min(prev + 1, currentItinerary.steps.length - 1)
+                )
+              }
+              onPrevStep={() => setActiveStepIndex((prev) => Math.max(prev - 1, 0))}
+              onOpenDetail={() => setSelectedStepDetail(activeStep)}
+            />
+          </View>
+        ) : (
+          /* Empty Itineraries State */
+          <View style={styles.emptyOverlayWrapper}>
+            <View
               style={[
-                styles.emptyCardTitle,
-                { color: colors.text, fontFamily: typography.fonts.bold },
+                styles.emptyCard,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  borderRadius: borderRadius.lg,
+                },
               ]}
             >
-              Sin planes guardados aún
-            </Text>
-            <Text
-              style={[
-                styles.emptyCardText,
-                { color: colors.textSecondary, fontFamily: typography.fonts.regular },
-              ]}
-            >
-              Pídele al AI Concierge que diseñe tu próxima cita o explora lugares cercanos para trazarlos en el mapa.
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.emptyCardBtn,
-                { backgroundColor: colors.primary, borderRadius: borderRadius.md },
-              ]}
-              activeOpacity={0.85}
-              onPress={() => router.push('/(tabs)/generator')}
-            >
+              <View style={styles.emptyHeaderRow}>
+                <SparklesIcon size={18} color={colors.primary} />
+                <Text
+                  style={[
+                    styles.emptyCardTitle,
+                    { color: colors.text, fontFamily: typography.fonts.bold },
+                  ]}
+                >
+                  Sin citas guardadas aún
+                </Text>
+              </View>
               <Text
                 style={[
-                  styles.emptyCardBtnText,
-                  { color: colors.primaryContrast, fontFamily: typography.fonts.bold },
+                  styles.emptyCardText,
+                  { color: colors.textSecondary, fontFamily: typography.fonts.regular },
                 ]}
               >
-                ✨ Crear Plan con IA
+                Pídele al AI Concierge que diseñe tu próxima cita o explora lugares cercanos para trazarlos en el mapa.
               </Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.emptyCardBtn,
+                  { backgroundColor: colors.primary, borderRadius: borderRadius.md },
+                ]}
+                activeOpacity={0.85}
+                onPress={() => router.push('/(tabs)/generator')}
+              >
+                <WandIcon size={14} color={colors.primaryContrast} />
+                <Text
+                  style={[
+                    styles.emptyCardBtnText,
+                    { color: colors.primaryContrast, fontFamily: typography.fonts.bold },
+                  ]}
+                >
+                  Diseñar Cita con IA
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
+        )
+      ) : (
+        /* Mode: 'places' */
+        <View style={styles.placesBottomWrapper}>
+          {savedPlaces.length > 0 ? (
+            <>
+              {/* Carousel of saved places */}
+              <MapSavedPlacesCarousel
+                places={savedPlaces}
+                selectedPlaceId={selectedPlace?.id}
+                onSelectPlace={(place) => {
+                  setSelectedPlace(place);
+                  setIsPlaceRoutingActive(true);
+                }}
+                userLat={userLoc.lat}
+                userLng={userLoc.lng}
+              />
+
+              {/* Selected place full action card */}
+              {selectedPlace && (
+                <View style={styles.selectedPlaceWrap}>
+                  <MapSavedPlaceCard
+                    place={selectedPlace}
+                    userLat={userLoc.lat}
+                    userLng={userLoc.lng}
+                    isRoutingActive={isPlaceRoutingActive}
+                    onStartRoute={() => setIsPlaceRoutingActive((prev) => !prev)}
+                    onPlanWithAi={() =>
+                      router.push({
+                        pathname: '/(tabs)/generator',
+                        params: {
+                          prompt: `Planifica una cita especial que incluya visitar ${selectedPlace.name}`,
+                        },
+                      })
+                    }
+                    onClose={() => {
+                      setSelectedPlace(null);
+                      setIsPlaceRoutingActive(false);
+                    }}
+                  />
+                </View>
+              )}
+            </>
+          ) : (
+            /* Empty Saved Places State */
+            <View style={styles.emptyCardContainer}>
+              <View
+                style={[
+                  styles.emptyCard,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: colors.border,
+                    borderRadius: borderRadius.lg,
+                  },
+                ]}
+              >
+                <View style={styles.emptyHeaderRow}>
+                  <BookmarkIcon size={18} color={colors.primary} />
+                  <Text
+                    style={[
+                      styles.emptyCardTitle,
+                      { color: colors.text, fontFamily: typography.fonts.bold },
+                    ]}
+                  >
+                    Sin lugares guardados aún
+                  </Text>
+                </View>
+                <Text
+                  style={[
+                    styles.emptyCardText,
+                    { color: colors.textSecondary, fontFamily: typography.fonts.regular },
+                  ]}
+                >
+                  Explora la comunidad o descubre nuevos spots en la pestaña de Explorar para agregarlos a tus favoritos y verlos en el mapa.
+                </Text>
+                <TouchableOpacity
+                  style={[
+                    styles.emptyCardBtn,
+                    { backgroundColor: colors.primary, borderRadius: borderRadius.md },
+                  ]}
+                  activeOpacity={0.85}
+                  onPress={() => router.push('/(tabs)/explore')}
+                >
+                  <BookmarkIcon size={14} color={colors.primaryContrast} />
+                  <Text
+                    style={[
+                      styles.emptyCardBtnText,
+                      { color: colors.primaryContrast, fontFamily: typography.fonts.bold },
+                    ]}
+                  >
+                    Explorar Lugares
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </View>
       )}
 
-      {/* Selector Modal de Itinerarios */}
+      {/* Itineraries Selector Modal */}
       {itineraries.length > 0 && (
         <ItinerarySelectorModal
           visible={showSelectorModal}
@@ -312,7 +470,7 @@ export default function MapScreen() {
         />
       )}
 
-      {/* Modal de Detalle de Paso */}
+      {/* Step Detail Modal */}
       <StepDetailModal
         step={
           selectedStepDetail
@@ -338,36 +496,53 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  itineraryPillWrap: {
     position: 'absolute',
-    top: 50,
+    top: 136,
     left: 16,
     right: 16,
-    zIndex: 20,
+    zIndex: 25,
+    alignItems: 'center',
   },
-  selectorBtn: {
+  itineraryPill: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderWidth: 1,
+    maxWidth: '90%',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 5,
   },
-  selectorInfo: {
-    flex: 1,
+  itineraryPillInfo: {
     marginRight: 10,
   },
-  selectorTitle: {
-    fontSize: 15,
+  itineraryPillTitle: {
+    fontSize: 13,
   },
-  selectorSubtitle: {
-    fontSize: 12,
-    marginTop: 2,
+  itineraryPillMeta: {
+    fontSize: 11,
+    marginTop: 1,
+  },
+  recenterBtn: {
+    position: 'absolute',
+    top: 136,
+    right: 16,
+    zIndex: 26,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 5,
   },
   mapContainer: {
     flex: 1,
@@ -379,17 +554,31 @@ const styles = StyleSheet.create({
   },
   overlayWrapper: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 24,
     left: 16,
     right: 16,
     zIndex: 20,
   },
+  placesBottomWrapper: {
+    position: 'absolute',
+    bottom: 24,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+  },
+  selectedPlaceWrap: {
+    paddingHorizontal: 16,
+    marginTop: 6,
+  },
   emptyOverlayWrapper: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 24,
     left: 16,
     right: 16,
     zIndex: 20,
+  },
+  emptyCardContainer: {
+    paddingHorizontal: 16,
   },
   emptyCard: {
     padding: 18,
@@ -400,9 +589,14 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 6,
   },
+  emptyHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
   emptyCardTitle: {
     fontSize: 16,
-    marginBottom: 6,
   },
   emptyCardText: {
     fontSize: 13,
@@ -410,9 +604,11 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   emptyCardBtn: {
-    paddingVertical: 12,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
   },
   emptyCardBtnText: {
     fontSize: 14,

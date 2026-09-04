@@ -154,7 +154,7 @@ export default function SavedScreen() {
           rating: payload.rating,
           actualCost: payload.budget === '$' ? 150 : payload.budget === '$$$' ? 800 : payload.budget === '$$$$' ? 2000 : 400,
           itineraryId: targetItineraryId,
-          imageUrls: payload.imageUrl ? [payload.imageUrl] : [],
+          imageUrls: payload.imageUrls && payload.imageUrls.length > 0 ? payload.imageUrls : (payload.imageUrl ? [payload.imageUrl] : []),
         });
       } catch (err: any) {
         // Si falló por itinerario inexistente, reintentar sin itinerario
@@ -167,7 +167,7 @@ export default function SavedScreen() {
             rating: payload.rating,
             actualCost: payload.budget === '$' ? 150 : payload.budget === '$$$' ? 800 : payload.budget === '$$$$' ? 2000 : 400,
             itineraryId: undefined,
-            imageUrls: payload.imageUrl ? [payload.imageUrl] : [],
+            imageUrls: payload.imageUrls && payload.imageUrls.length > 0 ? payload.imageUrls : (payload.imageUrl ? [payload.imageUrl] : []),
           });
         } else {
           throw err;
@@ -665,8 +665,20 @@ export default function SavedScreen() {
 
       {/* Modal de Detalle de Paradas */}
       <StepDetailModal
-        visible={!!selectedStepDetail}
-        step={selectedStepDetail}
+        step={
+          selectedStepDetail
+            ? {
+                ...selectedStepDetail,
+                latitude: selectedStepDetail.lat,
+                longitude: selectedStepDetail.lng,
+                duration: '45 min',
+                notes: selectedStepDetail.description,
+                transportMode: 'WALKING',
+                transitTime: selectedStepDetail.eta,
+                cost: selectedStepDetail.estimatedCost || '$0.00',
+              }
+            : null
+        }
         onClose={() => setSelectedStepDetail(null)}
       />
 

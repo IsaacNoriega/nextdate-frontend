@@ -47,11 +47,11 @@ export default function BottomBar({ activeTab, onTabPress }: BottomBarProps) {
       return;
     }
 
-    if (tab === 'explore') router.push('/(tabs)/explore');
-    else if (tab === 'map') router.push('/(tabs)/map');
-    else if (tab === 'ai') router.push('/(tabs)/generator');
-    else if (tab === 'saved') router.push('/(tabs)/saved');
-    else if (tab === 'profile') router.push('/(tabs)/profile');
+    if (tab === 'explore') router.push('/(tabs)/explore' as any);
+    else if (tab === 'map') router.push('/(tabs)/map' as any);
+    else if (tab === 'ai') router.push('/(tabs)/generator' as any);
+    else if (tab === 'saved') router.push('/(tabs)/saved' as any);
+    else if (tab === 'profile') router.push('/(tabs)/profile' as any);
   };
 
   const getTabIcon = (tab: BottomBarTab, isActive: boolean) => {
