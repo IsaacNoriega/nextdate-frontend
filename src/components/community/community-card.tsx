@@ -1,178 +1,304 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Image } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
+import {
+  HeartIcon,
+  StarIcon,
+  MapPinIcon,
+  BookmarkIcon,
+  MessageSquareIcon,
+  TagIcon,
+} from '../ui/icons';
 
-interface CommunityCardProps {
+export interface CommunityCardProps {
   authorName: string;
-  partnerName: string;
-  authorAvatar: string;
-  timeAgo: string;
+  partnerName?: string;
+  authorAvatar?: string;
+  timeAgo?: string;
   planTitle: string;
-  placeName: string;
+  placeName?: string;
   budget?: string;
   gastroTags?: string[];
-  rating: number;
-  likesCount: number;
-  commentsCount: number;
-  imageUrl: string;
-  reviewText: string;
+  rating?: number;
+  likesCount?: number;
+  commentsCount?: number;
+  imageUrl?: string;
+  reviewText?: string;
   isLiked: boolean;
   isSaved: boolean;
   onToggleLike: () => void;
   onToggleSave: () => void;
+  onPress?: () => void;
 }
 
 export default function CommunityCard({
   authorName,
   partnerName,
   authorAvatar,
-  timeAgo,
+  timeAgo = 'Reciente',
   planTitle,
   placeName,
   budget,
   gastroTags,
-  rating,
-  likesCount,
-  commentsCount,
+  rating = 5,
+  likesCount = 0,
+  commentsCount = 0,
   imageUrl,
   reviewText,
   isLiked,
   isSaved,
   onToggleLike,
   onToggleSave,
+  onPress,
 }: CommunityCardProps) {
   const { colors, typography, borderRadius, isDark } = useTheme();
 
+  const displayName = partnerName ? `${authorName} y ${partnerName}` : authorName;
+  const avatarFallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+    authorName || 'NextDate'
+  )}&background=000000&color=fff`;
+
   return (
-    <View style={[styles.postCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.lg }]}>
-      
-      {/* Header (Avatar & Names & Time) */}
+    <TouchableOpacity
+      style={[
+        styles.postCard,
+        {
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+          borderRadius: borderRadius.lg,
+        },
+      ]}
+      activeOpacity={0.94}
+      onPress={onPress}
+    >
+      {/* Header: Author Avatar, Names, Time & Rating */}
       <View style={styles.postHeader}>
-        <Image 
-          source={{ uri: authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName || 'NextDate')}&background=E11D48&color=fff` }} 
-          style={styles.avatarImage} 
+        <Image
+          source={{ uri: authorAvatar || avatarFallback }}
+          style={styles.avatarImage}
         />
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.authorName, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-            {partnerName ? `${authorName} & ${partnerName}` : authorName}
+        <View style={styles.authorInfo}>
+          <Text
+            style={[styles.authorName, { color: colors.text, fontFamily: typography.fonts.bold }]}
+            numberOfLines={1}
+          >
+            {displayName}
           </Text>
-          <Text style={[styles.postTime, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
+          <Text
+            style={[styles.postTime, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}
+          >
             {timeAgo}
           </Text>
         </View>
 
-        <View style={[styles.ratingBadge, { backgroundColor: isDark ? '#1C1C1E' : '#F2F2F7' }]}>
-          <Svg width={12} height={12} viewBox="0 0 24 24" fill="#FFD700">
-            <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-          </Svg>
-          <Text style={[styles.ratingNumber, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+        <View
+          style={[
+            styles.ratingBadge,
+            {
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+              borderRadius: borderRadius.round,
+            },
+          ]}
+        >
+          <StarIcon size={12} color="#FFD700" fill="#FFD700" />
+          <Text
+            style={[styles.ratingNumber, { color: colors.text, fontFamily: typography.fonts.bold }]}
+          >
             {rating}
           </Text>
         </View>
       </View>
 
+      {/* Main Image with floating badges */}
+      {imageUrl ? (
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: imageUrl }}
+            style={[styles.postImage, { borderRadius: borderRadius.md }]}
+            resizeMode="cover"
+          />
+
+          {/* Floating budget pill */}
+          {budget ? (
+            <View
+              style={[
+                styles.floatingBudgetBadge,
+                {
+                  backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                  borderRadius: borderRadius.round,
+                },
+              ]}
+            >
+              <Text style={[styles.floatingBudgetText, { fontFamily: typography.fonts.bold }]}>
+                {budget}
+              </Text>
+            </View>
+          ) : null}
+
+          {/* Floating heart like button */}
+          <TouchableOpacity
+            style={[
+              styles.floatingLikeBtn,
+              {
+                backgroundColor: 'rgba(0, 0, 0, 0.55)',
+                borderRadius: borderRadius.round,
+              },
+            ]}
+            onPress={onToggleLike}
+            activeOpacity={0.8}
+          >
+            <HeartIcon
+              size={16}
+              color={isLiked ? '#FF3B30' : '#FFFFFF'}
+              fill={isLiked ? '#FF3B30' : 'none'}
+            />
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
       {/* Plan Title */}
-      <Text style={[styles.planTitleText, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+      <Text
+        style={[styles.planTitleText, { color: colors.text, fontFamily: typography.fonts.bold }]}
+        numberOfLines={2}
+      >
         {planTitle}
       </Text>
 
-      {/* Location & Tags Row */}
-      <View style={styles.placeTagsRow}>
-        <TouchableOpacity activeOpacity={0.8} style={styles.placeTag}>
-          <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2}>
-            <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-            <Path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-          </Svg>
-          <Text style={[styles.placeTagText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-            {placeName}
-          </Text>
-        </TouchableOpacity>
-
-        {budget && (
-          <View style={[styles.budgetBadge, { backgroundColor: colors.primary + '18' }]}>
-            <Text style={[styles.budgetText, { color: colors.primary, fontFamily: typography.fonts.bold }]}>
-              {budget}
+      {/* Place / Venue Pill */}
+      {placeName ? (
+        <View style={styles.placeTagsRow}>
+          <View style={styles.placeTag}>
+            <MapPinIcon size={13} color={colors.accent || colors.primary} />
+            <Text
+              style={[
+                styles.placeTagText,
+                { color: colors.accent || colors.primary, fontFamily: typography.fonts.medium },
+              ]}
+              numberOfLines={1}
+            >
+              {placeName}
             </Text>
           </View>
-        )}
-      </View>
+        </View>
+      ) : null}
 
-      {gastroTags && gastroTags.length > 0 && (
+      {/* Gastro / Vibe Tags */}
+      {gastroTags && gastroTags.length > 0 ? (
         <View style={styles.cardGastroTagsRow}>
           {gastroTags.map((tag, idx) => (
-            <View key={idx} style={[styles.cardGastroTag, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
-              <Text style={[styles.cardGastroTagText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+            <View
+              key={idx}
+              style={[
+                styles.cardGastroTag,
+                {
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                  borderRadius: borderRadius.round,
+                },
+              ]}
+            >
+              <TagIcon size={10} color={colors.textSecondary} />
+              <Text
+                style={[
+                  styles.cardGastroTagText,
+                  { color: colors.textSecondary, fontFamily: typography.fonts.medium },
+                ]}
+              >
                 {tag}
               </Text>
             </View>
           ))}
         </View>
-      )}
+      ) : null}
 
-      {/* Main Image */}
-      {!!imageUrl && (
-        <Image source={{ uri: imageUrl }} style={[styles.postImage, { borderRadius: borderRadius.md }]} />
-      )}
+      {/* Review Text block */}
+      {reviewText ? (
+        <View
+          style={[
+            styles.reviewContainer,
+            {
+              backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+              borderColor: colors.border,
+              borderRadius: borderRadius.sm,
+            },
+          ]}
+        >
+          <Text
+            style={[styles.reviewText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}
+            numberOfLines={3}
+          >
+            "{reviewText}"
+          </Text>
+        </View>
+      ) : null}
 
-      {/* Review Text */}
-      {!!reviewText && (
-        <Text style={[styles.reviewText, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-          "{reviewText}"
-        </Text>
-      )}
-
-      {/* Action Bar */}
+      {/* Actions Row */}
       <View style={[styles.actionsRow, { borderTopColor: colors.border }]}>
-        <TouchableOpacity 
-          style={styles.actionItem} 
+        <TouchableOpacity
+          style={styles.actionItem}
           activeOpacity={0.7}
           onPress={onToggleLike}
         >
-          <Svg width={18} height={18} viewBox="0 0 24 24" fill={isLiked ? '#FF3B30' : 'none'} stroke={isLiked ? '#FF3B30' : colors.textSecondary} strokeWidth={2}>
-            <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-          </Svg>
-          <Text style={[styles.actionText, { color: isLiked ? '#FF3B30' : colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+          <HeartIcon
+            size={16}
+            color={isLiked ? '#FF3B30' : colors.textSecondary}
+            fill={isLiked ? '#FF3B30' : 'none'}
+          />
+          <Text
+            style={[
+              styles.actionText,
+              {
+                color: isLiked ? '#FF3B30' : colors.textSecondary,
+                fontFamily: typography.fonts.medium,
+              },
+            ]}
+          >
             {likesCount + (isLiked ? 1 : 0)}
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionItem} activeOpacity={0.7}>
-          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
-            <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </Svg>
-          <Text style={[styles.actionText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+        <View style={styles.actionItem}>
+          <MessageSquareIcon size={15} color={colors.textSecondary} />
+          <Text
+            style={[styles.actionText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}
+          >
             {commentsCount}
           </Text>
-        </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[
-            styles.savePlanPill, 
-            { 
-              backgroundColor: isSaved ? '#30D158' : colors.primary,
-              borderRadius: borderRadius.round 
-            }
-          ]} 
-          activeOpacity={0.88}
+            styles.savePlanPill,
+            {
+              backgroundColor: isSaved
+                ? isDark
+                  ? 'rgba(255, 255, 255, 0.15)'
+                  : 'rgba(0, 0, 0, 0.08)'
+                : colors.primary,
+              borderRadius: borderRadius.round,
+            },
+          ]}
+          activeOpacity={0.85}
           onPress={onToggleSave}
         >
-          {isSaved ? (
-            <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2.5}>
-              <Path d="M20 6L9 17l-5-5" />
-            </Svg>
-          ) : (
-            <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={colors.primaryContrast} strokeWidth={2}>
-              <Path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-            </Svg>
-          )}
-          <Text style={[styles.savePlanPillText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
-            {isSaved ? 'Guardado' : 'Guardar Plan'}
+          <BookmarkIcon
+            size={13}
+            color={isSaved ? colors.text : colors.primaryContrast}
+            fill={isSaved ? colors.text : 'none'}
+          />
+          <Text
+            style={[
+              styles.savePlanPillText,
+              {
+                color: isSaved ? colors.text : colors.primaryContrast,
+                fontFamily: typography.fonts.bold,
+              },
+            ]}
+          >
+            {isSaved ? 'Guardado' : 'Guardar'}
           </Text>
         </TouchableOpacity>
       </View>
-
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -184,16 +310,19 @@ const styles = StyleSheet.create({
   postHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
     gap: 10,
   },
   avatarImage: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  authorInfo: {
+    flex: 1,
   },
   authorName: {
-    fontSize: 14,
+    fontSize: 13,
   },
   postTime: {
     fontSize: 11,
@@ -205,20 +334,46 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
   },
   ratingNumber: {
     fontSize: 12,
   },
+  imageContainer: {
+    position: 'relative',
+    marginBottom: 12,
+  },
+  postImage: {
+    width: '100%',
+    height: 200,
+  },
+  floatingBudgetBadge: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  floatingBudgetText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+  },
+  floatingLikeBtn: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   planTitleText: {
-    fontSize: 17,
-    lineHeight: 22,
-    marginBottom: 4,
+    fontSize: 16,
+    lineHeight: 21,
+    marginBottom: 6,
   },
   placeTagsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: 8,
   },
   placeTag: {
@@ -229,14 +384,6 @@ const styles = StyleSheet.create({
   placeTagText: {
     fontSize: 12,
   },
-  budgetBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  budgetText: {
-    fontSize: 11,
-  },
   cardGastroTagsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -244,22 +391,24 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   cardGastroTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 10,
   },
   cardGastroTagText: {
     fontSize: 11,
   },
-  postImage: {
-    width: '100%',
-    height: 220,
+  reviewContainer: {
+    padding: 10,
+    borderWidth: 1,
     marginBottom: 12,
   },
   reviewText: {
-    fontSize: 14,
-    lineHeight: 21,
-    marginBottom: 14,
+    fontSize: 12,
+    lineHeight: 18,
+    fontStyle: 'italic',
   },
   actionsRow: {
     flexDirection: 'row',
@@ -274,17 +423,17 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   actionText: {
-    fontSize: 13,
+    fontSize: 12,
   },
   savePlanPill: {
     marginLeft: 'auto',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 6,
   },
   savePlanPillText: {
-    fontSize: 12,
+    fontSize: 11,
   },
 });

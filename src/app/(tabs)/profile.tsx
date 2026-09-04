@@ -325,6 +325,33 @@ export default function ProfileScreen() {
                   <Path d="M9 18l6-6-6-6" />
                 </Svg>
               </TouchableOpacity>
+
+              <View style={[styles.settingDivider, { backgroundColor: colors.border }]} />
+
+              <TouchableOpacity
+                style={styles.settingItemRow}
+                activeOpacity={0.7}
+                onPress={() =>
+                  router.push(
+                    `/edit-profile?mode=interests&profileId=${profile?.id || ''}&userId=${user?.id || ''}`
+                  )
+                }
+              >
+                <View style={{ flex: 1, paddingRight: 10 }}>
+                  <Text style={[styles.settingLabel, { color: colors.text, fontFamily: typography.fonts.medium }]}>
+                    Intereses para Citas
+                  </Text>
+                  <Text style={[styles.settingValueSubtitle, { color: colors.primary, fontFamily: typography.fonts.medium }]}>
+                    {profile?.interests && profile.interests.length > 0
+                      ? `${profile.interests.length} categorías seleccionadas`
+                      : 'Gastronomía, Cultura'}
+                  </Text>
+                </View>
+
+                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
+                  <Path d="M9 18l6-6-6-6" />
+                </Svg>
+              </TouchableOpacity>
             </View>
 
             {/* Logout */}

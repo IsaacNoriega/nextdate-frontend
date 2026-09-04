@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -12,7 +12,6 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../hooks/useTheme';
 import StarRating from '../ui/star-rating';
@@ -21,6 +20,18 @@ import { useUserLocation } from '../../hooks/useUserLocation';
 import { useAuth } from '../../context/AuthContext';
 import { getItinerariesByUserIdApi, Itinerary } from '../../services/itineraryService';
 import { GASTRO_PREFERENCES, BUDGET_OPTIONS } from '../../mocks/community.mock';
+import {
+  CloseIcon,
+  MapPinIcon,
+  SearchIcon,
+  PhotoIcon,
+  PlusIcon,
+  StarIcon,
+  UtensilsIcon,
+  TagIcon,
+  RefreshIcon,
+  CheckIcon,
+} from '../ui/icons';
 
 export interface CreateExperiencePayload {
   title: string;
@@ -30,7 +41,8 @@ export interface CreateExperiencePayload {
   longitude?: number;
   selectedGastro: string[];
   budget: string;
-  imageUrl: string;
+  imageUrl?: string;
+  imageUrls: string[];
   reviewText: string;
   rating: number;
   selectedItineraryId?: string;
@@ -53,6 +65,7 @@ export default function ShareExperienceModal({
   const { user } = useAuth();
   const userLoc = useUserLocation();
 
+  // Form states
   const [title, setTitle] = useState('');
   const [place, setPlace] = useState('');
   const [location, setLocation] = useState('');
@@ -60,43 +73,66 @@ export default function ShareExperienceModal({
   const [showMapPickerModal, setShowMapPickerModal] = useState(false);
   const [selectedGastro, setSelectedGastro] = useState<string[]>([]);
   const [budget, setBudget] = useState<string>('$$');
-  const [selectedImage, setSelectedImage] = useState<string>('');
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [review, setReview] = useState('');
   const [rating, setRating] = useState(5);
   const [userItineraries, setUserItineraries] = useState<Itinerary[]>([]);
   const [selectedItineraryId, setSelectedItineraryId] = useState<string>('');
   const [loadingItineraries, setLoadingItineraries] = useState(false);
+  const [detectingGps, setDetectingGps] = useState(false);
 
-  // Sugerencias y Autocompletado de Lugares
+  // Suggestions & autocomplete
   const [placeSuggestions, setPlaceSuggestions] = useState<
     { name: string; address: string; lat: number; lng: number }[]
   >([]);
   const [isSearchingPlaces, setIsSearchingPlaces] = useState(false);
   const searchTimeoutRef = React.useRef<any>(null);
 
+  // Sincronizar ubicación real cada vez que el modal se abre
   useEffect(() => {
-    if (visible && user?.id) {
-      setLoadingItineraries(true);
-      getItinerariesByUserIdApi(user.id)
-        .then((itins) => {
-          if (itins && itins.length > 0) {
-            setUserItineraries(itins);
-            setSelectedItineraryId(itins[0].id);
-            if (!title) {
-              setTitle(itins[0].title);
-            }
-          }
-        })
-        .catch((err) => console.warn('Error loading itineraries for sharing:', err))
-        .finally(() => setLoadingItineraries(false));
-    }
-  }, [visible, user?.id]);
+    if (visible) {
+      if (userLoc.formattedAddress) {
+        setLocation(userLoc.formattedAddress);
+      }
+      if (userLoc.lat && userLoc.lng) {
+        setPickedCoords({ lat: userLoc.lat, lng: userLoc.lng });
+      }
 
-  useEffect(() => {
-    if (userLoc.formattedAddress && !location) {
-      setLocation(userLoc.formattedAddress);
+      if (user?.id) {
+        setLoadingItineraries(true);
+        getItinerariesByUserIdApi(user.id)
+          .then((itins) => {
+            if (itins && itins.length > 0) {
+              setUserItineraries(itins);
+              setSelectedItineraryId(itins[0].id);
+              if (!title) {
+                setTitle(itins[0].title);
+              }
+            }
+          })
+          .catch((err) => console.warn('Error cargando itinerarios:', err))
+          .finally(() => setLoadingItineraries(false));
+      }
     }
-  }, [userLoc.formattedAddress, location]);
+  }, [visible, user?.id, userLoc.formattedAddress, userLoc.lat, userLoc.lng]);
+
+  // Actualizar a la ubicación actual detectada
+  const handleUseCurrentLocation = async () => {
+    setDetectingGps(true);
+    try {
+      await userLoc.requestUserLocation();
+      if (userLoc.formattedAddress) {
+        setLocation(userLoc.formattedAddress);
+      }
+      if (userLoc.lat && userLoc.lng) {
+        setPickedCoords({ lat: userLoc.lat, lng: userLoc.lng });
+      }
+    } catch (e) {
+      console.warn('Error detectando ubicación:', e);
+    } finally {
+      setDetectingGps(false);
+    }
+  };
 
   const handlePlaceChange = (text: string) => {
     setPlace(text);
@@ -105,34 +141,20 @@ export default function ShareExperienceModal({
       setIsSearchingPlaces(true);
       searchTimeoutRef.current = setTimeout(async () => {
         try {
-          // Delimitar búsqueda estricta a la ciudad del usuario (~20km)
-          const delta = 0.18;
-          const left = userLoc.lng - delta;
-          const top = userLoc.lat + delta;
-          const right = userLoc.lng + delta;
-          const bottom = userLoc.lat - delta;
-          const viewbox = `${left},${top},${right},${bottom}`;
-
-          const cityName = userLoc.city || 'Guadalajara';
-          const queryText = `${text.trim()}, ${cityName}`;
+          const lat = pickedCoords?.lat ?? userLoc.lat;
+          const lng = pickedCoords?.lng ?? userLoc.lng;
+          const delta = 0.4;
+          const viewbox = `${lng - delta},${lat + delta},${lng + delta},${lat - delta}`;
 
           const res = await fetch(
             `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-              queryText
-            )}&viewbox=${viewbox}&bounded=1&limit=6&addressdetails=1`
+              text.trim()
+            )}&viewbox=${viewbox}&limit=6&addressdetails=1`
           );
+
           if (res.ok) {
             const data = await res.json();
-            // Filtrar estrictamente para que solo aparezcan lugares dentro de la ciudad/región actual
-            const localResults = (data || []).filter((item: any) => {
-              const itemLat = parseFloat(item.lat);
-              const itemLng = parseFloat(item.lon);
-              const isWithinBounds =
-                itemLat >= bottom && itemLat <= top && itemLng >= left && itemLng <= right;
-              return isWithinBounds;
-            });
-
-            const suggestions = localResults.map((item: any) => ({
+            const suggestions = (data || []).map((item: any) => ({
               name: item.name || item.display_name.split(',')[0],
               address: item.display_name,
               lat: parseFloat(item.lat),
@@ -141,7 +163,7 @@ export default function ShareExperienceModal({
             setPlaceSuggestions(suggestions);
           }
         } catch (e) {
-          console.warn('Place search error:', e);
+          console.warn('Error en búsqueda de lugar:', e);
         } finally {
           setIsSearchingPlaces(false);
         }
@@ -170,17 +192,18 @@ export default function ShareExperienceModal({
         const amenityName = data.name || data.address?.amenity || data.address?.shop || data.address?.tourism;
         const road = data.address?.road || '';
         const suburb = data.address?.suburb || data.address?.neighbourhood || '';
-        const city = data.address?.city || data.address?.town || data.address?.municipality || 'Guadalajara';
-        const formatted = data.display_name || [road, suburb, city].filter(Boolean).join(', ');
-        setLocation(formatted || `${city}, Jalisco`);
+        const city = data.address?.city || data.address?.town || data.address?.municipality || data.address?.county || '';
+        const state = data.address?.state || '';
+        const formatted = data.display_name || [road, suburb, city, state].filter(Boolean).join(', ');
+        setLocation(formatted || `${city}${state ? `, ${state}` : ''}`);
         if (!place && amenityName) {
           setPlace(amenityName);
         }
       } else {
-        setLocation(`Ubicación seleccionada (${e.lat.toFixed(4)}, ${e.lng.toFixed(4)})`);
+        setLocation(`Coordenadas (${e.lat.toFixed(4)}, ${e.lng.toFixed(4)})`);
       }
     } catch {
-      setLocation(`Ubicación seleccionada (${e.lat.toFixed(4)}, ${e.lng.toFixed(4)})`);
+      setLocation(`Coordenadas (${e.lat.toFixed(4)}, ${e.lng.toFixed(4)})`);
     }
   };
 
@@ -190,28 +213,39 @@ export default function ShareExperienceModal({
     );
   };
 
-  const handlePickImage = async () => {
+  // Subir múltiples fotos de la experiencia
+  const handlePickImages = async () => {
+    if (selectedImages.length >= 5) {
+      Alert.alert('Límite alcanzado', 'Puedes subir un máximo de 5 fotografías por experiencia.');
+      return;
+    }
+
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
       Alert.alert('Permiso requerido', 'Se necesita permiso para acceder a tus fotos.');
       return;
     }
 
+    const remainingLimit = 5 - selectedImages.length;
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [16, 9],
+      allowsMultipleSelection: true,
+      selectionLimit: remainingLimit,
       quality: 0.7,
       base64: true,
     });
 
-    if (!result.canceled && result.assets && result.assets[0]) {
-      const asset = result.assets[0];
-      const imagePayload = asset.base64
-        ? `data:image/jpeg;base64,${asset.base64}`
-        : asset.uri;
-      setSelectedImage(imagePayload);
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const newImages = result.assets.map((asset) =>
+        asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri
+      );
+      setSelectedImages((prev) => [...prev, ...newImages].slice(0, 5));
     }
+  };
+
+  const handleRemoveImage = (indexToRemove: number) => {
+    setSelectedImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   const handleFormSubmit = async () => {
@@ -223,12 +257,13 @@ export default function ShareExperienceModal({
     await onSubmit({
       title: title.trim(),
       place: place.trim() || title.trim(),
-      location: location.trim() || userLoc.formattedAddress,
+      location: location.trim() || userLoc.formattedAddress || 'Ubicación seleccionada',
       latitude: pickedCoords?.lat ?? userLoc.lat,
       longitude: pickedCoords?.lng ?? userLoc.lng,
       selectedGastro,
       budget,
-      imageUrl: selectedImage,
+      imageUrl: selectedImages.length > 0 ? selectedImages[0] : '',
+      imageUrls: selectedImages,
       reviewText: review.trim(),
       rating,
       selectedItineraryId: selectedItineraryId || undefined,
@@ -237,48 +272,36 @@ export default function ShareExperienceModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
-      <SafeAreaView style={[styles.modalRoot, { backgroundColor: colors.background }]}>
-        {/* Header Modal */}
+      <SafeAreaView style={[styles.modalRoot, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
+        {/* Header Rediseñado: Solo botón de cerrar y título, SIN botón duplicado arriba a la derecha */}
         <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
-            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth={2}>
-              <Path d="M18 6L6 18M6 6l12 12" />
-            </Svg>
+            <CloseIcon size={20} color={colors.text} />
           </TouchableOpacity>
+
           <Text style={[styles.modalTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
             Compartir Experiencia
           </Text>
-          <TouchableOpacity
-            style={[styles.publishActionBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
-            activeOpacity={0.8}
-            onPress={handleFormSubmit}
-            disabled={publishing}
-          >
-            {publishing ? (
-              <ActivityIndicator size="small" color="#FFF" />
-            ) : (
-              <Text style={[styles.publishActionText, { fontFamily: typography.fonts.bold }]}>
-                Publicar
-              </Text>
-            )}
-          </TouchableOpacity>
+
+          <View style={styles.headerSpacer} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.formScroll} showsVerticalScrollIndicator={false}>
-          {/* Selector de Itinerarios */}
+        <ScrollView
+          contentContainerStyle={styles.formScroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Selector de Itinerarios (si el usuario tiene guardados) */}
           {userItineraries.length > 0 && (
-            <View style={{ marginBottom: 18 }}>
-              <View style={styles.labelWithIcon}>
-                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
-                  <Path d="M9 11l3 3L22 4" />
-                  <Path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                </Svg>
-                <Text style={[styles.fieldLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
-                  Seleccionar Itinerario
+            <View style={styles.sectionCard}>
+              <View style={styles.labelRow}>
+                <CheckIcon size={14} color={colors.primary} />
+                <Text style={[styles.sectionLabel, { color: colors.text, fontFamily: typography.fonts.bold }]}>
+                  Vincular a un Itinerario
                 </Text>
               </View>
 
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 4 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.itinerariesRow}>
                 {userItineraries.map((itin) => {
                   const isSelected = selectedItineraryId === itin.id;
                   return (
@@ -287,7 +310,7 @@ export default function ShareExperienceModal({
                       style={[
                         styles.itineraryChip,
                         {
-                          backgroundColor: isSelected ? colors.primary + '18' : colors.card,
+                          backgroundColor: isSelected ? colors.primary + '14' : colors.card,
                           borderColor: isSelected ? colors.primary : colors.border,
                           borderRadius: borderRadius.md,
                         },
@@ -296,6 +319,7 @@ export default function ShareExperienceModal({
                         setSelectedItineraryId(itin.id);
                         if (!title) setTitle(itin.title);
                       }}
+                      activeOpacity={0.75}
                     >
                       <Text
                         style={[
@@ -309,8 +333,8 @@ export default function ShareExperienceModal({
                       >
                         {itin.title}
                       </Text>
-                      <Text style={{ fontSize: 11, color: colors.textSecondary }}>
-                        ${itin.totalCost.toFixed(2)} USD • {itin.items?.length || 0} paradas
+                      <Text style={[styles.itineraryChipMeta, { color: colors.textSecondary }]}>
+                        {itin.items?.length || 0} paradas
                       </Text>
                     </TouchableOpacity>
                   );
@@ -320,16 +344,10 @@ export default function ShareExperienceModal({
           )}
 
           {/* Título de la Cita */}
-          <View style={styles.inputSection}>
-            <View style={styles.labelWithIcon}>
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
-                <Path d="M12 20h9" />
-                <Path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-              </Svg>
-              <Text style={[styles.fieldLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
-                Título de la cita *
-              </Text>
-            </View>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
+              Título de la experiencia *
+            </Text>
             <TextInput
               style={[
                 styles.inputField,
@@ -341,103 +359,83 @@ export default function ShareExperienceModal({
                   fontFamily: typography.fonts.regular,
                 },
               ]}
-              placeholder="Ej. Tarde de Cócteles y Jazz"
+              placeholder="Ej. Tarde de cócteles y pasta artesanal"
               placeholderTextColor={colors.textSecondary}
               value={title}
               onChangeText={setTitle}
             />
           </View>
 
-          {/* Foto de la Experiencia (Solo subida propia) */}
-          <View style={styles.inputSection}>
-            <View style={styles.labelWithIcon}>
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
-                <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                <Circle cx="12" cy="13" r="4" />
-              </Svg>
-              <Text style={[styles.fieldLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
-                Foto de la experiencia
+          {/* Galería de Fotos Múltiples */}
+          <View style={styles.inputGroup}>
+            <View style={styles.labelWithCounter}>
+              <View style={styles.labelRow}>
+                <PhotoIcon size={14} color={colors.textSecondary} />
+                <Text style={[styles.inputLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
+                  Fotografías de la cita
+                </Text>
+              </View>
+              <Text style={[styles.counterText, { color: colors.textSecondary, fontFamily: typography.fonts.medium }]}>
+                {selectedImages.length}/5 fotos
               </Text>
             </View>
 
-            <View
-              style={[
-                styles.imagePickerCard,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: colors.border,
-                  borderRadius: borderRadius.lg,
-                },
-              ]}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.photosScroll}
             >
-              {selectedImage ? (
-                <View style={styles.imagePreviewWrap}>
-                  <Image source={{ uri: selectedImage }} style={styles.previewImage} resizeMode="cover" />
-                  <View style={styles.previewActionRow}>
-                    <TouchableOpacity
-                      style={[styles.actionBadgeBtn, { backgroundColor: colors.primary }]}
-                      activeOpacity={0.85}
-                      onPress={handlePickImage}
-                    >
-                      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2.2}>
-                        <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                        <Circle cx="12" cy="13" r="4" />
-                      </Svg>
-                      <Text style={[styles.actionBadgeText, { fontFamily: typography.fonts.bold }]}>
-                        Cambiar foto
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={[styles.actionBadgeBtn, { backgroundColor: '#FF3B30' }]}
-                      activeOpacity={0.85}
-                      onPress={() => setSelectedImage('')}
-                    >
-                      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2.2}>
-                        <Path d="M18 6L6 18M6 6l12 12" />
-                      </Svg>
-                      <Text style={[styles.actionBadgeText, { fontFamily: typography.fonts.bold }]}>
-                        Quitar
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ) : (
+              {/* Botón para añadir foto */}
+              {selectedImages.length < 5 && (
                 <TouchableOpacity
-                  style={[styles.uploadBox, { borderColor: colors.border }]}
+                  style={[
+                    styles.addPhotoCard,
+                    {
+                      borderColor: colors.border,
+                      backgroundColor: colors.card,
+                      borderRadius: borderRadius.md,
+                    },
+                  ]}
+                  onPress={handlePickImages}
                   activeOpacity={0.8}
-                  onPress={handlePickImage}
                 >
-                  <View style={[styles.uploadIconCircle, { backgroundColor: colors.primary + '15' }]}>
-                    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2}>
-                      <Path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <Path d="M17 8l-5-5-5 5" />
-                      <Path d="M12 3v12" />
-                    </Svg>
-                  </View>
-                  <Text style={[styles.uploadTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
-                    Subir foto desde la galería
-                  </Text>
-                  <Text style={[styles.uploadSubtitle, { color: colors.textSecondary, fontFamily: typography.fonts.regular }]}>
-                    Formato PNG o JPG en alta resolución
+                  <PlusIcon size={20} color={colors.primary} />
+                  <Text style={[styles.addPhotoText, { color: colors.text, fontFamily: typography.fonts.medium }]}>
+                    Añadir fotos
                   </Text>
                 </TouchableOpacity>
               )}
-            </View>
+
+              {/* Miniaturas de imágenes seleccionadas */}
+              {selectedImages.map((uri, idx) => (
+                <View key={idx} style={styles.photoThumbWrapper}>
+                  <Image
+                    source={{ uri }}
+                    style={[styles.photoThumb, { borderRadius: borderRadius.md }]}
+                    resizeMode="cover"
+                  />
+                  <TouchableOpacity
+                    style={[styles.removeThumbBtn, { borderRadius: borderRadius.round }]}
+                    activeOpacity={0.8}
+                    onPress={() => handleRemoveImage(idx)}
+                  >
+                    <CloseIcon size={12} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
           </View>
 
-          {/* Nombre del Lugar */}
-          <View style={styles.inputSection}>
-            <View style={styles.labelWithIcon}>
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
-                <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                <Circle cx="12" cy="10" r="3" />
-              </Svg>
-              <Text style={[styles.fieldLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
-                Lugar visitado
+          {/* Nombre del Lugar con Búsqueda */}
+          <View style={styles.inputGroup}>
+            <View style={styles.labelRow}>
+              <SearchIcon size={14} color={colors.textSecondary} />
+              <Text style={[styles.inputLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
+                Lugar o establecimiento
               </Text>
               {isSearchingPlaces && <ActivityIndicator size="small" color={colors.primary} style={{ marginLeft: 6 }} />}
             </View>
+
             <TextInput
               style={[
                 styles.inputField,
@@ -449,17 +447,17 @@ export default function ShareExperienceModal({
                   fontFamily: typography.fonts.regular,
                 },
               ]}
-              placeholder="Ej. Terraza Luna Gastro Bar"
+              placeholder="Ej. Terraza Luna Bar & Bistro"
               placeholderTextColor={colors.textSecondary}
               value={place}
               onChangeText={handlePlaceChange}
             />
 
-            {/* Lista desplegable de sugerencias */}
+            {/* Dropdown de Sugerencias */}
             {placeSuggestions.length > 0 && (
               <View
                 style={[
-                  styles.suggestionsBox,
+                  styles.suggestionsDropdown,
                   {
                     backgroundColor: colors.card,
                     borderColor: colors.border,
@@ -478,10 +476,7 @@ export default function ShareExperienceModal({
                     activeOpacity={0.7}
                     onPress={() => handleSelectSuggestion(s)}
                   >
-                    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2}>
-                      <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                      <Circle cx="12" cy="10" r="3" />
-                    </Svg>
+                    <MapPinIcon size={14} color={colors.primary} />
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.suggestionTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
                         {s.name}
@@ -499,22 +494,37 @@ export default function ShareExperienceModal({
             )}
           </View>
 
-          {/* Ubicación y Mapa */}
-          <View style={styles.inputSection}>
-            <View style={styles.labelWithIcon}>
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
-                <Path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z" />
-                <Path d="M8 2v16" />
-                <Path d="M16 6v16" />
-              </Svg>
-              <Text style={[styles.fieldLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
-                Ubicación geográfica
-              </Text>
+          {/* Ubicación Geográfica Corregida */}
+          <View style={styles.inputGroup}>
+            <View style={styles.labelWithCounter}>
+              <View style={styles.labelRow}>
+                <MapPinIcon size={14} color={colors.textSecondary} />
+                <Text style={[styles.inputLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
+                  Ubicación exacta en el mapa
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.useGpsBtn}
+                onPress={handleUseCurrentLocation}
+                activeOpacity={0.7}
+              >
+                {detectingGps ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <>
+                    <RefreshIcon size={11} color={colors.primary} />
+                    <Text style={[styles.useGpsText, { color: colors.primary, fontFamily: typography.fonts.medium }]}>
+                      Mi ubicación actual
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
             </View>
 
             <View
               style={[
-                styles.mapPickerCard,
+                styles.locationCard,
                 {
                   backgroundColor: colors.card,
                   borderColor: colors.border,
@@ -522,61 +532,64 @@ export default function ShareExperienceModal({
                 },
               ]}
             >
-              <TouchableOpacity style={styles.miniMapCanvas} activeOpacity={0.9} onPress={() => setShowMapPickerModal(true)}>
+              {/* Miniatura interactiva de Leaflet */}
+              <TouchableOpacity
+                style={styles.mapCanvasWrapper}
+                activeOpacity={0.9}
+                onPress={() => setShowMapPickerModal(true)}
+              >
                 <View pointerEvents="none" style={StyleSheet.absoluteFill}>
                   <LeafletMap
                     waypoints={[
                       {
                         lat: pickedCoords?.lat ?? userLoc.lat,
                         lng: pickedCoords?.lng ?? userLoc.lng,
-                        title: title || 'Tu Cita',
-                        placeName: location || userLoc.formattedAddress || 'Ubicación actual',
+                        title: title || 'Lugar de la Cita',
+                        placeName: location || userLoc.formattedAddress || 'Ubicación seleccionada',
                         stepNumber: 1,
                       },
                     ]}
                     showRoutingMachine={false}
                     showGeocoder={false}
-                    userLocation={{ lat: userLoc.lat, lng: userLoc.lng }}
+                    userLocation={{
+                      lat: pickedCoords?.lat ?? userLoc.lat,
+                      lng: pickedCoords?.lng ?? userLoc.lng,
+                    }}
                     isDark={isDark}
                   />
                 </View>
-                <View style={styles.miniMapOverlayBtn}>
-                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2}>
-                    <Path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z" />
-                  </Svg>
-                  <Text style={[styles.miniMapOverlayText, { fontFamily: typography.fonts.bold }]}>
-                    Abrir mapa interactivo
+
+                <View style={[styles.openMapBadge, { borderRadius: borderRadius.round }]}>
+                  <MapPinIcon size={13} color="#FFFFFF" />
+                  <Text style={[styles.openMapBadgeText, { fontFamily: typography.fonts.bold }]}>
+                    Cambiar punto en el mapa
                   </Text>
                 </View>
               </TouchableOpacity>
-              <View style={styles.selectedLocationRow}>
-                <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2}>
-                  <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                  <Circle cx="12" cy="10" r="3" />
-                </Svg>
-                <Text style={[styles.selectedLocationText, { color: colors.text, fontFamily: typography.fonts.medium }]} numberOfLines={1}>
-                  {location || userLoc.formattedAddress || 'Detectando ubicación...'}
+
+              {/* Fila con el texto de la dirección seleccionada */}
+              <View style={styles.addressSummaryRow}>
+                <MapPinIcon size={14} color={colors.primary} />
+                <Text
+                  style={[styles.addressSummaryText, { color: colors.text, fontFamily: typography.fonts.medium }]}
+                  numberOfLines={2}
+                >
+                  {location || userLoc.formattedAddress || 'Ubicación seleccionada'}
                 </Text>
               </View>
             </View>
           </View>
 
-          {/* Preferencias Gastronómicas */}
-          <View style={styles.inputSection}>
-            <View style={styles.labelWithIcon}>
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
-                <Path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-                <Path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
-                <Path d="M6 1v3" />
-                <Path d="M10 1v3" />
-                <Path d="M14 1v3" />
-              </Svg>
-              <Text style={[styles.fieldLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
+          {/* Categorías Gastronómicas / Vibe */}
+          <View style={styles.inputGroup}>
+            <View style={styles.labelRow}>
+              <UtensilsIcon size={14} color={colors.textSecondary} />
+              <Text style={[styles.inputLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
                 Categorías gastronómicas
               </Text>
             </View>
 
-            <View style={styles.gastroChipsGrid}>
+            <View style={styles.gastroGrid}>
               {GASTRO_PREFERENCES.map((pref) => {
                 const isSelected = selectedGastro.includes(pref);
                 return (
@@ -591,13 +604,14 @@ export default function ShareExperienceModal({
                       },
                     ]}
                     onPress={() => toggleGastro(pref)}
+                    activeOpacity={0.75}
                   >
                     <Text
                       style={[
                         styles.gastroChipText,
                         {
                           color: isSelected ? colors.primaryContrast : colors.text,
-                          fontFamily: typography.fonts.medium,
+                          fontFamily: isSelected ? typography.fonts.bold : typography.fonts.medium,
                         },
                       ]}
                     >
@@ -610,13 +624,11 @@ export default function ShareExperienceModal({
           </View>
 
           {/* Presupuesto */}
-          <View style={styles.inputSection}>
-            <View style={styles.labelWithIcon}>
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
-                <Path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </Svg>
-              <Text style={[styles.fieldLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
-                Rango de Costo
+          <View style={styles.inputGroup}>
+            <View style={styles.labelRow}>
+              <TagIcon size={14} color={colors.textSecondary} />
+              <Text style={[styles.inputLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
+                Rango de presupuesto aproximado
               </Text>
             </View>
 
@@ -635,10 +647,11 @@ export default function ShareExperienceModal({
                       },
                     ]}
                     onPress={() => setBudget(opt.id)}
+                    activeOpacity={0.75}
                   >
                     <Text
                       style={[
-                        styles.budgetChipLabel,
+                        styles.budgetChipText,
                         {
                           color: isSelected ? colors.primaryContrast : colors.text,
                           fontFamily: typography.fonts.bold,
@@ -654,32 +667,24 @@ export default function ShareExperienceModal({
           </View>
 
           {/* Calificación */}
-          <View style={styles.inputSection}>
-            <View style={styles.labelWithIcon}>
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="#FFD700" stroke="#FFD700" strokeWidth={1}>
-                <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </Svg>
-              <Text style={[styles.fieldLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
-                Calificación
+          <View style={styles.inputGroup}>
+            <View style={styles.labelRow}>
+              <StarIcon size={14} color="#FFD700" fill="#FFD700" />
+              <Text style={[styles.inputLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
+                Calificación de la experiencia
               </Text>
             </View>
 
-            <View style={styles.ratingRow}>
+            <View style={styles.ratingBox}>
               <StarRating rating={rating} onRatingChange={setRating} />
             </View>
           </View>
 
-          {/* Reseña / Tips */}
-          <View style={styles.inputSection}>
-            <View style={styles.labelWithIcon}>
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth={2}>
-                <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </Svg>
-              <Text style={[styles.fieldLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
-                Tu reseña y consejos
-              </Text>
-            </View>
-
+          {/* Reseña y Consejos */}
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.textSecondary, fontFamily: typography.fonts.bold }]}>
+              Reseña y consejos para otras parejas
+            </Text>
             <TextInput
               style={[
                 styles.textArea,
@@ -691,7 +696,7 @@ export default function ShareExperienceModal({
                   fontFamily: typography.fonts.regular,
                 },
               ]}
-              placeholder="Cuenta qué tal estuvo el ambiente, el servicio o qué platillo no perderse..."
+              placeholder="Cuenta qué tal el ambiente, si conviene reservar, qué platillo o cóctel pedir..."
               placeholderTextColor={colors.textSecondary}
               multiline
               numberOfLines={4}
@@ -700,10 +705,10 @@ export default function ShareExperienceModal({
             />
           </View>
 
-          {/* Botón Principal de Publicar al final del formulario */}
+          {/* Botón Principal y ÚNICO de Publicar */}
           <TouchableOpacity
             style={[
-              styles.bottomSubmitBtn,
+              styles.primarySubmitBtn,
               {
                 backgroundColor: colors.primary,
                 borderRadius: borderRadius.lg,
@@ -714,22 +719,16 @@ export default function ShareExperienceModal({
             disabled={publishing}
           >
             {publishing ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color={colors.primaryContrast} />
             ) : (
-              <View style={styles.bottomSubmitBtnInner}>
-                <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.2}>
-                  <Path d="M22 2L11 13" />
-                  <Path d="M22 2l-7 20-4-9-9-4 20-7z" />
-                </Svg>
-                <Text style={[styles.bottomSubmitBtnText, { fontFamily: typography.fonts.bold }]}>
-                  Publicar Experiencia
-                </Text>
-              </View>
+              <Text style={[styles.primarySubmitBtnText, { color: colors.primaryContrast, fontFamily: typography.fonts.bold }]}>
+                Publicar Experiencia
+              </Text>
             )}
           </TouchableOpacity>
         </ScrollView>
 
-        {/* Modal de Mapa Completo */}
+        {/* Modal de Mapa Pantalla Completa para Ajustar Coordenadas */}
         <Modal visible={showMapPickerModal} animationType="slide" onRequestClose={() => setShowMapPickerModal(false)}>
           <SafeAreaView style={[styles.modalRoot, { backgroundColor: colors.background }]}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
@@ -739,14 +738,17 @@ export default function ShareExperienceModal({
               <Text style={[styles.modalTitle, { color: colors.text, fontFamily: typography.fonts.bold }]}>
                 Seleccionar Ubicación
               </Text>
-              <View style={{ width: 40 }} />
+              <View style={styles.headerSpacer} />
             </View>
             <View style={{ flex: 1 }}>
               <LeafletMap
                 waypoints={[]}
                 showRoutingMachine={false}
                 showGeocoder={true}
-                userLocation={{ lat: userLoc.lat, lng: userLoc.lng }}
+                userLocation={{
+                  lat: pickedCoords?.lat ?? userLoc.lat,
+                  lng: pickedCoords?.lng ?? userLoc.lng,
+                }}
                 isDark={isDark}
                 onMapClick={(e: MapClickEvent) => handleMapClick(e)}
               />
@@ -759,54 +761,133 @@ export default function ShareExperienceModal({
 }
 
 const styles = StyleSheet.create({
-  modalRoot: { flex: 1 },
+  modalRoot: {
+    flex: 1,
+  },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
   },
-  closeBtn: { padding: 4 },
-  modalTitle: { fontSize: 17 },
-  publishActionBtn: { paddingHorizontal: 18, paddingVertical: 8, alignItems: 'center', justifyContent: 'center' },
-  publishActionText: { color: '#FFFFFF', fontSize: 13 },
-  bottomSubmitBtn: {
-    marginTop: 16,
-    marginBottom: 40,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+  closeBtn: {
+    padding: 6,
   },
-  bottomSubmitBtnInner: {
+  modalTitle: {
+    fontSize: 17,
+  },
+  headerSpacer: {
+    width: 32,
+  },
+  formScroll: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 40,
+  },
+  sectionCard: {
+    marginBottom: 18,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  bottomSubmitBtnText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-  },
-  formScroll: { padding: 20, paddingBottom: 60 },
-  inputSection: { marginBottom: 18 },
-  labelWithIcon: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    gap: 6,
     marginBottom: 8,
   },
-  fieldLabel: { fontSize: 13 },
-  inputField: { borderWidth: 1, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14 },
-  suggestionsBox: {
-    marginTop: 6,
+  labelWithCounter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  sectionLabel: {
+    fontSize: 13,
+  },
+  inputLabel: {
+    fontSize: 13,
+  },
+  counterText: {
+    fontSize: 11,
+  },
+  inputField: {
+    fontSize: 14,
     borderWidth: 1,
-    maxHeight: 180,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+  },
+  textArea: {
+    fontSize: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  itinerariesRow: {
+    gap: 10,
+    paddingVertical: 4,
+  },
+  itineraryChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    minWidth: 140,
+  },
+  itineraryChipTitle: {
+    fontSize: 13,
+    marginBottom: 2,
+  },
+  itineraryChipMeta: {
+    fontSize: 11,
+  },
+  photosScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 4,
+  },
+  addPhotoCard: {
+    width: 105,
+    height: 105,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  addPhotoText: {
+    fontSize: 11,
+  },
+  photoThumbWrapper: {
+    position: 'relative',
+    width: 105,
+    height: 105,
+  },
+  photoThumb: {
+    width: '100%',
+    height: '100%',
+  },
+  removeThumbBtn: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 22,
+    height: 22,
+    backgroundColor: '#FF3B30',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  suggestionsDropdown: {
+    borderWidth: 1,
+    marginTop: 6,
     overflow: 'hidden',
   },
   suggestionItem: {
@@ -822,76 +903,92 @@ const styles = StyleSheet.create({
   },
   suggestionAddress: {
     fontSize: 11,
-    marginTop: 2,
   },
-  imagePickerCard: { borderWidth: 1, padding: 12, overflow: 'hidden' },
-  imagePreviewWrap: { position: 'relative', height: 180, borderRadius: 10, overflow: 'hidden' },
-  previewImage: { width: '100%', height: '100%' },
-  previewActionRow: {
+  useGpsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 2,
+  },
+  useGpsText: {
+    fontSize: 11,
+  },
+  locationCard: {
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  mapCanvasWrapper: {
+    height: 150,
+    position: 'relative',
+  },
+  openMapBadge: {
     position: 'absolute',
     bottom: 10,
     right: 10,
     flexDirection: 'row',
-    gap: 8,
-  },
-  actionBadgeBtn: {
-    flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
   },
-  actionBadgeText: { color: '#FFF', fontSize: 12 },
-  uploadBox: {
-    height: 120,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderRadius: 12,
-    padding: 16,
+  openMapBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
   },
-  uploadIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  uploadTitle: { fontSize: 14, marginBottom: 2 },
-  uploadSubtitle: { fontSize: 11 },
-  mapPickerCard: { borderWidth: 1, overflow: 'hidden' },
-  miniMapCanvas: { height: 130, position: 'relative' },
-  miniMapOverlayBtn: {
-    position: 'absolute',
-    bottom: 8,
-    left: 8,
-    backgroundColor: 'rgba(0,0,0,0.75)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  miniMapOverlayText: { color: '#FFF', fontSize: 11 },
-  selectedLocationRow: {
-    padding: 10,
+  addressSummaryRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
-  selectedLocationText: { fontSize: 12, flex: 1 },
-  gastroChipsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  gastroChip: { paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1 },
-  gastroChipText: { fontSize: 12 },
-  budgetRow: { flexDirection: 'row', gap: 8 },
-  budgetChip: { flex: 1, paddingVertical: 10, alignItems: 'center', borderWidth: 1 },
-  budgetChipLabel: { fontSize: 12 },
-  ratingRow: { paddingVertical: 4 },
-  textArea: { borderWidth: 1, padding: 12, height: 90, textAlignVertical: 'top', fontSize: 14 },
-  itineraryChip: { paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, minWidth: 160 },
-  itineraryChipTitle: { fontSize: 13, marginBottom: 2 },
+  addressSummaryText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  gastroGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  gastroChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderWidth: 1,
+  },
+  gastroChipText: {
+    fontSize: 12,
+  },
+  budgetRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  budgetChip: {
+    flex: 1,
+    minWidth: '45%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderWidth: 1,
+  },
+  budgetChipText: {
+    fontSize: 12,
+  },
+  ratingBox: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  primarySubmitBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 15,
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  primarySubmitBtnText: {
+    fontSize: 14,
+  },
 });

@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Circle } from 'react-native-svg';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../context/AuthContext';
@@ -23,7 +23,18 @@ import {
   updateProfileApi,
   DietaryPreference,
   PriceRange,
+  PlaceCategory,
 } from '../services/profileService';
+
+const INTEREST_OPTIONS: { id: PlaceCategory; label: string; desc: string }[] = [
+  { id: 'FOOD_DRINK', label: 'Gastronomía', desc: 'Restaurantes, catas, cafeterías y bares' },
+  { id: 'CULTURE', label: 'Cultura & Arte', desc: 'Museos, teatros, conciertos y galerías' },
+  { id: 'NATURE', label: 'Naturaleza', desc: 'Parques, miradores, senderismo y aire libre' },
+  { id: 'ENTERTAINMENT', label: 'Entretenimiento', desc: 'Cine, bolos, juegos y experiencias interactivas' },
+  { id: 'SHOPPING', label: 'Compras', desc: 'Boutiques, bazares de diseño y plazas' },
+  { id: 'SPORTS', label: 'Deportes & Activo', desc: 'Ciclismo, escalada, pádel y aventura' },
+  { id: 'OTHER', label: 'Otros Planes', desc: 'Planes sorpresa y citas alternativas' },
+];
 
 const PRICE_RANGES: { id: PriceRange; label: string; desc: string }[] = [
   { id: 'CHEAP', label: '$ Económico', desc: 'Planes accesibles e informales' },
@@ -56,7 +67,7 @@ export default function EditProfileModalScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{
-    mode?: 'profile' | 'preferences' | 'budget';
+    mode?: 'profile' | 'preferences' | 'budget' | 'interests';
     profileId?: string;
     userId?: string;
   }>();
@@ -70,6 +81,7 @@ export default function EditProfileModalScreen() {
   const [avatarUrl, setAvatarUrl] = useState<string>('');
   const [preferredPriceRange, setPreferredPriceRange] = useState<PriceRange>('MODERATE');
   const [dietaryPreference, setDietaryPreference] = useState<DietaryPreference>('NONE');
+  const [interests, setInterests] = useState<PlaceCategory[]>(['FOOD_DRINK', 'CULTURE']);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetchingInitial, setFetchingInitial] = useState(true);
@@ -92,6 +104,9 @@ export default function EditProfileModalScreen() {
           setAvatarUrl(existingProfile.avatarUrl || '');
           setPreferredPriceRange(existingProfile.preferredPriceRange || 'MODERATE');
           setDietaryPreference(existingProfile.dietaryPreference || 'NONE');
+          if (existingProfile.interests && existingProfile.interests.length > 0) {
+            setInterests(existingProfile.interests);
+          }
         }
       } catch (err) {
         console.warn('Error cargando perfil actual:', err);
@@ -128,6 +143,18 @@ export default function EditProfileModalScreen() {
     }
   };
 
+  const toggleInterest = (category: PlaceCategory) => {
+    if (interests.includes(category)) {
+      if (interests.length > 1) {
+        setInterests(interests.filter((i) => i !== category));
+      } else {
+        Alert.alert('Aviso', 'Debes mantener al menos una categoría de interés.');
+      }
+    } else {
+      setInterests([...interests, category]);
+    }
+  };
+
   const handleSave = async () => {
     const targetUserId = params.userId || user?.id;
     if (!targetUserId || !profileId) {
@@ -145,6 +172,7 @@ export default function EditProfileModalScreen() {
         avatarUrl: avatarUrl || undefined,
         preferredPriceRange,
         dietaryPreference,
+        interests,
       });
 
       setSavedSuccess(true);
@@ -164,6 +192,7 @@ export default function EditProfileModalScreen() {
     profile: 'Editar Perfil',
     preferences: 'Preferencias Gastronómicas',
     budget: 'Rango de Presupuesto',
+    interests: 'Intereses para Citas',
   };
 
   const currentDisplayAvatar =
@@ -445,6 +474,71 @@ export default function EditProfileModalScreen() {
                           ]}
                         >
                           {pr.desc}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            {/* Mode: Interests */}
+            {mode === 'interests' && (
+              <View style={styles.section}>
+                <Text
+                  style={[
+                    styles.sectionSubtitle,
+                    { color: colors.textSecondary, fontFamily: typography.fonts.regular },
+                  ]}
+                >
+                  Elige las categorías de actividades y citas que más disfrutas. Tu feed de Explorar se adaptará automáticamente a estas selecciones.
+                </Text>
+
+                <View style={styles.priceList}>
+                  {INTEREST_OPTIONS.map((opt) => {
+                    const isSelected = interests.includes(opt.id);
+                    return (
+                      <TouchableOpacity
+                        key={opt.id}
+                        style={[
+                          styles.priceOption,
+                          {
+                            borderColor: isSelected ? colors.primary : colors.border,
+                            borderWidth: isSelected ? 2 : 1,
+                            backgroundColor: isSelected ? colors.primary + '12' : colors.card,
+                            borderRadius: borderRadius.md,
+                          },
+                        ]}
+                        activeOpacity={0.8}
+                        onPress={() => toggleInterest(opt.id)}
+                      >
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                          <Text
+                            style={[
+                              styles.priceLabel,
+                              { color: isSelected ? colors.primary : colors.text, fontFamily: typography.fonts.bold },
+                            ]}
+                          >
+                            {opt.label}
+                          </Text>
+                          {isSelected && (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth={2.5}>
+                                <Path d="M20 6L9 17l-5-5" />
+                              </Svg>
+                              <Text style={{ color: colors.primary, fontSize: 13, fontFamily: typography.fonts.bold }}>
+                                Activo
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                        <Text
+                          style={[
+                            styles.priceDesc,
+                            { color: colors.textSecondary, fontFamily: typography.fonts.regular },
+                          ]}
+                        >
+                          {opt.desc}
                         </Text>
                       </TouchableOpacity>
                     );

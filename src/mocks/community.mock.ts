@@ -15,8 +15,11 @@ export interface SharedExperienceItem {
   likesCount: number;
   commentsCount: number;
   imageUrl: string;
+  imageUrls?: string[];
   reviewText: string;
   category: FeedCategory;
+  latitude?: number;
+  longitude?: number;
 }
 
 export const GASTRO_PREFERENCES = [
